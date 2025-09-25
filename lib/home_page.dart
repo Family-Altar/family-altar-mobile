@@ -1,6 +1,5 @@
 import 'package:family_altar/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -38,7 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    String a = t.login.success; 
+    final a = t.login.success; 
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
