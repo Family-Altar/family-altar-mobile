@@ -1,7 +1,10 @@
+import 'package:family_altar/i18n/strings.g.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(TranslationProvider(child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -12,6 +15,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      locale: TranslationProvider.of(context).flutterLocale, // use provider
+      supportedLocales: AppLocaleUtils.supportedLocales,
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -37,6 +43,7 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({required this.title, super.key});
+
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -69,6 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    String a = t.login.success; 
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -104,6 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            Text('text from en locale $a'),
             const Text('You have pushed the button this many times:'),
             Text(
               '$_counter',
