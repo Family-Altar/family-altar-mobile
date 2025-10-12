@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
-
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
+import 'package:flutter/material.dart';
 
 class BookSelectionScreen extends StatelessWidget {
   const BookSelectionScreen({required this.title, super.key});
@@ -42,7 +41,7 @@ class BookSelectionScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               'This page will contain book selection options',
-              style: AppFonts.normal(context, size: FontSize.medium),
+              style: AppFonts.normal(context),
             ),
           ],
         ),

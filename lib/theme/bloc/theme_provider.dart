@@ -1,19 +1,18 @@
+import 'package:family_altar/i18n/strings.g.dart';
+import 'package:family_altar/theme/bloc/theme_bloc.dart';
+import 'package:family_altar/theme/bloc/theme_event.dart';
+import 'package:family_altar/theme/bloc/theme_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:family_altar/i18n/strings.g.dart';
-import 'package:family_altar/theme/bloc/theme_bloc.dart';
-import 'package:family_altar/theme/bloc/theme_event.dart';
-import 'package:family_altar/theme/bloc/theme_state.dart';
-
 /// Theme provider widget that wraps the app and provides theme functionality
 class ThemeProvider extends StatelessWidget {
   const ThemeProvider({
-    super.key,
     required this.child,
     required this.router,
+    super.key,
   });
 
   final Widget child;

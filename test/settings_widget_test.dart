@@ -5,7 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('SettingsScreen displays theme options', (WidgetTester tester) async {
+  testWidgets('SettingsScreen displays theme options',
+      (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: BlocProvider(

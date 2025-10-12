@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:family_altar/theme/bloc/theme_event.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -56,75 +55,61 @@ class SettingsScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     BlocBuilder<ThemeBloc, ThemeState>(
                       builder: (context, state) {
-                        return Column(
-                          children: [
-                            RadioListTile<ThemeMode>(
-                              title: Text(
-                                'Light',
-                                style: AppFonts.normal(context),
-                              ),
-                              subtitle: Text(
-                                'Always use light theme',
-                                style: AppFonts.normal(
-                                  context,
-                                  size: FontSize.small,
+                        return RadioGroup<ThemeMode>(
+                          groupValue: state.themeMode,
+                          onChanged: (ThemeMode? value) {
+                            if (value != null) {
+                              context.read<ThemeBloc>().add(
+                                ThemeSetEvent(value),
+                              );
+                            }
+                          },
+                          child: Column(
+                            children: [
+                              RadioListTile<ThemeMode>(
+                                title: Text(
+                                  'Light',
+                                  style: AppFonts.normal(context),
                                 ),
-                              ),
-                              value: ThemeMode.light,
-                              groupValue: state.themeMode,
-                              onChanged: (ThemeMode? value) {
-                                if (value != null) {
-                                  context.read<ThemeBloc>().add(
-                                    ThemeSetEvent(value),
-                                  );
-                                }
-                              },
-                            ),
-                            RadioListTile<ThemeMode>(
-                              title: Text(
-                                'Dark',
-                                style: AppFonts.normal(context),
-                              ),
-                              subtitle: Text(
-                                'Always use dark theme',
-                                style: AppFonts.normal(
-                                  context,
-                                  size: FontSize.small,
+                                subtitle: Text(
+                                  'Always use light theme',
+                                  style: AppFonts.normal(
+                                    context,
+                                    size: FontSize.small,
+                                  ),
                                 ),
+                                value: ThemeMode.light,
                               ),
-                              value: ThemeMode.dark,
-                              groupValue: state.themeMode,
-                              onChanged: (ThemeMode? value) {
-                                if (value != null) {
-                                  context.read<ThemeBloc>().add(
-                                    ThemeSetEvent(value),
-                                  );
-                                }
-                              },
-                            ),
-                            RadioListTile<ThemeMode>(
-                              title: Text(
-                                'System',
-                                style: AppFonts.normal(context),
-                              ),
-                              subtitle: Text(
-                                'Follow system theme',
-                                style: AppFonts.normal(
-                                  context,
-                                  size: FontSize.small,
+                              RadioListTile<ThemeMode>(
+                                title: Text(
+                                  'Dark',
+                                  style: AppFonts.normal(context),
                                 ),
+                                subtitle: Text(
+                                  'Always use dark theme',
+                                  style: AppFonts.normal(
+                                    context,
+                                    size: FontSize.small,
+                                  ),
+                                ),
+                                value: ThemeMode.dark,
                               ),
-                              value: ThemeMode.system,
-                              groupValue: state.themeMode,
-                              onChanged: (ThemeMode? value) {
-                                if (value != null) {
-                                  context.read<ThemeBloc>().add(
-                                    ThemeSetEvent(value),
-                                  );
-                                }
-                              },
-                            ),
-                          ],
+                              RadioListTile<ThemeMode>(
+                                title: Text(
+                                  'System',
+                                  style: AppFonts.normal(context),
+                                ),
+                                subtitle: Text(
+                                  'Follow system theme',
+                                  style: AppFonts.normal(
+                                    context,
+                                    size: FontSize.small,
+                                  ),
+                                ),
+                                value: ThemeMode.system,
+                              ),
+                            ],
+                          ),
                         );
                       },
                     ),

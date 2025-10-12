@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:family_altar/i18n/strings.g.dart';
 import 'package:family_altar/screens/home/home_screen.dart';
 import 'package:family_altar/screens/settings/settings_screen.dart';
 import 'package:family_altar/theme/bloc/theme_provider.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

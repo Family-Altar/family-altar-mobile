@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:family_altar/theme/bloc/theme_event.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Widget to toggle between light and dark themes
 class ThemeToggleButton extends StatelessWidget {
@@ -69,48 +68,35 @@ class ThemeSelector extends StatelessWidget {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 16),
-                Column(
-                  children: [
-                    RadioListTile<ThemeMode>(
-                      title: const Text('Light'),
-                      subtitle: const Text('Always use light theme'),
-                      value: ThemeMode.light,
-                      groupValue: state.themeMode,
-                      onChanged: (ThemeMode? value) {
-                        if (value != null) {
-                          context.read<ThemeBloc>().add(
-                            ThemeSetEvent(value),
-                          );
-                        }
-                      },
-                    ),
-                    RadioListTile<ThemeMode>(
-                      title: const Text('Dark'),
-                      subtitle: const Text('Always use dark theme'),
-                      value: ThemeMode.dark,
-                      groupValue: state.themeMode,
-                      onChanged: (ThemeMode? value) {
-                        if (value != null) {
-                          context.read<ThemeBloc>().add(
-                            ThemeSetEvent(value),
-                          );
-                        }
-                      },
-                    ),
-                    RadioListTile<ThemeMode>(
-                      title: const Text('System'),
-                      subtitle: const Text('Follow system theme'),
-                      value: ThemeMode.system,
-                      groupValue: state.themeMode,
-                      onChanged: (ThemeMode? value) {
-                        if (value != null) {
-                          context.read<ThemeBloc>().add(
-                            ThemeSetEvent(value),
-                          );
-                        }
-                      },
-                    ),
-                  ],
+                RadioGroup<ThemeMode>(
+                  groupValue: state.themeMode,
+                  onChanged: (ThemeMode? value) {
+                    if (value != null) {
+                      context.read<ThemeBloc>().add(
+                        ThemeSetEvent(value),
+                      );
+                    }
+                  },
+                  child: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RadioListTile<ThemeMode>(
+                        title: Text('Light'),
+                        subtitle: Text('Always use light theme'),
+                        value: ThemeMode.light,
+                      ),
+                      RadioListTile<ThemeMode>(
+                        title: Text('Dark'),
+                        subtitle: Text('Always use dark theme'),
+                        value: ThemeMode.dark,
+                      ),
+                      RadioListTile<ThemeMode>(
+                        title: Text('System'),
+                        subtitle: Text('Follow system theme'),
+                        value: ThemeMode.system,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
