@@ -1,6 +1,6 @@
-import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
+import 'package:family_altar/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -23,11 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: context.appBarColor,
         title: Text(
           widget.title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: context.textColor,
-          ),
+          style: AppFonts.bold(context),
         ),
         actions: [
           // Button to navigate to Book Selection screen
@@ -35,14 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
             margin: const EdgeInsets.only(right: 8),
             child: ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (context) => BookSelectionScreen(
-                      title: widget.title,
-                    ),
-                  ),
-                );
+                context.push('/book-selection?title=${Uri.encodeComponent(widget.title)}');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.isDarkMode
@@ -60,24 +49,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'Volume I',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.normal,
-                ),
+                style: AppFonts.normal(context, size: FontSize.small),
               ),
             ),
           ),
           // Settings screen
           IconButton(
-            onPressed: () => context.go('/settings'),
+            onPressed: () => context.push('/settings'),
             icon: Icon(
               Icons.settings,
               color: context.textColor,
             ),
             tooltip: 'Settings',
-            iconSize: 20,
+            iconSize: AppIcons.getIconSize(IconSize.medium),
           ),
         ],
       ),

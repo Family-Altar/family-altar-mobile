@@ -7,9 +7,6 @@ class AppFonts {
   // Private constructor to prevent instantiation
   AppFonts._();
 
-  /// Using Open Sans - a clean, readable sans-serif font perfect for books
-  // static const String _fontFamily = 'Open Sans';
-
   // Font variants
   /// Normal font style (400 weight)
   static TextStyle normal(BuildContext context,

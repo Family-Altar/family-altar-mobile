@@ -1,3 +1,4 @@
+import 'package:family_altar/theme/app_icons.dart';
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:family_altar/theme/bloc/theme_event.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
@@ -41,6 +42,7 @@ class ThemeToggleButton extends StatelessWidget {
           },
           icon: Icon(
             _getToggleIcon(state),
+            size: AppIcons.getIconSize(IconSize.medium),
           ),
           tooltip: _getToggleTooltip(state),
         );

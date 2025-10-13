@@ -1,6 +1,8 @@
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
+import 'package:family_altar/theme/app_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class BookSelectionScreen extends StatelessWidget {
   const BookSelectionScreen({required this.title, super.key});
@@ -16,17 +18,14 @@ class BookSelectionScreen extends StatelessWidget {
         backgroundColor: context.appBarColor,
         title: Text(
           title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: context.textColor,
-          ),
+           style: AppFonts.bold(context, size: FontSize.large),
         ),
         leading: IconButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
           icon: Icon(
             Icons.arrow_back,
             color: context.textColor,
+            size: AppIcons.getIconSize(IconSize.medium),
           ),
         ),
       ),

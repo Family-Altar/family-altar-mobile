@@ -1,9 +1,12 @@
 import 'package:family_altar/i18n/strings.g.dart';
+import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/screens/home/home_screen.dart';
 import 'package:family_altar/screens/settings/settings_screen.dart';
 import 'package:family_altar/theme/bloc/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+const String appTitle = 'The Family Altar - Tim Dodd';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,13 +18,20 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/',
       builder: (BuildContext context, GoRouterState state) {
-        return const HomeScreen(title: 'The Family Altar -Tim Dodd',);
+        return const HomeScreen(title: appTitle);
       },
       routes: <RouteBase>[
         GoRoute(
-          path: '/settings',
+          path: 'settings',
           builder: (BuildContext context, GoRouterState state) {
             return const SettingsScreen();
+          },
+        ),
+        GoRoute(
+          path: 'book-selection',
+          builder: (BuildContext context, GoRouterState state) {
+            final title = state.uri.queryParameters['title'] ?? appTitle;
+            return BookSelectionScreen(title: title);
           },
         ),
       ],
