@@ -46,32 +46,34 @@ class ReaderScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: BlocBuilder<ReadingBloc, ReadingState>(
-        builder: (context, state) {
-          if (state is ReadingLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is ReadingLoaded) {
-            return Scrollbar(
-              child: Center(
-                child: Column(
-                  children: [
-                    Text(
-                      state.reading,
-                      style: AppFonts.italics(context),
-                    ),
-                    Text(
-                      'Quote',
-                      style: AppFonts.normal(context),
-                    ),
-                  ],
+      body: SingleChildScrollView(
+        child: BlocBuilder<ReadingBloc, ReadingState>(
+          builder: (context, state) {
+            if (state is ReadingLoading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is ReadingLoaded) {
+              return Scrollbar(
+                child: Center(
+                  child: Column(
+                    children: [
+                      Text(
+                        state.reading.scripture,
+                        style: AppFonts.italics(context),
+                      ),
+                      Text(
+                        state.reading.quote,
+                        style: AppFonts.normal(context),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          } else {
-            // ReadingInitial or any other unhandled state
-            return const SizedBox.shrink();
-          }
-        },
+              );
+            } else {
+              // ReadingInitial or any other unhandled state
+              return const SizedBox.shrink();
+            }
+          },
+        ),
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

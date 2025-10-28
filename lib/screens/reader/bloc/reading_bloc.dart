@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:family_altar/repository/reading_repository.dart';
+import 'package:family_altar/screens/reader/domain/reading.dart';
 
 part 'reading_event.dart';
 part 'reading_state.dart';

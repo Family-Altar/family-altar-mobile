@@ -15,7 +15,7 @@ class ReadingLoading extends ReadingState {}
 
 /// Shown when the reading for the given day is successfully loaded
 class ReadingLoaded extends ReadingState {
-  final String reading;
+  final Reading reading;
 
   const ReadingLoaded({required this.reading});
 
