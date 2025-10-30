@@ -57,7 +57,6 @@ class ReaderScreen extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           textAlign: TextAlign.center,
@@ -71,8 +70,14 @@ class ReaderScreen extends StatelessWidget {
                           style: AppFonts.normal(context),
                         ),
                         const SizedBox(height: 8),
-                        Divider(),
+                        const Divider(),
                         Text(
+                          'Daily Reading:',
+                          textAlign: TextAlign.center,
+                          style: AppFonts.bold(context),
+                        ),
+                        Text(
+                          textAlign: TextAlign.left,
                           state.reading.dailyReading,
                           style: AppFonts.bold(context),
                         ),
