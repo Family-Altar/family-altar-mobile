@@ -13,8 +13,8 @@ class ReadingRepository {
 
     // --- Extract date ---
     final dateRegex = RegExp(r'([A-Za-z]+\s+\d+)');
-    final dateMatch = dateRegex.firstMatch(text);
-    final dateText = dateMatch?.group(0) ?? '';
+    final dateMatch = dateRegex.allMatches(text).toList();
+    final dateText = dateMatch[1].group(0) ?? '';
     final dateIndex = text.indexOf(dateText);
 
     // --- Extract scripture reference ---
@@ -33,9 +33,10 @@ class ReadingRepository {
               scriptureEndIndex,
             )
             .trim();
-
-    final dailyReadingIndex = text.indexOf("Daily Reading:");
-    final dailyReading = text.substring(dailyReadingIndex).trim();
+    final dailyReadingSearch = "Daily Reading:";
+    final dailyReadingIndex = text.indexOf(dailyReadingSearch);
+    final dailyReading =
+        text.substring(dailyReadingIndex + dailyReadingSearch.length).trim();
 
     final quote =
         text
