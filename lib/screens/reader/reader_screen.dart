@@ -93,6 +93,7 @@ class ReaderScreen extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_circle_left_outlined),
+                    iconSize: 50,
                     onPressed: () {
                       print("button pressed");
                       // TODO: navigate to previous day
@@ -104,6 +105,7 @@ class ReaderScreen extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.arrow_circle_right_outlined),
+                    iconSize: 50,
                     onPressed: () {
                       // TODO: navigate to next day
                     },
