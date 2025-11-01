@@ -1,4 +1,4 @@
-import 'package:family_altar/screens/reading/bloc/reading_bloc.dart';
+import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   final dayOfYear = _getDayOfYear(date);
                   if (context.mounted) {
                     // valid context, navigate
-                    await context.push('/book/day-$dayOfYear');
+                    await context.push('/reader', extra: dayOfYear);
                   }
                 },
                 style: ElevatedButton.styleFrom(

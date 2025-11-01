@@ -1,7 +1,5 @@
 import 'package:family_altar/models/reading_entry.dart';
-import 'package:family_altar/screens/reading/bloc/reading_bloc.dart';
-import 'package:family_altar/screens/reading/bloc/reading_event.dart';
-import 'package:family_altar/screens/reading/bloc/reading_state.dart';
+import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:flutter/material.dart';
@@ -90,7 +88,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
             onPressed: () {
               Navigator.of(dialogContext).pop();
               context.read<ReadingBloc>().add(
-                ReadingToggleDayEvent(date),
+                ToggleDayEvent(date),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -173,11 +171,11 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
   Widget build(BuildContext context) {
     return BlocBuilder<ReadingBloc, ReadingState>(
       builder: (context, state) {
-        if (state is ReadingLoadingState) {
+        if (state is ReadingLoading) {
           return const Center(child: CircularProgressIndicator());
         }
         
-        if (state is ReadingErrorState) {
+        if (state is ReadingError) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -186,7 +184,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    context.read<ReadingBloc>().add(const ReadingLoadEvent());
+                    context.read<ReadingBloc>().add(const LoadReadingEvent());
                   },
                   child: const Text('Retry'),
                 ),
@@ -194,13 +192,13 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
             ),
           );
         }
-        
-        final loadedState = state is ReadingLoadedState 
+      
+        final loadedState = state is ReadingLoaded 
             ? state 
-            : const ReadingLoadedState(entries: {});
+            : null;
         
         // Get total missed days (all time, not just current month)
-        final missedDaysCount = loadedState.getTotalMissedDaysCount();
+        final missedDaysCount = loadedState?.getTotalMissedDaysCount() ?? 0;
         
         return Container(
           padding: const EdgeInsets.all(16),
@@ -341,18 +339,17 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                   // Tap to navigate to that day's reading page
                   if (details.date != null) {
                     final dayOfYear = _getDayOfYear(details.date!);
-                    ReadingBloc.saveLastAccessedDay(details.date!);
-                    context.push('/book/day-$dayOfYear');
+                    context.push('/reader', extra: dayOfYear);
                   }
                 },
                 onLongPress: (CalendarLongPressDetails details) {
-                  if (details.date != null) {
+                  if (details.date != null && loadedState != null) {
                     final dayStatus = loadedState.getStatus(details.date!);
                     _showMarkDialog(context, details.date!, dayStatus);
                   }
                 },
                 monthCellBuilder: (context, details) {
-                  final dayStatus = loadedState.getStatus(details.date);
+                  final dayStatus = loadedState?.getStatus(details.date) ?? ReadingStatus.upcoming;
                   final isToday = _isToday(details.date);
 
                   return Container(
