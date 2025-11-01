@@ -1,7 +1,6 @@
-import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as p;
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as p;
 
 class LocalReadingStorage {
   Future<String> fetchReading({int? dayOfYear}) async {
@@ -9,11 +8,11 @@ class LocalReadingStorage {
     final date = _dayOfYearToDate(dayOfYear ?? _getCurrentDayOfYear());
     final fileName = _getFileName(date);
     
-    String filePath = p.join(
+    final filePath = p.join(
       'assets/volume_I/daily_readings',
       fileName,
     );
-    var fileContent = await rootBundle.loadString(filePath);
+    final fileContent = await rootBundle.loadString(filePath);
     return fileContent;
   }
   
@@ -32,7 +31,7 @@ class LocalReadingStorage {
   
   DateTime _dayOfYearToDate(int dayOfYear, {int? year}) {
     final targetYear = year ?? DateTime.now().year;
-    final firstDayOfYear = DateTime(targetYear, 1, 1);
+    final firstDayOfYear = DateTime(targetYear);
     return firstDayOfYear.add(Duration(days: dayOfYear - 1));
   }
 }

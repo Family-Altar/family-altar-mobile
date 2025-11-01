@@ -4,7 +4,6 @@ import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -23,9 +22,8 @@ class ReaderScreenProvider extends StatelessWidget {
 
     return BlocProvider(
       create: (_) {
-        final bloc = ReadingBloc(readingRepository: repo);
-        bloc.add(LoadReadingEvent(dayOfYear: dayOfYear));
-        return bloc;
+        return ReadingBloc(readingRepository: repo)
+          ..add(LoadReadingEvent(dayOfYear: dayOfYear));
       },
       child: ReaderScreen( 
         dayOfYear: dayOfYear,
@@ -114,7 +112,9 @@ class ReaderScreen extends StatelessWidget {
                     icon: const Icon(Icons.arrow_circle_left_outlined),
                     iconSize: 50,
                     onPressed: () {
-                      context.read<ReadingBloc>().add(PreviousReadingEvent());
+                      context.read<ReadingBloc>().add(
+                            const PreviousReadingEvent(),
+                          );
                     },
                   ),
                   Text(
@@ -125,7 +125,9 @@ class ReaderScreen extends StatelessWidget {
                     icon: const Icon(Icons.arrow_circle_right_outlined),
                     iconSize: 50,
                     onPressed: () {
-                      context.read<ReadingBloc>().add(NextReadingEvent());
+                      context.read<ReadingBloc>().add(
+                            const NextReadingEvent(),
+                          );
                     },
                   ),
                 ],

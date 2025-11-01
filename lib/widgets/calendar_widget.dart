@@ -48,7 +48,6 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
     return difference + 1;
   }
 
-  /// Show dialog to mark a day as read or unread
   void _showMarkDialog(
     BuildContext context,
     DateTime date,
@@ -87,9 +86,15 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              context.read<ReadingBloc>().add(
-                ToggleDayEvent(date),
-              );
+              if (isRead) {
+                context.read<ReadingBloc>().add(
+                  MarkAsUnreadEvent(date),
+                );
+              } else {
+                context.read<ReadingBloc>().add(
+                  MarkAsReadEvent(date),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: isRead
@@ -349,7 +354,8 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                   }
                 },
                 monthCellBuilder: (context, details) {
-                  final dayStatus = loadedState?.getStatus(details.date) ?? ReadingStatus.upcoming;
+                  final dayStatus = loadedState?.getStatus(details.date) ??
+                      ReadingStatus.upcoming;
                   final isToday = _isToday(details.date);
 
                   return Container(

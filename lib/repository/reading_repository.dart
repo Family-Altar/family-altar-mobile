@@ -7,8 +7,6 @@ class ReadingRepository {
   final LocalReadingStorage _localReadingStorage;
   
   Future<Reading> fetchReading({int? dayOfYear}) async {
-    print('in fetchReading from Repository (day: $dayOfYear)');
-
     // Get raw text from storage
     final text = await _localReadingStorage.fetchReading(dayOfYear: dayOfYear);
 
@@ -23,7 +21,6 @@ class ReadingRepository {
       r'\(([1-3]?\s?[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+\d{1,3}(?::\d{1,3}(?:[-–]\d{1,3})?)?)\)',
     );
     final scriptureMatch = scriptureRegex.firstMatch(text);
-    final scriptureText = scriptureMatch?.group(0) ?? '';
     final scriptureEndIndex = scriptureMatch?.end ?? 0;
 
     // --- Extract sections based on indices ---
@@ -34,7 +31,7 @@ class ReadingRepository {
               scriptureEndIndex,
             )
             .trim();
-    final dailyReadingSearch = "Daily Reading:";
+    const dailyReadingSearch = 'Daily Reading:';
     final dailyReadingIndex = text.indexOf(dailyReadingSearch);
     final dailyReading =
         text.substring(dailyReadingIndex + dailyReadingSearch.length).trim();

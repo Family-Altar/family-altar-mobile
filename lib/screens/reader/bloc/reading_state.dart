@@ -15,15 +15,15 @@ class ReadingLoading extends ReadingState {}
 
 /// Shown when the reading for the given day is successfully loaded
 class ReadingLoaded extends ReadingState {
-  final Reading reading;
-  final int currentDayOfYear; // 1-366
-  final Map<String, ReadingEntry> entries; // Status tracking for all days
-  
   const ReadingLoaded({
     required this.reading,
     required this.currentDayOfYear,
     required this.entries,
   });
+  
+  final Reading reading;
+  final int currentDayOfYear; // 1-366
+  final Map<String, ReadingEntry> entries; // Status tracking for all days
   
   /// Get reading entry for current day
   ReadingEntry? getCurrentEntry() {
@@ -82,7 +82,7 @@ class ReadingLoaded extends ReadingState {
   
   static DateTime _dayOfYearToDate(int dayOfYear, {int? year}) {
     final targetYear = year ?? DateTime.now().year;
-    final firstDayOfYear = DateTime(targetYear, 1, 1);
+    final firstDayOfYear = DateTime(targetYear);
     return firstDayOfYear.add(Duration(days: dayOfYear - 1));
   }
   
@@ -107,9 +107,9 @@ class ReadingLoaded extends ReadingState {
 
 /// Shown when an error occurs (file not found, etc.)
 class ReadingError extends ReadingState {
-  final String message;
-
   const ReadingError(this.message);
+
+  final String message;
 
   @override
   List<Object> get props => [message];

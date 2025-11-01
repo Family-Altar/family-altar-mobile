@@ -11,11 +11,6 @@ part 'reading_event.dart';
 part 'reading_state.dart';
 
 class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
-  final ReadingRepository readingRepository;
-  
-  static const String _storageKey = 'reading_entries';
-  static const String _lastAccessedKey = 'last_accessed_day';
-  
   ReadingBloc({required this.readingRepository}) : super(ReadingInitial()) {
     on<LoadReadingEvent>(_onLoad);
     on<NextReadingEvent>(_onNext);
@@ -24,6 +19,11 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     on<MarkAsUnreadEvent>(_onMarkAsUnread);
     on<ToggleDayEvent>(_onToggleDay);
   }
+
+  final ReadingRepository readingRepository;
+  
+  static const String _storageKey = 'reading_entries';
+  static const String _lastAccessedKey = 'last_accessed_day';
   
   Future<void> _onLoad(
     LoadReadingEvent event,
@@ -39,7 +39,9 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       final entries = await _loadEntries();
       
       // Load the actual reading content
-      final reading = await readingRepository.fetchReading(dayOfYear: dayOfYear);
+      final reading = await readingRepository.fetchReading(
+        dayOfYear: dayOfYear,
+      );
       
       // Save last accessed day
       final date = _dayOfYearToDate(dayOfYear);
@@ -50,7 +52,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
         currentDayOfYear: dayOfYear,
         entries: entries,
       ));
-    } catch (e) {
+    } on Exception catch (e) {
       emit(ReadingError('Failed to load reading: $e'));
     }
   }
@@ -78,7 +80,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
         reading: reading,
         currentDayOfYear: nextDay,
       ));
-    } catch (e) {
+    } on Exception catch (e) {
       emit(ReadingError('Failed to load next reading: $e'));
     }
   }
@@ -106,7 +108,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
         reading: reading,
         currentDayOfYear: prevDay,
       ));
-    } catch (e) {
+    } on Exception catch (e) {
       emit(ReadingError('Failed to load previous reading: $e'));
     }
   }
@@ -139,11 +141,12 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     final currentState = state as ReadingLoaded;
     final dateKey = _dateToKey(event.date);
     
-    final updatedEntries = Map<String, ReadingEntry>.from(currentState.entries);
-    updatedEntries[dateKey] = ReadingEntry(
-      date: _normalizeDate(event.date),
-      status: ReadingStatus.missed,
-    );
+    final updatedEntries = Map<String, ReadingEntry>.from(
+      currentState.entries,
+    )..remove(dateKey);
+    
+    // Remove the entry so it becomes unread
+    // (upcoming if future, missed if past)
     
     emit(currentState.copyWith(entries: updatedEntries));
     await _saveToStorage(updatedEntries);
@@ -161,7 +164,8 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     
     final updatedEntries = Map<String, ReadingEntry>.from(currentState.entries);
     
-    if (existingEntry == null || existingEntry.status != ReadingStatus.completed) {
+    if (existingEntry == null ||
+        existingEntry.status != ReadingStatus.completed) {
       updatedEntries[dateKey] = ReadingEntry(
         date: _normalizeDate(event.date),
         status: ReadingStatus.completed,
@@ -184,7 +188,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       final prefs = await SharedPreferences.getInstance();
       final jsonString = prefs.getString(_storageKey);
       
-      var entries = <String, ReadingEntry>{};
+      final entries = <String, ReadingEntry>{};
       
       if (jsonString != null && jsonString.isNotEmpty) {
         final jsonData = json.decode(jsonString) as Map<String, dynamic>;
@@ -197,10 +201,8 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       }
       
       // Auto-mark missed days
-      entries = await _autoMarkMissedDays(entries);
-      
-      return entries;
-    } catch (e) {
+      return await _autoMarkMissedDays(entries);
+    } on Exception {
       return {};
     }
   }
@@ -216,7 +218,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       
       final jsonString = json.encode(jsonData);
       await prefs.setString(_storageKey, jsonString);
-    } catch (e) {
+    } on Exception {
       // Error saving reading data - fail silently
     }
   }
@@ -256,7 +258,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_lastAccessedKey, date.toIso8601String());
-    } catch (e) {
+    } on Exception {
       // Error saving last accessed day - fail silently
     }
   }
@@ -268,7 +270,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       if (dateString != null) {
         return DateTime.parse(dateString);
       }
-    } catch (e) {
+    } on Exception {
       // Error getting last accessed day - fail silently
     }
     return null;
@@ -283,7 +285,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
   
   DateTime _dayOfYearToDate(int dayOfYear, {int? year}) {
     final targetYear = year ?? DateTime.now().year;
-    final firstDayOfYear = DateTime(targetYear, 1, 1);
+    final firstDayOfYear = DateTime(targetYear);
     return firstDayOfYear.add(Duration(days: dayOfYear - 1));
   }
   
