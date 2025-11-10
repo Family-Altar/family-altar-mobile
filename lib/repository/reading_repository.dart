@@ -6,7 +6,7 @@ class ReadingRepository {
 
   final LocalReadingStorage _localReadingStorage;
   
-  Future<Reading> fetchReading({int? dayOfYear}) async {
+  Future<Reading> fetchReading({required int dayOfYear}) async {
     // Get raw text from storage
     final text = await _localReadingStorage.fetchReading(dayOfYear: dayOfYear);
 

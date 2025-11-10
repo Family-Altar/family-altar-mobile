@@ -25,8 +25,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
   void initState() {
     super.initState();
     // Initialize to first day of current month
-    final now = DateTime.now();
-    _currentDate = DateTime(now.year, now.month);
+    _currentDate = DateTime(DateTime.now().year, DateTime.now().month);
     _calendarController = CalendarController();
   }
 
@@ -35,20 +34,13 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
     _calendarController.dispose();
     super.dispose();
   }
-  bool _isToday(DateTime date) {
-    final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
-  }
   int _getDayOfYear(DateTime date) {
     // Calculate day of year (1-366)
-    final firstDayOfYear = DateTime(date.year);
-    final difference = date.difference(firstDayOfYear).inDays;
+    final difference = date.difference(DateTime(date.year)).inDays;
     return difference + 1;
   }
 
-  void _showMarkDialog(
+  void _showLongPressDialog(
     BuildContext context,
     DateTime date,
     ReadingStatus status,
@@ -350,13 +342,16 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                 onLongPress: (CalendarLongPressDetails details) {
                   if (details.date != null && loadedState != null) {
                     final dayStatus = loadedState.getStatus(details.date!);
-                    _showMarkDialog(context, details.date!, dayStatus);
+                    _showLongPressDialog(context, details.date!, dayStatus);
                   }
                 },
                 monthCellBuilder: (context, details) {
                   final dayStatus = loadedState?.getStatus(details.date) ??
                       ReadingStatus.upcoming;
-                  final isToday = _isToday(details.date);
+                  final isToday = ReadingEntry(
+                    date: details.date,
+                    status: ReadingStatus.upcoming,
+                  ).isToday;
 
                   return Container(
                     margin: const EdgeInsets.all(2),
