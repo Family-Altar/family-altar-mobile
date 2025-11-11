@@ -168,28 +168,6 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
   Widget build(BuildContext context) {
     return BlocBuilder<ReadingBloc, ReadingState>(
       builder: (context, state) {
-        if (state is ReadingLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        
-        if (state is ReadingError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Error: ${state.message}'),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<ReadingBloc>().add(const LoadReadingEvent());
-                  },
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          );
-        }
-      
         final loadedState = state is ReadingLoaded 
             ? state 
             : null;
