@@ -1,19 +1,21 @@
 import 'package:family_altar/i18n/strings.g.dart';
+import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/screens/home/home_screen.dart';
+import 'package:family_altar/screens/missed_days/missed_days_screen.dart';
+import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
+import 'package:family_altar/screens/reader/reader_screen.dart';
 import 'package:family_altar/screens/settings/settings_screen.dart';
+import 'package:family_altar/storage/local_reading_storage.dart';
 import 'package:family_altar/theme/bloc/theme_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 const String appTitle = 'The Family Altar - Tim Dodd';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(TranslationProvider(child: const MyApp()));
-}
-
 final GoRouter _router = GoRouter(
+  initialLocation: '/',
   routes: <RouteBase>[
     GoRoute(
       path: '/',
@@ -34,19 +36,60 @@ final GoRouter _router = GoRouter(
             return BookSelectionScreen(title: title);
           },
         ),
+        GoRoute(
+          path: 'reader',
+          builder: (BuildContext context, GoRouterState state) {
+            final dayOfYear = state.extra as int?;
+            return ReaderScreenProvider(dayOfYear: dayOfYear);
+          },
+        ),
       ],
+    ),
+    GoRoute(
+      path: '/missed-days/book-:volumeId',
+      builder: (BuildContext context, GoRouterState state) {
+        final volumeId = state.pathParameters['volumeId'] ?? '1';
+        return MissedDaysScreen(volumeId: volumeId);
+      },
     ),
   ],
 );
+void main() {
+  final localReadingStorage = LocalReadingStorage();
+  final readingRepository = ReadingRepository(localReadingStorage);
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    TranslationProvider(
+      child: MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<LocalReadingStorage>.value(
+            value: localReadingStorage,
+          ),
+          RepositoryProvider<ReadingRepository>.value(
+            value: readingRepository,
+          ),
+        ],
+        child: const MyApp(),
+      ),
+    ),
+  );
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ThemeProvider(
-      router: _router,
-      child: const SizedBox.shrink(),
+    return BlocProvider(
+      create: (context) {
+        final repo = context.read<ReadingRepository>();
+        return ReadingBloc(readingRepository: repo)
+          ..add(const LoadReadingEvent());
+      },
+      child: ThemeProvider(
+        router: _router,
+        child: const SizedBox.shrink(),
+      ),
     );
   }
 }

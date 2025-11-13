@@ -1,6 +1,9 @@
+import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
+import 'package:family_altar/widgets/banner_widget.dart';
+import 'package:family_altar/widgets/calendar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,6 +16,22 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+
+  int _getDayOfYear(DateTime date) {
+    final firstDayOfYear = DateTime(date.year);
+    final difference = date.difference(firstDayOfYear).inDays;
+    return difference + 1; // Add 1 because Jan 1 is day 1, not day 0
+  }
+
+  Future<DateTime> _getLastReadingOrToday() async {
+    // Try to get the last accessed day from storage
+    final lastAccessed = await ReadingBloc.getLastAccessedDay();
+    if (lastAccessed != null) {
+      return lastAccessed;
+    }
+    // If no last accessed day, return today
+    return DateTime.now();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,10 +86,54 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Center(
-        child: Text(
-          'Home Screen',
-          style: AppFonts.bold(context, size: FontSize.large),
+      body: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            // Banner
+            const FamilyAltarBanner(),
+            // Continue reading button
+            // Navigates to last accessed or today's reading
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  // Get the date to navigate to (last accessed or today)
+                  final date = await _getLastReadingOrToday();
+                  // Convert date to day-of-year for reading navigation
+                  final dayOfYear = _getDayOfYear(date);
+                  if (context.mounted) {
+                    // valid context, navigate
+                    await context.push('/reader', extra: dayOfYear);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: context.primaryButtonBGColor,
+                  foregroundColor: context.isDarkMode
+                    ? Colors.white
+                    : Colors.black,
+                  elevation: 2,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Continue where you left off',
+                  style: AppFonts.bold(context).copyWith(
+                     // in the design i put white should i stick to white on
+                     // light mode ? ask Jer
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            // Calendar widget
+            const FamilyAltarCalendar(),
+          ],
         ),
       ),
     );
