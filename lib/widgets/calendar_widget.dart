@@ -17,7 +17,7 @@ class FamilyAltarCalendar extends StatefulWidget {
 class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
   /// Currently displayed month/year in the calendar
   late DateTime _currentDate;
-  
+
   /// Syncfusion calendar controller for programmatic calendar control
   late CalendarController _calendarController;
 
@@ -34,11 +34,6 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
     _calendarController.dispose();
     super.dispose();
   }
-  int _getDayOfYear(DateTime date) {
-    // Calculate day of year (1-366)
-    final difference = date.difference(DateTime(date.year)).inDays;
-    return difference + 1;
-  }
 
   void _showLongPressDialog(
     BuildContext context,
@@ -46,62 +41,64 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
     ReadingStatus status,
   ) {
     final isRead = status == ReadingStatus.completed;
-    
+
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: context.dialogBG,
-        title: Text(
-          isRead ? 'Mark as Unread' : 'Mark as Read',
-          style: AppFonts.bold(context).copyWith(
-            color: context.dialogTitle,
-          ),
-        ),
-        content: Text(
-          isRead 
-              ? 'Do you want to mark this day as unread?'
-              : 'Do you want to mark this day as read?',
-          style: AppFonts.normal(context).copyWith(
-            color: context.dialogContent,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(
-              'Cancel',
-              style: AppFonts.normal(context).copyWith(
-                color: context.dialogCancel,
+      builder:
+          (dialogContext) => AlertDialog(
+            backgroundColor: context.dialogBG,
+            title: Text(
+              isRead ? 'Mark as Unread' : 'Mark as Read',
+              style: AppFonts.bold(context).copyWith(
+                color: context.dialogTitle,
               ),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              if (isRead) {
-                context.read<ReadingBloc>().add(
-                  MarkAsUnreadEvent(date),
-                );
-              } else {
-                context.read<ReadingBloc>().add(
-                  MarkAsReadEvent(date),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isRead
-                  ? AppColors.dialogMarkUnreadBG
-                  : AppColors.dialogMarkReadBG,
-            ),
-            child: Text(
-              isRead ? 'Mark Unread' : 'Mark Read',
+            content: Text(
+              isRead
+                  ? 'Do you want to mark this day as unread?'
+                  : 'Do you want to mark this day as read?',
               style: AppFonts.normal(context).copyWith(
-                color: AppColors.dialogButtonText,
+                color: context.dialogContent,
               ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(
+                  'Cancel',
+                  style: AppFonts.normal(context).copyWith(
+                    color: context.dialogCancel,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  if (isRead) {
+                    context.read<ReadingBloc>().add(
+                      MarkAsUnreadEvent(date),
+                    );
+                  } else {
+                    context.read<ReadingBloc>().add(
+                      MarkAsReadEvent(date),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      isRead
+                          ? AppColors.dialogMarkUnreadBG
+                          : AppColors.dialogMarkReadBG,
+                ),
+                child: Text(
+                  isRead ? 'Mark Unread' : 'Mark Read',
+                  style: AppFonts.normal(context).copyWith(
+                    color: AppColors.dialogButtonText,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -113,7 +110,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
     if (isToday) {
       return context.calendarTodayBG;
     }
-    
+
     switch (status) {
       case ReadingStatus.completed:
         return context.calendarCompletedBG;
@@ -132,7 +129,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
     if (isToday) {
       return AppColors.calendarTodayBorder;
     }
-    
+
     switch (status) {
       case ReadingStatus.completed:
         return AppColors.calendarCompletedBorder;
@@ -145,7 +142,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
 
   Widget? _getStatusIcon(ReadingStatus status, bool isToday) {
     if (isToday) return null;
-    
+
     switch (status) {
       case ReadingStatus.completed:
         return const Icon(
@@ -168,13 +165,11 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
   Widget build(BuildContext context) {
     return BlocBuilder<ReadingBloc, ReadingState>(
       builder: (context, state) {
-        final loadedState = state is ReadingLoaded 
-            ? state 
-            : null;
-        
+        final loadedState = state is ReadingLoaded ? state : null;
+
         // Get total missed days (all time, not just current month)
         final missedDaysCount = loadedState?.getTotalMissedDaysCount() ?? 0;
-        
+
         return Container(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -227,37 +222,37 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                       ),
                     ],
                   ),
-              // Missed days count - clickable
-              GestureDetector(
-                onTap: () {
-                  // Navigate to books/book-1
-                  context.push('/missed-days/book-1');
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                  // Missed days count - clickable
+                  GestureDetector(
+                    onTap: () {
+                      // Navigate to books/book-1
+                      context.push('/missed-days/book-1');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.missedDaysBadgeBG,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$missedDaysCount missed days',
+                            style: AppFonts.normal(
+                              context,
+                              size: FontSize.small,
+                            ).copyWith(
+                              color: context.missedDaysBadgeText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: context.missedDaysBadgeBG,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$missedDaysCount missed days',
-                        style: AppFonts.normal(
-                          context,
-                          size: FontSize.small,
-                        ).copyWith(
-                          color: context.missedDaysBadgeText,
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-              ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -313,8 +308,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                 onTap: (CalendarTapDetails details) {
                   // Tap to navigate to that day's reading page
                   if (details.date != null) {
-                    final dayOfYear = _getDayOfYear(details.date!);
-                    context.push('/reader', extra: dayOfYear);
+                    context.push('/reader', extra: details.date);
                   }
                 },
                 onLongPress: (CalendarLongPressDetails details) {
@@ -324,12 +318,14 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                   }
                 },
                 monthCellBuilder: (context, details) {
-                  final dayStatus = loadedState?.getStatus(details.date) ??
+                  final dayStatus =
+                      loadedState?.getStatus(details.date) ??
                       ReadingStatus.upcoming;
-                  final isToday = ReadingEntry(
-                    date: details.date,
-                    status: ReadingStatus.upcoming,
-                  ).isToday;
+                  final isToday =
+                      ReadingEntry(
+                        date: details.date,
+                        status: ReadingStatus.upcoming,
+                      ).isToday;
 
                   return Container(
                     margin: const EdgeInsets.all(2),
@@ -355,9 +351,10 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                               size: FontSize.small,
                             ).copyWith(
                               fontWeight: FontWeight.w500,
-                              color: dayStatus == ReadingStatus.upcoming
-                                  ? context.calendarUpcomingDayText
-                                  : context.calendarDayTextSecondary,
+                              color:
+                                  dayStatus == ReadingStatus.upcoming
+                                      ? context.calendarUpcomingDayText
+                                      : context.calendarDayTextSecondary,
                             ),
                           ),
                         ),

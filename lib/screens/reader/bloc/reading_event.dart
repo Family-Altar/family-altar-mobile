@@ -9,12 +9,12 @@ sealed class ReadingEvent extends Equatable {
 
 /// Load reading for a specific day (1-366)
 class LoadReadingEvent extends ReadingEvent {
-  const LoadReadingEvent({this.dayOfYear});
-  
-  final int? dayOfYear; // If null, loads today's reading
-  
+  const LoadReadingEvent({required this.date});
+
+  final DateTime date; // If null, loads today's reading
+
   @override
-  List<Object> get props => [dayOfYear ?? 0];
+  List<Object> get props => [date];
 }
 
 /// Navigate to next day
@@ -30,9 +30,9 @@ class PreviousReadingEvent extends ReadingEvent {
 /// Mark a specific date as read
 class MarkAsReadEvent extends ReadingEvent {
   const MarkAsReadEvent(this.date);
-  
+
   final DateTime date;
-  
+
   @override
   List<Object> get props => [date];
 }
@@ -40,9 +40,9 @@ class MarkAsReadEvent extends ReadingEvent {
 /// Mark a specific date as unread/missed
 class MarkAsUnreadEvent extends ReadingEvent {
   const MarkAsUnreadEvent(this.date);
-  
+
   final DateTime date;
-  
+
   @override
   List<Object> get props => [date];
 }
@@ -50,9 +50,9 @@ class MarkAsUnreadEvent extends ReadingEvent {
 /// Toggle read status for a date
 class ToggleDayEvent extends ReadingEvent {
   const ToggleDayEvent(this.date);
-  
+
   final DateTime date;
-  
+
   @override
   List<Object> get props => [date];
 }

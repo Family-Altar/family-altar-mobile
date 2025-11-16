@@ -39,8 +39,8 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: 'reader',
           builder: (BuildContext context, GoRouterState state) {
-            final dayOfYear = state.extra as int?;
-            return ReaderScreenProvider(dayOfYear: dayOfYear);
+            final date = state.extra as DateTime?;
+            return ReaderScreenProvider(date: date!);
           },
         ),
       ],
@@ -68,6 +68,12 @@ void main() {
           RepositoryProvider<ReadingRepository>.value(
             value: readingRepository,
           ),
+          BlocProvider(
+            create:
+                (_) => ReadingBloc(
+                  readingRepository: readingRepository,
+                )..add(LoadReadingEvent(date: DateTime.now())),
+          ),
         ],
         child: const MyApp(),
       ),
@@ -80,16 +86,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) {
-        final repo = context.read<ReadingRepository>();
-        return ReadingBloc(readingRepository: repo)
-          ..add(const LoadReadingEvent());
-      },
-      child: ThemeProvider(
-        router: _router,
-        child: const SizedBox.shrink(),
-      ),
+    return ThemeProvider(
+      router: _router,
+      child: const SizedBox.shrink(),
     );
   }
 }

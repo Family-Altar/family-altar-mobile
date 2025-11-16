@@ -9,12 +9,12 @@ import 'package:go_router/go_router.dart';
 
 class ReaderScreenProvider extends StatelessWidget {
   const ReaderScreenProvider({
-    this.dayOfYear,
+    required this.date,
     super.key,
   });
-  
+
   // from calendar widget or from continue reading button
-  final int? dayOfYear;
+  final DateTime date;
 
   @override
   Widget build(BuildContext context) {
@@ -22,27 +22,54 @@ class ReaderScreenProvider extends StatelessWidget {
 
     return BlocProvider(
       create: (_) {
-        return ReadingBloc(readingRepository: repo)
-          ..add(LoadReadingEvent(dayOfYear: dayOfYear));
+        return ReadingBloc(
+          readingRepository: repo,
+        )..add(LoadReadingEvent(date: date));
       },
-      child: ReaderScreen( 
-        dayOfYear: dayOfYear,
+      child: ReaderScreen(
+        date: date,
       ),
     );
   }
 }
 
-class ReaderScreen extends StatelessWidget {
+class ReaderScreen extends StatefulWidget {
   const ReaderScreen({
-    this.dayOfYear,
+    this.date,
     super.key,
   });
 
-  final int? dayOfYear;
+  final DateTime? date;
+
+  @override
+  State<ReaderScreen> createState() => _ReaderScreenState();
+}
+
+class _ReaderScreenState extends State<ReaderScreen> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-      return BlocBuilder<ReadingBloc, ReadingState>(
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels ==
+          _scrollController.position.maxScrollExtent) {
+        print('Mark as read $_scrollController.offset');
+      }
+    });
+    return BlocBuilder<ReadingBloc, ReadingState>(
       builder: (context, state) {
         if (state is ReadingLoading) {
           return const Center(child: CircularProgressIndicator());
@@ -64,6 +91,7 @@ class ReaderScreen extends StatelessWidget {
               ),
             ),
             body: SingleChildScrollView(
+              controller: _scrollController,
               child: Scrollbar(
                 child: Center(
                   child: Padding(
@@ -113,29 +141,24 @@ class ReaderScreen extends StatelessWidget {
                     iconSize: 50,
                     onPressed: () {
                       context.read<ReadingBloc>().add(
-                            const PreviousReadingEvent(),
-                          );
+                        const PreviousReadingEvent(),
+                      );
                     },
-                  ),
-                  Text(
-                    'Day ${state.currentDayOfYear} of ${state.getTotalDays()}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     icon: const Icon(Icons.arrow_circle_right_outlined),
                     iconSize: 50,
                     onPressed: () {
                       context.read<ReadingBloc>().add(
-                            const NextReadingEvent(),
-                          );
+                        const NextReadingEvent(),
+                      );
                     },
                   ),
                 ],
               ),
             ),
           );
-        }
-      else {
+        } else {
           // ReadingInitial or any other unhandled state
           return const SizedBox.shrink();
         }
