@@ -25,12 +25,6 @@ class ReadingLoaded extends ReadingState {
   final DateTime currentDate;
   final Map<String, ReadingEntry> entries; // Status tracking for all days
 
-  // /// Get reading entry for current day
-  // ReadingEntry? getCurrentEntry() {
-  //   final date = _dayOfYearToDate(currentDayOfYear);
-  //   return getEntry(date);
-  // }
-
   /// Get reading entry for a specific date
   ReadingEntry? getEntry(DateTime date) {
     final key = _dateToKey(date);
