@@ -16,12 +16,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _getDayOfYear(DateTime date) {
-    final firstDayOfYear = DateTime(date.year);
-    final difference = date.difference(firstDayOfYear).inDays;
-    return difference + 1; // Add 1 because Jan 1 is day 1, not day 0
-  }
-
   Future<DateTime> _getLastReadingOrToday() async {
     // Try to get the last accessed day from storage
     final lastAccessed = await ReadingBloc.getLastAccessedDay();

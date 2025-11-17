@@ -66,7 +66,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _scrollController.addListener(() {
       if (_scrollController.position.pixels ==
           _scrollController.position.maxScrollExtent) {
-        print('Mark as read $_scrollController.offset');
       }
     });
     return BlocBuilder<ReadingBloc, ReadingState>(
