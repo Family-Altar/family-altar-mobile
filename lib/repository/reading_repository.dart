@@ -58,7 +58,7 @@ class ReadingRepository {
       dailyReading: dailyReading,
     );
 
-    print("Returning");
+    print('Returning');
 
     return reading;
   }
