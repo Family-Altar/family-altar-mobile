@@ -11,9 +11,7 @@ part 'reading_event.dart';
 part 'reading_state.dart';
 
 class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
-  ReadingBloc({
-    required this.readingRepository,
-  }) : super(ReadingInitial()) {
+  ReadingBloc({required this.readingRepository}) : super(ReadingInitial()) {
     on<LoadReadingEvent>(_onLoad);
     on<NextReadingEvent>(_onNext);
     on<PreviousReadingEvent>(_onPrevious);
@@ -38,9 +36,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       final entries = await _loadEntries();
 
       // Load the actual reading content
-      final reading = await readingRepository.fetchReading(
-        date: event.date,
-      );
+      final reading = await readingRepository.fetchReading(date: event.date);
 
       // Save last accessed day
       await _saveLastAccessedDay(event.date);
@@ -73,12 +69,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       final reading = await readingRepository.fetchReading(date: nextDate);
       await _saveLastAccessedDay(nextDate);
 
-      emit(
-        currentState.copyWith(
-          reading: reading,
-          currentDate: nextDate,
-        ),
-      );
+      emit(currentState.copyWith(reading: reading, currentDate: nextDate));
     } on Exception catch (e) {
       emit(ReadingError('Failed to load next reading: $e'));
     }
@@ -98,15 +89,9 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
     try {
       final reading = await readingRepository.fetchReading(date: prevDate);
-      final date = prevDate;
-      await _saveLastAccessedDay(date);
+      await _saveLastAccessedDay(prevDate);
 
-      emit(
-        currentState.copyWith(
-          reading: reading,
-          currentDate: prevDate,
-        ),
-      );
+      emit(currentState.copyWith(reading: reading, currentDate: prevDate));
     } on Exception catch (e) {
       emit(ReadingError('Failed to load previous reading: $e'));
     }
@@ -140,9 +125,8 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     final currentState = state as ReadingLoaded;
     final dateKey = _dateToKey(event.date);
 
-    final updatedEntries = Map<String, ReadingEntry>.from(
-      currentState.entries,
-    )..remove(dateKey);
+    final updatedEntries = Map<String, ReadingEntry>.from(currentState.entries)
+      ..remove(dateKey);
 
     // Remove the entry so it becomes unread
     // (upcoming if future, missed if past)
