@@ -16,13 +16,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
-  int _getDayOfYear(DateTime date) {
-    final firstDayOfYear = DateTime(date.year);
-    final difference = date.difference(firstDayOfYear).inDays;
-    return difference + 1; // Add 1 because Jan 1 is day 1, not day 0
-  }
-
   Future<DateTime> _getLastReadingOrToday() async {
     // Try to get the last accessed day from storage
     final lastAccessed = await ReadingBloc.getLastAccessedDay();
@@ -38,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        toolbarHeight: 48, 
+        toolbarHeight: 48,
         backgroundColor: context.appBarColor,
         title: Text(
           widget.title,
@@ -50,15 +43,15 @@ class _HomeScreenState extends State<HomeScreen> {
             margin: const EdgeInsets.only(right: 8),
             child: ElevatedButton(
               onPressed: () {
-                context.push('/book-selection?title=${Uri.encodeComponent(widget.title)}');
+                context.push(
+                  '/book-selection?title=${Uri.encodeComponent(widget.title)}',
+                );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: context.isDarkMode
-                    ? Colors.grey[800]
-                    : Colors.grey[200],
-                foregroundColor: context.isDarkMode
-                    ? Colors.white
-                    : Colors.black,
+                backgroundColor:
+                    context.isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                foregroundColor:
+                    context.isDarkMode ? Colors.white : Colors.black,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 8,
@@ -101,17 +94,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Get the date to navigate to (last accessed or today)
                   final date = await _getLastReadingOrToday();
                   // Convert date to day-of-year for reading navigation
-                  final dayOfYear = _getDayOfYear(date);
                   if (context.mounted) {
                     // valid context, navigate
-                    await context.push('/reader', extra: dayOfYear);
+                    await context.push('/reader', extra: date);
                   }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.primaryButtonBGColor,
-                  foregroundColor: context.isDarkMode
-                    ? Colors.white
-                    : Colors.black,
+                  foregroundColor:
+                      context.isDarkMode ? Colors.white : Colors.black,
                   elevation: 2,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -124,8 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text(
                   'Continue where you left off',
                   style: AppFonts.bold(context).copyWith(
-                     // in the design i put white should i stick to white on
-                     // light mode ? ask Jer
+                    // in the design i put white should i stick to white on
+                    // light mode ? ask Jer
                     color: Colors.white,
                   ),
                 ),

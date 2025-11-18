@@ -5,10 +5,10 @@ class ReadingRepository {
   ReadingRepository(this._localReadingStorage);
 
   final LocalReadingStorage _localReadingStorage;
-  
-  Future<Reading> fetchReading({required int dayOfYear}) async {
+
+  Future<Reading> fetchReading({required DateTime date}) async {
     // Get raw text from storage
-    final text = await _localReadingStorage.fetchReading(dayOfYear: dayOfYear);
+    final text = await _localReadingStorage.fetchReading(date: date);
 
     // --- Extract date ---
     final dateRegex = RegExp(r'([A-Za-z]+\s+\d+)');
@@ -18,7 +18,13 @@ class ReadingRepository {
 
     // --- Extract scripture reference ---
     final scriptureRegex = RegExp(
-      r'\(([1-3]?\s?[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+\d{1,3}(?::\d{1,3}(?:[-–]\d{1,3})?)?)\)',
+      r'\(('
+      r'[1-3]?\s?[A-Z][a-z]+' // First word (Song)
+      r'(?:\s+[A-Za-z][a-z]+)*' // Additional words (of Solomon)
+      r'\s+\d{1,3}:' // Chapter number + colon
+      r'\d{1,3}(?:[-–]\d{1,3})?' // Verse or range
+      r'(?:\s*,\s*\d{1,3}(?:[-–]\d{1,3})?)*' // Optional more verses: ,15 or , 15-18 etc.
+      r')\)',
     );
     final scriptureMatch = scriptureRegex.firstMatch(text);
     final scriptureEndIndex = scriptureMatch?.end ?? 0;
