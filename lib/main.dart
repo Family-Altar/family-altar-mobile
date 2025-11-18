@@ -33,7 +33,7 @@ final GoRouter _router = GoRouter(
           path: 'book-selection',
           builder: (BuildContext context, GoRouterState state) {
             final title = state.uri.queryParameters['title'] ?? appTitle;
-            return BookSelectionScreen(title: title);
+            return const BookSelectionScreen(title: 'Book Selection');
           },
         ),
         GoRoute(
@@ -65,14 +65,12 @@ void main() {
           RepositoryProvider<LocalReadingStorage>.value(
             value: localReadingStorage,
           ),
-          RepositoryProvider<ReadingRepository>.value(
-            value: readingRepository,
-          ),
+          RepositoryProvider<ReadingRepository>.value(value: readingRepository),
           BlocProvider(
             create:
-                (_) => ReadingBloc(
-                  readingRepository: readingRepository,
-                )..add(LoadReadingEvent(date: DateTime.now())),
+                (_) =>
+                    ReadingBloc(readingRepository: readingRepository)
+                      ..add(LoadReadingEvent(date: DateTime.now())),
           ),
         ],
         child: const MyApp(),
@@ -86,9 +84,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ThemeProvider(
-      router: _router,
-      child: const SizedBox.shrink(),
-    );
+    return ThemeProvider(router: _router, child: const SizedBox.shrink());
   }
 }

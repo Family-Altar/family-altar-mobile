@@ -9,41 +9,45 @@ class AppFonts {
 
   // Font variants
   /// Normal font style (400 weight)
-  static TextStyle normal(BuildContext context,
-          {FontSize size = FontSize.medium}) =>
-      GoogleFonts.openSans(
-        fontSize: _getFontSize(size),
-        fontWeight: FontWeight.w400,
-        color: context.textColor,
-      );
+  static TextStyle normal(
+    BuildContext context, {
+    FontSize size = FontSize.medium,
+  }) => GoogleFonts.openSans(
+    fontSize: _getFontSize(size),
+    fontWeight: FontWeight.w400,
+    color: context.textColor,
+  );
 
   /// Bold font style (700 weight)
-  static TextStyle bold(BuildContext context,
-          {FontSize size = FontSize.medium}) =>
-      GoogleFonts.openSans(
-        fontSize: _getFontSize(size),
-        fontWeight: FontWeight.w700,
-        color: context.textColor,
-      );
+  static TextStyle bold(
+    BuildContext context, {
+    FontSize size = FontSize.medium,
+  }) => GoogleFonts.openSans(
+    fontSize: _getFontSize(size),
+    fontWeight: FontWeight.w700,
+    color: context.textColor,
+  );
 
   /// Extra bold font style (900 weight)
-  static TextStyle extraBold(BuildContext context,
-          {FontSize size = FontSize.medium}) =>
-      GoogleFonts.openSans(
-        fontSize: _getFontSize(size),
-        fontWeight: FontWeight.w900,
-        color: context.textColor,
-      );
+  static TextStyle extraBold(
+    BuildContext context, {
+    FontSize size = FontSize.medium,
+  }) => GoogleFonts.openSans(
+    fontSize: _getFontSize(size),
+    fontWeight: FontWeight.w900,
+    color: context.textColor,
+  );
 
   /// Italics font style (400 weight, italic)
-  static TextStyle italics(BuildContext context,
-          {FontSize size = FontSize.medium}) =>
-      GoogleFonts.openSans(
-        fontSize: _getFontSize(size),
-        fontWeight: FontWeight.w400,
-        fontStyle: FontStyle.italic,
-        color: context.textColor,
-      );
+  static TextStyle italics(
+    BuildContext context, {
+    FontSize size = FontSize.medium,
+  }) => GoogleFonts.openSans(
+    fontSize: _getFontSize(size),
+    fontWeight: FontWeight.w400,
+    fontStyle: FontStyle.italic,
+    color: context.textColor,
+  );
 
   /// Helper method to get font size based on enum
   static double _getFontSize(FontSize size) {
@@ -54,13 +58,11 @@ class AppFonts {
         return 16;
       case FontSize.large:
         return 18;
+      case FontSize.xlarge:
+        return 25;
     }
   }
 }
 
 /// Font size enum for consistent sizing
-enum FontSize {
-  small,
-  medium,
-  large,
-}
+enum FontSize { small, medium, large, xlarge }
