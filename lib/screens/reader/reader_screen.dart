@@ -1,4 +1,3 @@
-import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
@@ -7,39 +6,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-class ReaderScreenProvider extends StatelessWidget {
-  const ReaderScreenProvider({
-    required this.date,
-    super.key,
-  });
+class ReaderScreenProvider extends StatefulWidget {
+  const ReaderScreenProvider({required this.date, super.key});
 
   // from calendar widget or from continue reading button
   final DateTime date;
 
   @override
-  Widget build(BuildContext context) {
-    final repo = context.read<ReadingRepository>();
+  State<ReaderScreenProvider> createState() => _ReaderScreenProviderState();
+}
 
-    return BlocProvider(
-      create: (_) {
-        return ReadingBloc(
-          readingRepository: repo,
-        )..add(LoadReadingEvent(date: date));
-      },
-      child: ReaderScreen(
-        date: date,
-      ),
-    );
+class _ReaderScreenProviderState extends State<ReaderScreenProvider> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ReadingBloc>().add(LoadReadingEvent(date: widget.date));
   }
+
+  @override
+  Widget build(BuildContext context) => ReaderScreen(date: widget.date);
 }
 
 class ReaderScreen extends StatefulWidget {
-  const ReaderScreen({
-    this.date,
-    super.key,
-  });
+  const ReaderScreen({required this.date, super.key});
 
-  final DateTime? date;
+  final DateTime date;
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -53,6 +44,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
     super.initState();
 
     _scrollController = ScrollController();
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels ==
+          _scrollController.position.maxScrollExtent) {
+        context.read<ReadingBloc>().add(MarkAsReadEvent(widget.date));
+      }
+    });
   }
 
   @override
@@ -63,11 +61,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels ==
-          _scrollController.position.maxScrollExtent) {
-      }
-    });
     return BlocBuilder<ReadingBloc, ReadingState>(
       builder: (context, state) {
         if (state is ReadingLoading) {
@@ -148,9 +141,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     icon: const Icon(Icons.arrow_circle_right_outlined),
                     iconSize: 50,
                     onPressed: () {
-                      context.read<ReadingBloc>().add(
-                        const NextReadingEvent(),
-                      );
+                      context.read<ReadingBloc>().add(const NextReadingEvent());
                     },
                   ),
                 ],
