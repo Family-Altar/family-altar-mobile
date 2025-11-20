@@ -10,11 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-class ReaderScreenProvider extends StatelessWidget {
-  const ReaderScreenProvider({
-    required this.date,
-    super.key,
-  });
+class ReaderScreenProvider extends StatefulWidget {
+  const ReaderScreenProvider({required this.date, super.key});
 
   final DateTime date;
 
@@ -23,15 +20,24 @@ class ReaderScreenProvider extends StatelessWidget {
     final repo = context.read<ReadingRepository>();
 
     return BlocProvider(
-      create: (_) => ReadingBloc(readingRepository: repo)
-        ..add(LoadReadingEvent(date: date)),
-      child: ReaderScreen(date: date),
+      create: (_) {
+        return ReadingBloc(
+          readingRepository: repo,
+        )..add(LoadReadingEvent(date: date));
+      },
+      child: ReaderScreen(
+        date: date,
+      ),
     );
   }
 }
 
 class ReaderScreen extends StatefulWidget {
-  const ReaderScreen({this.date, super.key});
+  const ReaderScreen({
+    this.date,
+    super.key,
+  });
+
   final DateTime? date;
 
   @override
@@ -45,6 +51,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels ==
+          _scrollController.position.maxScrollExtent) {
+        context.read<ReadingBloc>().add(MarkAsReadEvent(widget.date));
+      }
+    });
   }
 
   @override
@@ -58,28 +71,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return BlocBuilder<ReadingBloc, ReadingState>(
       builder: (context, state) {
         if (state is ReadingLoading) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
-
-        if (state is ReadingLoaded) {
-          return BlocBuilder<ThemeBloc, ThemeState>(
-            builder: (context, themeState) {
-              return Scaffold(
-                backgroundColor: context.backgroundColor,
-                appBar: AppBar(
-                  toolbarHeight: 48,
-                  backgroundColor: context.appBarColor,
-                  centerTitle: true,
-                  title: Text(state.reading.date, style: AppFonts.bold(context)),
-                  leading: IconButton(
-                    onPressed: () => context.pop(),
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: context.textColor,
-                      size: AppIcons.getIconSize(IconSize.medium),
-                    ),
-                  ),
-                  actions: [
+          return const Center(child: CircularProgressIndicator());
+        } else if (state is ReadingLoaded) {
+          return Scaffold(
+            backgroundColor: context.backgroundColor,
+            appBar: AppBar(
+              toolbarHeight: 48,
+              backgroundColor: context.appBarColor,
+              centerTitle: true,
+              title: Text(state.reading.date, style: AppFonts.bold(context)),
+              leading: IconButton(
+                onPressed: () => context.pop(),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: context.textColor,
+                  size: AppIcons.getIconSize(IconSize.medium),
+                ),
+              ),
+               actions: [
                     IconButton(
                       icon: Icon(
                         Icons.settings,
@@ -99,51 +108,53 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       },
                     ),
                   ],
-                ),
-                body: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Scrollbar(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          children: [
-                            Text(
-                              state.reading.scripture.replaceAll('\n', ''),
-                              textAlign: TextAlign.center,
-                              style: AppFonts.italics(context).copyWith(
+            ),
+            body: SingleChildScrollView(
+              controller: _scrollController,
+              child: Scrollbar(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Text(
+                          textAlign: TextAlign.center,
+                          state.reading.scripture.replaceAll('\n', ''),
+                       style: AppFonts.italics(context).copyWith(
                                 fontSize: themeState.readingFontSize,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              state.reading.quote.replaceAll('\n', ''),
-                              textAlign: TextAlign.left,
-                              style: AppFonts.normal(context).copyWith(
-                                fontSize: themeState.readingFontSize,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Divider(),
-                            Text(
-                              'Daily Reading:',
-                              textAlign: TextAlign.center,
-                              style: AppFonts.bold(context),
-                            ),
-                            Text(
-                              state.reading.dailyReading,
-                              textAlign: TextAlign.left,
-                              style: AppFonts.bold(context).copyWith(
-                                fontSize: themeState.readingFontSize,
-                              ),
-                            ),
-                          ],
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                        Text(
+                          textAlign: TextAlign.left,
+                          state.reading.quote.replaceAll('\n', ''),
+                         style: AppFonts.normal(context).copyWith(
+                                fontSize: themeState.readingFontSize,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Divider(),
+                        Text(
+                          'Daily Reading:',
+                          textAlign: TextAlign.center,
+                         style: AppFonts.bold(context).copyWith(
+                                fontSize: themeState.readingFontSize,
+                              ),
+                        ),
+                        Text(
+                          textAlign: TextAlign.left,
+                          state.reading.dailyReading,
+                             style: AppFonts.bold(context).copyWith(
+                                fontSize: themeState.readingFontSize,
+                              ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                bottomNavigationBar: Container(
+              ),
+            ),
+            bottomNavigationBar: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: context.appBarColor,
@@ -169,9 +180,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     ],
                   ),
                 ),
-              );
-            }, // <-- This closes the inner BlocBuilder
           );
+        } else {
+          // ReadingInitial or any other unhandled state
+          return const SizedBox.shrink();
         }
 
         return const SizedBox.shrink();
