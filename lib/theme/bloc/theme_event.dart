@@ -24,6 +24,16 @@ class ThemeSetEvent extends ThemeEvent {
   List<Object?> get props => [themeMode];
 }
 
+/// Event to update the reading font size
+class ThemeReadingFontSizeChanged extends ThemeEvent {
+  const ThemeReadingFontSizeChanged(this.fontSize);
+
+  final double fontSize;
+
+  @override
+  List<Object?> get props => [fontSize];
+}
+
 /// Event to initialize theme from system preferences
 class ThemeInitializeEvent extends ThemeEvent {
   const ThemeInitializeEvent();

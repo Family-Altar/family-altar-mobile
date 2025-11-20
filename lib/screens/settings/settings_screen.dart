@@ -8,8 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-
- class ThemeOption {
+class ThemeOption {
   const ThemeOption({
     required this.title,
     required this.subtitle,
@@ -20,6 +19,7 @@ import 'package:go_router/go_router.dart';
   final String subtitle;
   final ThemeMode value;
 }
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -67,6 +67,9 @@ class SettingsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Card(
+            color: context.backgroundColor.withOpacity(0.8),
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -76,7 +79,7 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.palette_outlined,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: context.accent,
                           size: AppIcons.getIconSize(IconSize.medium),
                         ),
                         const SizedBox(width: 12),
@@ -89,33 +92,44 @@ class SettingsScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     BlocBuilder<ThemeBloc, ThemeState>(
                       builder: (context, state) {
-                        return RadioGroup<ThemeMode>(
-                          groupValue: state.themeMode,
-                          onChanged: (ThemeMode? value) {
-                            if (value != null) {
-                              context.read<ThemeBloc>().add(
-                                ThemeSetEvent(value),
-                              );
-                            }
-                          },
-                          child: Column(
-                            children: themeOptions.map((option) {
-                              return RadioListTile<ThemeMode>(
-                                title: Text(
-                                  option.title,
-                                  style: AppFonts.normal(context),
+                        final currentMode = state.themeMode;
+
+                        return Column(
+                          children: themeOptions.map((option) {
+                            final isSelected = currentMode == option.value;
+
+                            return RadioListTile<ThemeMode>(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                              title: Text(
+                                option.title,
+                                style: AppFonts.normal(context).copyWith(
+                                  color: context.textColor,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                 ),
-                                subtitle: Text(
-                                  option.subtitle,
-                                  style: AppFonts.normal(
-                                    context,
-                                    size: FontSize.small,
-                                  ),
+                              ),
+                              subtitle: Text(
+                                option.subtitle,
+                                style: AppFonts.normal(context, size: FontSize.small).copyWith(
+                                  color: context.textColor
                                 ),
-                                value: option.value,
-                              );
-                            }).toList(),
-                          ),
+                              ),
+                              value: option.value,
+                              groupValue: currentMode,
+                              onChanged: (ThemeMode? value) {
+                                if (value != null) {
+                                  context.read<ThemeBloc>().add(ThemeSetEvent(value));
+                                }
+                              },
+                              activeColor: context.accent, // Active radio circle color
+                              selected: isSelected, // Enables Material 3 selected style
+                              selectedTileColor: context.accent.withOpacity(0.12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              tileColor: Colors.transparent,
+                              dense: true,
+                            );
+                          }).toList(),
                         );
                       },
                     ),
@@ -129,4 +143,3 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
-

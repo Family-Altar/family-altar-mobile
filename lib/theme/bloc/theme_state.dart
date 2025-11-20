@@ -8,12 +8,14 @@ class ThemeState extends Equatable {
     required this.isDarkMode,
     required this.lightTheme,
     required this.darkTheme,
+    required this.readingFontSize,
   });
 
   final ThemeMode themeMode;
   final bool isDarkMode;
   final ThemeData lightTheme;
   final ThemeData darkTheme;
+  final double readingFontSize;
 
   /// Get the current theme based on the theme mode
   ThemeData get currentTheme {
@@ -33,15 +35,23 @@ class ThemeState extends Equatable {
     bool? isDarkMode,
     ThemeData? lightTheme,
     ThemeData? darkTheme,
+    double? readingFontSize,
   }) {
     return ThemeState(
       themeMode: themeMode ?? this.themeMode,
       isDarkMode: isDarkMode ?? this.isDarkMode,
       lightTheme: lightTheme ?? this.lightTheme,
       darkTheme: darkTheme ?? this.darkTheme,
+      readingFontSize: readingFontSize ?? this.readingFontSize,
     );
   }
 
   @override
-  List<Object?> get props => [themeMode, isDarkMode, lightTheme, darkTheme];
+  List<Object?> get props => [
+        themeMode,
+        isDarkMode,
+        lightTheme,
+        darkTheme,
+        readingFontSize,
+      ];
 }
