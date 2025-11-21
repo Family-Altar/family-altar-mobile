@@ -42,6 +42,7 @@ dependencies:
   intl: ^0.20.2
   path: ^1.8.0
   shared_preferences: ^2.3.2
+  transparent_image: ^2.0.1
   slang: ^4.8.1
   slang_build_runner: ^4.8.1
   slang_flutter: ^4.8.0
@@ -78,6 +79,8 @@ flutter:
   assets:
     - assets/images/
     - assets/volume_I/daily_readings/
+    - assets/volume_I/Foreword.txt
+    - assets/volume_I/Preface.txt
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

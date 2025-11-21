@@ -95,21 +95,13 @@ class _BookItemState extends State<BookItem>
     _controller.reverse();
   }
 
-  void _handleSectionTap(String section) {
+  void _handleSectionTap(Section section) {
     if (!widget.data.isAvailable) return;
-    if (section == 'Daily Reading') {
+    if (section == Section.dailyReading) {
       context.push('/reader', extra: DateTime.now());
+    } else {
+      context.push('/foreword-preface', extra: section);
     }
-
-    final messenger =
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(
-              duration: const Duration(seconds: 1),
-              content: Text('Opening $section in ${widget.data.title}'),
-            ),
-          );
   }
 
   @override
@@ -146,17 +138,36 @@ class _BookItemState extends State<BookItem>
   }
 }
 
+enum Section { foreword, preface, dailyReading }
+
+extension SectionLabel on Section {
+  String get displayName {
+    switch (this) {
+      case Section.foreword:
+        return 'Foreword';
+      case Section.preface:
+        return 'Preface';
+      case Section.dailyReading:
+        return 'Daily Reading';
+    }
+  }
+}
+
 class BookItemData {
   const BookItemData({
     required this.imagePath,
     required this.title,
-    this.sections = const ['Foreword', 'Preface', 'Daily Reading'],
+    this.sections = const [
+      Section.foreword,
+      Section.preface,
+      Section.dailyReading,
+    ],
     this.isAvailable = true,
   });
 
   final String imagePath;
   final String title;
-  final List<String> sections;
+  final List<Section> sections;
   final bool isAvailable;
 }
 
@@ -244,9 +255,12 @@ class _BookCoverInterior extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.surfaceColor.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: const Color.fromARGB(255, 253, 233, 152)),
         gradient: LinearGradient(
-          colors: [Colors.black.withValues(alpha: 0.05), Colors.transparent],
+          colors: [
+            const Color.fromARGB(255, 233, 226, 129).withValues(alpha: 0.05),
+            const Color.fromARGB(136, 255, 211, 79),
+          ],
         ),
       ),
     );
@@ -260,7 +274,6 @@ class _ComingSoonBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return IgnorePointer(
       child: Align(
-        alignment: Alignment.center,
         child: Transform.rotate(
           angle: -math.pi / 4,
           child: Container(
@@ -279,10 +292,7 @@ class _ComingSoonBanner extends StatelessWidget {
             child: Text(
               'COMING SOON',
               textAlign: TextAlign.center,
-              style: AppFonts.bold(
-                context,
-                size: FontSize.medium,
-              ).copyWith(color: Colors.white),
+              style: AppFonts.bold(context).copyWith(color: Colors.white),
             ),
           ),
         ),
@@ -301,10 +311,10 @@ class _BookInnerPage extends StatelessWidget {
   });
 
   final String title;
-  final List<String> sections;
+  final List<Section> sections;
   final double progress;
   final VoidCallback onClose;
-  final ValueChanged<String> onSectionTap;
+  final ValueChanged<Section> onSectionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -348,13 +358,10 @@ class _BookInnerPage extends StatelessWidget {
                             padding: EdgeInsets.zero,
                             alignment: Alignment.centerLeft,
                             foregroundColor: Colors.black,
-                            textStyle: AppFonts.bold(
-                              context,
-                              size: FontSize.medium,
-                            ),
+                            textStyle: AppFonts.bold(context),
                           ),
                           onPressed: () => onSectionTap(section),
-                          child: Text(section),
+                          child: Text(section.displayName),
                         ),
                       ),
                     ),

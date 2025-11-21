@@ -1,6 +1,7 @@
 import 'package:family_altar/i18n/strings.g.dart';
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
+import 'package:family_altar/screens/foreword_preface/foreword_preface_screen.dart';
 import 'package:family_altar/screens/home/home_screen.dart';
 import 'package:family_altar/screens/missed_days/missed_days_screen.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
@@ -41,6 +42,13 @@ final GoRouter _router = GoRouter(
           builder: (BuildContext context, GoRouterState state) {
             final date = state.extra as DateTime?;
             return ReaderScreenProvider(date: date!);
+          },
+        ),
+        GoRoute(
+          path: 'foreword-preface',
+          builder: (BuildContext context, GoRouterState state) {
+            final section = state.extra as Section? ?? Section.foreword;
+            return ForewordPrefaceScreenProvider(section: section);
           },
         ),
       ],

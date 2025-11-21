@@ -101,8 +101,6 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     MarkAsReadEvent event,
     Emitter<ReadingState> emit,
   ) async {
-    if (state is! ReadingLoaded) return;
-
     final currentState = state as ReadingLoaded;
     final dateKey = _dateToKey(event.date);
 
