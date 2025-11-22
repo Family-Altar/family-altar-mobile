@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
+import 'package:family_altar/utils/utilities.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -95,12 +96,17 @@ class _BookItemState extends State<BookItem>
     _controller.reverse();
   }
 
-  void _handleSectionTap(Section section) {
+  Future<void> _handleSectionTap(Section section) async {
     if (!widget.data.isAvailable) return;
     if (section == Section.dailyReading) {
-      context.push('/reader', extra: DateTime.now());
+      final date = await Utils.getLastAccessedDay();
+      // Convert date to day-of-year for reading navigation
+      if (!mounted) return;
+      // valid context, navigate
+      await context.push('/reader', extra: date);
     } else {
-      context.push('/foreword-preface', extra: section);
+      if (!mounted) return;
+      await context.push('/foreword-preface', extra: section);
     }
   }
 
