@@ -8,6 +8,8 @@ import 'package:family_altar/theme/bloc/theme_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
+
 
 class ReaderScreenProvider extends StatefulWidget {
   const ReaderScreenProvider({required this.date, super.key});
@@ -96,25 +98,53 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     size: AppIcons.getIconSize(IconSize.medium),
                   ),
                 ),
-                actions: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.settings,
-                      color: context.textColor,
-                      size: AppIcons.getIconSize(IconSize.medium),
-                    ),
-                    onPressed: () {
-                      showModalBottomSheet<void>(
-                        context: context,
-                        backgroundColor: Colors.transparent,
-                        barrierColor: Colors.transparent,
-                        isScrollControlled: true,
-                        useSafeArea: true,
-                        builder: (_) => const _SettingsBottomSheet(),
-                      );
-                    },
-                  ),
-                ],
+              actions: [
+
+            IconButton(
+              icon: Icon(
+                Icons.share,
+                color: context.textColor,
+                size: AppIcons.getIconSize(IconSize.medium),
+              ),
+              onPressed: () async {
+                    final reading = state.reading;
+                          // ${reading.date} // Consider adding volume number
+                                final shareContent = """
+                          ${reading.scripture.replaceAll('\n', '')} \n
+                          ${reading.quote.replaceAll('\n', '')} \n
+                          Daily Reading:
+                          ${reading.dailyReading}
+                          """;
+
+                          final fullShareText = '''
+                          Family Altar Reading for ${reading.date} \n
+                          $shareContent
+                          ''';
+
+            await Share.share(fullShareText);
+
+    },
+  ),
+
+  IconButton(
+    icon: Icon(
+      Icons.settings,
+      color: context.textColor,
+      size: AppIcons.getIconSize(IconSize.medium),
+    ),
+    onPressed: () {
+      showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.transparent,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => const _SettingsBottomSheet(),
+      );
+    },
+  ),
+]
+
               ),
               body: SingleChildScrollView(
                 controller: _scrollController,
