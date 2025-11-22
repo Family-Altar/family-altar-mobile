@@ -55,28 +55,28 @@ class AppColors {
   static const Color calendarTodayBorderLight = Color(0xFF60B7FF); // Blue
   static const Color calendarTodayBorderDark = Color(0xFF60B7FF);
 
-  static const Color calendarCompletedBorderLight = Color(0xFF4CAF50); // Green
-  static const Color calendarCompletedBorderDark = Color(0xFF81C784);
+  static const Color calendarCompletedBorderLight = Color(0xFF888888); // Green
+  static const Color calendarCompletedBorderDark = Color(0xFF585858);
 
-  static const Color calendarMissedBorderLight = Color(0xFFFF6E6E);
-  static const Color calendarMissedBorderDark = Color(0xFFFF6D6D);
+  static const Color calendarMissedBorderLight = Color(0xFF888888);
+  static const Color calendarMissedBorderDark = Color(0xFF585858);
 
-  static const Color calendarUpcomingBorderLight = Color(0xFFE0E0E0);
-  static const Color calendarUpcomingBorderDark = Color(0xFF757575);
+  static const Color calendarUpcomingBorderLight = Color(0xFF888888);
+  static const Color calendarUpcomingBorderDark = Color(0xFF585858);
 
   // Calendar – Icons
-  static const Color calendarCompletedIcon = Color(0xFF4CAF50);
-  static const Color calendarMissedIcon = Color(0xFFFF4B4B);
+  static const Color calendarCompletedIcon = Color(0xFF24A129);
+  static const Color calendarMissedIcon = Color(0xFFFF1F1F);
 
   // Calendar – Headers & cell borders
-  static const Color calendarDayHeaderLight = Color(0xFF757575);
-  static const Color calendarDayHeaderDark = Color(0xFF9E9E9E);
+  static const Color calendarDayHeaderLight = Color(0xFF000000);
+  static const Color calendarDayHeaderDark = Color(0xFFFFFFFF);
 
-  static const Color calendarCellBorderLight = Color(0xFFEEEEEE);
-  static const Color calendarCellBorderDark = Color(0xFF757575);
+  static const Color calendarCellBorderLight = Color(0xFF313131);
+  static const Color calendarCellBorderDark = Color(0xFFFFFFFF);
 
-  static const Color calendarTrailingDateLight = Color(0xFF9E9E9E);
-  static const Color calendarTrailingDateDark = Color(0xFF757575);
+  static const Color calendarTrailingDateLight = Color(0xFF313131);
+  static const Color calendarTrailingDateDark = Color(0xFFFFFFFF);
 
   // Calendar – Text colors
   static const Color calendarDayTextLight = Color(0xFF000000);
@@ -85,8 +85,8 @@ class AppColors {
   static const Color calendarDayTextSecondaryLight = Color(0xFF212121);
   static const Color calendarDayTextSecondaryDark = Color(0xFFFFFFFF);
 
-  static const Color calendarUpcomingDayTextLight = Color(0xFF757575);
-  static const Color calendarUpcomingDayTextDark = Color(0xFF9E9E9E);
+  static const Color calendarUpcomingDayTextLight = Color(0xFF383838);
+  static const Color calendarUpcomingDayTextDark = Color(0xFFFFFFFF);
 
   static const Color calendarMonthTextLight = Color(0xFF000000);
   static const Color calendarMonthTextDark = Color(0xFFFFFFFF);

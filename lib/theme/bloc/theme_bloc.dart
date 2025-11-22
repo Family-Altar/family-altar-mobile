@@ -111,25 +111,25 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     return  ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme.light(
+      colorScheme: const ColorScheme.light(
         primary: p,
         secondary: AppColors.secondary,
         error: AppColors.lightError,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: p,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
       ),
-      cardTheme: CardThemeData(
+      cardTheme:const CardThemeData(
         color: AppColors.lightSurface,
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
+      elevatedButtonTheme: const ElevatedButtonThemeData(
         style: ButtonStyle(
           backgroundColor: WidgetStatePropertyAll(
             AppColors.primaryButtonBGColorLight,
@@ -145,7 +145,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
           ),
         ),
       ),
-      textTheme: TextTheme(
+      textTheme:const TextTheme(
         headlineLarge: TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w600,
@@ -185,7 +185,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme.dark(
+      colorScheme: const ColorScheme.dark(
         primary: p,
         onPrimary: Colors.white,
         secondary: AppColors.secondaryVariant,
@@ -193,20 +193,20 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
         onSurface: AppColors.darkOnSurface,
         error: AppColors.darkError,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.darkSurface,
         foregroundColor: on,
         elevation: 0,
         centerTitle: true,
       ),
-      cardTheme: CardThemeData(
+      cardTheme:const CardThemeData(
         color: AppColors.darkSurface,
         elevation: 4,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
+      elevatedButtonTheme:const ElevatedButtonThemeData(
         style: ButtonStyle(
           backgroundColor: WidgetStatePropertyAll(
             AppColors.primaryButtonBGColorDark,
@@ -222,7 +222,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
           ),
         ),
       ),
-      textTheme: TextTheme(
+      textTheme: const TextTheme(
         headlineLarge: TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w600,

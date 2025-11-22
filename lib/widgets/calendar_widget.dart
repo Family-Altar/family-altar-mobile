@@ -233,7 +233,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                         Icons.check,
                         size: 12,
                         color: context.calendarCompletedIcon
-                            .withValues(alpha: 0.4),
+                            .withValues(alpha: 0.9),
                       ),
                     );
                   } else if (status == ReadingStatus.missed) {
@@ -241,8 +241,8 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                       top: 4,
                       right: 4,
                       child: Icon(
-                        Icons.close,
-                        size: 12,
+                        Icons.circle,
+                        size: 8,
                         color: context.calendarMissedIcon
                             .withValues(alpha: 0.4),
                       ),
@@ -282,57 +282,10 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
               ),
 
               const SizedBox(height: 16),
-
-        Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _legendItem(
-                    context.calendarCompletedBorder
-                        .withValues(alpha: 0.3),
-                    'Completed',
-                  ),
-                  _legendItem(
-                    context.calendarTodayBorder.withValues(alpha: 0.7),
-                    'Today',
-                  ),
-                  _legendItem(
-                    context.calendarMissedBorder.withValues(alpha: 0.3),
-                    'Missed',
-                  ),
-                  _legendItem(
-                    context.calendarUpcomingBorder
-                        .withValues(alpha: 0.3),
-                    'Upcoming',
-                  ),
-                ],
-              ),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _legendItem(Color borderColor, String label, {Color? fill}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: fill ?? Colors.transparent,
-            border: Border.all(color: borderColor, width: 2),
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: AppFonts.normal(context, size: FontSize.small)
-              .copyWith(color: context.legendText),
-        ),
-      ],
     );
   }
 }
