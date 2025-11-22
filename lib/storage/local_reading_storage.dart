@@ -9,7 +9,6 @@ class LocalReadingStorage {
     final fileName = _getFileName(date);
 
     final filePath = p.join('assets/volume_I/daily_readings', fileName);
-    print(filePath);
     final fileContent = await rootBundle.loadString(filePath);
     return fileContent;
   }
@@ -29,14 +28,12 @@ class LocalReadingStorage {
       case Section.dailyReading:
         final fileName = _getFileName(DateTime.now());
         final filePath = p.join('assets/volume_I/daily_readings', fileName);
-        print(filePath);
         return rootBundle.loadString(filePath);
     }
   }
 
   Future<String> _loadStaticPage(String fileName) async {
     final filePath = p.join('assets/volume_I/', fileName);
-    print(filePath);
     return rootBundle.loadString(filePath);
   }
 }

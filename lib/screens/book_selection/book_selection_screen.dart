@@ -50,7 +50,7 @@ class BookSelectionScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         itemCount: _bookConfigs.length,
         itemBuilder: (_, index) => BookItem(data: _bookConfigs[index]),
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        separatorBuilder: (_, _) => const SizedBox(height: 16),
       ),
     );
   }

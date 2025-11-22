@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/screens/foreword_preface/bloc/foreword_preface_bloc.dart';
@@ -40,15 +38,19 @@ class ForewordPrefaceScreen extends StatelessWidget {
         if (previous is! PageLoaded) return true;
         return previous.section != current.section;
       },
-      listener: (context, state) async {
+      listener: (context, state) {
         if (state is! PageLoaded) return;
-        final date = await Utils.getLastAccessedDay();
-        final bloc = context.read<ForewordPrefaceBloc>();
-        unawaited(
+
+        Utils.getLastAccessedDay().then((date) {
+          if (!context.mounted) return;
+
+          final bloc = context.read<ForewordPrefaceBloc>();
+
           context.push('/reader', extra: date).then((_) {
+            if (!context.mounted) return;
             bloc.add(const PreviousPageEvent());
-          }),
-        );
+          });
+        });
       },
       child: BlocBuilder<ForewordPrefaceBloc, ForewordPrefaceState>(
         builder: (context, state) {

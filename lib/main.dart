@@ -13,15 +13,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-const String appTitle = 'The Family Altar - Tim Dodd';
-
 final GoRouter _router = GoRouter(
   initialLocation: '/',
   routes: <RouteBase>[
     GoRoute(
       path: '/',
       builder: (BuildContext context, GoRouterState state) {
-        return const HomeScreen(title: appTitle);
+        return const HomeScreen(title: 'The Family Altar - Tim Dodd');
       },
       routes: <RouteBase>[
         GoRoute(
@@ -33,7 +31,6 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: 'book-selection',
           builder: (BuildContext context, GoRouterState state) {
-            final title = state.uri.queryParameters['title'] ?? appTitle;
             return const BookSelectionScreen(title: 'Book Selection');
           },
         ),
