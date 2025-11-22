@@ -68,7 +68,7 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
         ),
       );
     } on Exception catch (e) {
-      emit(PageError('Failed to load reading: $e'));
+      emit(PageError('Failed to load $section: $e'));
     }
   }
 

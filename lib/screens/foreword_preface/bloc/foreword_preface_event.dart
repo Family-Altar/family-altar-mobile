@@ -16,12 +16,12 @@ class LoadPageEvent extends PageEvent {
   List<Object> get props => [sect];
 }
 
-/// Navigate to next day
+/// Navigate to next section
 class NextPageEvent extends PageEvent {
   const NextPageEvent();
 }
 
-/// Navigate to previous day
+/// Navigate to previous section
 class PreviousPageEvent extends PageEvent {
   const PreviousPageEvent();
 }
