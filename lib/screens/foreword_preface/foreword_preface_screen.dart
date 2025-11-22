@@ -6,6 +6,7 @@ import 'package:family_altar/screens/foreword_preface/bloc/foreword_preface_bloc
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
+import 'package:family_altar/utils/utilities.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -39,11 +40,12 @@ class ForewordPrefaceScreen extends StatelessWidget {
         if (previous is! PageLoaded) return true;
         return previous.section != current.section;
       },
-      listener: (context, state) {
+      listener: (context, state) async {
         if (state is! PageLoaded) return;
+        final date = await Utils.getLastAccessedDay();
         final bloc = context.read<ForewordPrefaceBloc>();
         unawaited(
-          context.push('/reader', extra: DateTime.now()).then((_) {
+          context.push('/reader', extra: date).then((_) {
             bloc.add(const PreviousPageEvent());
           }),
         );
