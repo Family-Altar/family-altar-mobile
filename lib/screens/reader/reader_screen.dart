@@ -92,13 +92,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       children: [
                         Text(
                           textAlign: TextAlign.center,
-                          state.reading.scripture.replaceAll('\n', ''),
+                          state.reading.scripture.replaceAll('\n', ' '),
                           style: AppFonts.italics(context),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           textAlign: TextAlign.left,
-                          state.reading.quote.replaceAll('\n', ''),
+                          state.reading.quote.replaceAll('\n', ' '),
                           style: AppFonts.normal(context),
                         ),
                         const SizedBox(height: 8),
