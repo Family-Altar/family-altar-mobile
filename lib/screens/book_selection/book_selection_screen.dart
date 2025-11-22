@@ -255,11 +255,11 @@ class _BookCoverInterior extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.surfaceColor.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color.fromARGB(255, 253, 233, 152)),
+        // border: Border.all(color: const Color.fromARGB(255, 253, 233, 152)),
         gradient: LinearGradient(
           colors: [
-            const Color.fromARGB(255, 233, 226, 129).withValues(alpha: 0.05),
-            const Color.fromARGB(136, 255, 211, 79),
+            const Color.fromARGB(235, 248, 231, 126).withValues(alpha: 0.25),
+            const Color.fromARGB(255, 255, 221, 136).withValues(alpha: 0.15),
           ],
         ),
       ),
@@ -324,6 +324,8 @@ class _BookInnerPage extends StatelessWidget {
       opacity: opacity,
       duration: const Duration(milliseconds: 200),
       child: Container(
+        height: 370,
+        width: 240,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           color: context.surfaceColor,
