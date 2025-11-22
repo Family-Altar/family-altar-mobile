@@ -1,236 +1,257 @@
 import 'dart:ui';
 
+import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/bloc/theme_event.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Theme BLoC class
 class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
-  ThemeBloc() : super(_initialState()) {
+  ThemeBloc() : super(_initialState) {
     on<ThemeInitializeEvent>(_onInitialize);
     on<ThemeToggleEvent>(_onToggle);
     on<ThemeSetEvent>(_onSetTheme);
+    on<ThemeReadingFontSizeChanged>(_onReadingFontSizeChanged);
   }
 
-  static const String _themeKey = 'theme_mode';
+  static const _themeKey = 'theme_mode';
+  static const _readingFontSizeKey = 'reading_font_size';
 
-  /// Create initial state with default themes
-  static ThemeState _initialState() {
-    return ThemeState(
-      themeMode: ThemeMode.system,
-      isDarkMode: false,
-      lightTheme: _createLightTheme(),
-      darkTheme: _createDarkTheme(),
-    );
-  }
+  static final ThemeState _initialState = ThemeState(
+    themeMode: ThemeMode.system,
+    isDarkMode: false,
+    lightTheme: _createLightTheme(),
+    darkTheme: _createDarkTheme(),
+    readingFontSize: 16,
+  );
 
-  /// Initialize theme from system preferences
+
   Future<void> _onInitialize(
     ThemeInitializeEvent event,
     Emitter<ThemeState> emit,
   ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedThemeIndex = prefs.getInt(_themeKey);
-      
-      var themeMode = ThemeMode.system;
-      if (savedThemeIndex != null) {
-        themeMode = ThemeMode.values[savedThemeIndex];
+      final savedIdx = prefs.getInt(_themeKey);
+      final savedSize = prefs.getDouble(_readingFontSizeKey);
+
+      var mode = ThemeMode.system;
+      if (savedIdx != null && savedIdx < ThemeMode.values.length) {
+        mode = ThemeMode.values[savedIdx];
       }
 
-      final brightness = PlatformDispatcher.instance.platformBrightness;
-      final isDarkMode = brightness == Brightness.dark;
+      final isSysDark = PlatformDispatcher.instance.platformBrightness ==
+          Brightness.dark;
+
+      final isDark = mode == ThemeMode.dark ||
+          (mode == ThemeMode.system && isSysDark);
 
       emit(state.copyWith(
-        themeMode: themeMode,
-        isDarkMode: isDarkMode,
+        themeMode: mode,
+        isDarkMode: isDark,
+        readingFontSize: savedSize ?? 16,
       ));
     } on Exception {
-      // If there's an error, use default state
       emit(state);
     }
   }
 
-  /// Toggle between light and dark theme
   Future<void> _onToggle(
     ThemeToggleEvent event,
     Emitter<ThemeState> emit,
   ) async {
-    try {
-      ThemeMode newThemeMode;
-      
-      if (state.themeMode == ThemeMode.system) {
-        // If currently system, switch to opposite of current appearance
-        newThemeMode = state.isDarkMode ? ThemeMode.light : ThemeMode.dark;
-      } else {
-        // If currently light/dark, switch to opposite
-        newThemeMode = state.themeMode == ThemeMode.light 
-            ? ThemeMode.dark 
+    final newMode = state.themeMode == ThemeMode.system
+        ? (state.isDarkMode ? ThemeMode.light : ThemeMode.dark)
+        : state.themeMode == ThemeMode.light
+            ? ThemeMode.dark
             : ThemeMode.light;
-      }
 
-      await _saveThemeMode(newThemeMode);
-      
-      emit(state.copyWith(
-        themeMode: newThemeMode,
-        isDarkMode: newThemeMode == ThemeMode.dark,
-      ));
-    } on Exception {
-      // Handle error silently or emit error state
-    }
+    await _saveThemeMode(newMode);
+    emit(state.copyWith(
+      themeMode: newMode,
+      isDarkMode: newMode == ThemeMode.dark,
+    ));
   }
 
-  /// Set specific theme mode
   Future<void> _onSetTheme(
     ThemeSetEvent event,
     Emitter<ThemeState> emit,
   ) async {
-    try {
-      await _saveThemeMode(event.themeMode);
-      
-      emit(state.copyWith(
-        themeMode: event.themeMode,
-        isDarkMode: event.themeMode == ThemeMode.dark,
-      ));
-    } on Exception {
-      // Handle error silently or emit error state
-    }
+    await _saveThemeMode(event.themeMode);
+    emit(state.copyWith(
+      themeMode: event.themeMode,
+      isDarkMode: event.themeMode == ThemeMode.dark,
+    ));
   }
 
-  /// Save theme mode to shared preferences
-  Future<void> _saveThemeMode(ThemeMode themeMode) async {
+  Future<void> _onReadingFontSizeChanged(
+    ThemeReadingFontSizeChanged event,
+    Emitter<ThemeState> emit,
+  ) async {
+    final size = event.fontSize.clamp(12.0, 28.0);
+    await _saveReadingFontSize(size);
+    emit(state.copyWith(readingFontSize: size));
+  }
+
+  Future<void> _saveThemeMode(ThemeMode mode) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_themeKey, themeMode.index);
+    await prefs.setInt(_themeKey, mode.index);
   }
 
-  /// Create light theme
-  static ThemeData _createLightTheme() {
-    return ThemeData(
+  Future<void> _saveReadingFontSize(double size) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_readingFontSizeKey, size);
+  }
+
+  static  ThemeData _createLightTheme() {
+    const p = AppColors.primary;
+    const on = AppColors.lightOnBackground;
+
+    return  ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF6750A4),
+      colorScheme: const ColorScheme.light(
+        primary: p,
+        secondary: AppColors.secondary,
+        error: AppColors.lightError,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF6750A4),
+        backgroundColor: p,
         foregroundColor: Colors.white,
         elevation: 0,
+        centerTitle: true,
       ),
-      cardTheme: CardThemeData(
-        color: Colors.white,
+      cardTheme:const CardThemeData(
+        color: AppColors.lightSurface,
         elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6750A4),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+      elevatedButtonTheme: const ElevatedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(
+            AppColors.primaryButtonBGColorLight,
+          ),
+          foregroundColor: WidgetStatePropertyAll(Colors.white),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+            ),
+          ),
+          padding: WidgetStatePropertyAll(
+            EdgeInsets.symmetric(vertical: 14, horizontal: 24),
           ),
         ),
       ),
-      textTheme: const TextTheme(
+      textTheme:const TextTheme(
         headlineLarge: TextStyle(
-          color: Color(0xFF1C1B1F),
           fontSize: 32,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w600,
+          color: on,
         ),
         headlineMedium: TextStyle(
-          color: Color(0xFF1C1B1F),
           fontSize: 28,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w600,
+          color: on,
         ),
         headlineSmall: TextStyle(
-          color: Color(0xFF1C1B1F),
           fontSize: 24,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w600,
+          color: on,
         ),
-        bodyLarge: TextStyle(
-          color: Color(0xFF1C1B1F),
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
+        titleLarge: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: on,
         ),
-        bodyMedium: TextStyle(
-          color: Color(0xFF1C1B1F),
+        bodyLarge: TextStyle(fontSize: 16, color: on),
+        bodyMedium: TextStyle(fontSize: 14, color: on),
+        labelLarge: TextStyle(
           fontSize: 14,
-          fontWeight: FontWeight.w400,
-        ),
-        bodySmall: TextStyle(
-          color: Color(0xFF49454F),
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
         ),
       ),
+      scaffoldBackgroundColor: AppColors.lightBackground,
     );
   }
 
-  /// Create dark theme
   static ThemeData _createDarkTheme() {
+    const p = AppColors.primary;
+    const on = AppColors.darkOnBackground;
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF6750A4),
-        brightness: Brightness.dark,
+      colorScheme: const ColorScheme.dark(
+        primary: p,
+        onPrimary: Colors.white,
+        secondary: AppColors.secondaryVariant,
+        surface: AppColors.darkSurface,
+        onSurface: AppColors.darkOnSurface,
+        error: AppColors.darkError,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF1C1B1F),
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.darkSurface,
+        foregroundColor: on,
         elevation: 0,
+        centerTitle: true,
       ),
-      cardTheme: CardThemeData(
-        color: const Color(0xFF2B2930),
-        elevation: 2,
+      cardTheme:const CardThemeData(
+        color: AppColors.darkSurface,
+        elevation: 4,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
         ),
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6750A4),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+      elevatedButtonTheme:const ElevatedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(
+            AppColors.primaryButtonBGColorDark,
+          ),
+          foregroundColor: WidgetStatePropertyAll(Colors.white),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+            ),
+          ),
+          padding: WidgetStatePropertyAll(
+            EdgeInsets.symmetric(vertical: 14, horizontal: 24),
           ),
         ),
       ),
       textTheme: const TextTheme(
         headlineLarge: TextStyle(
-          color: Color(0xFFE6E1E5),
           fontSize: 32,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w600,
+          color: on,
         ),
         headlineMedium: TextStyle(
-          color: Color(0xFFE6E1E5),
           fontSize: 28,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w600,
+          color: on,
         ),
         headlineSmall: TextStyle(
-          color: Color(0xFFE6E1E5),
           fontSize: 24,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w600,
+          color: on,
         ),
-        bodyLarge: TextStyle(
-          color: Color(0xFFE6E1E5),
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
+        titleLarge: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: on,
         ),
-        bodyMedium: TextStyle(
-          color: Color(0xFFE6E1E5),
+        bodyLarge: TextStyle(fontSize: 16, color: on),
+        bodyMedium: TextStyle(fontSize: 14, color: on),
+        labelLarge: TextStyle(
           fontSize: 14,
-          fontWeight: FontWeight.w400,
-        ),
-        bodySmall: TextStyle(
-          color: Color(0xFFCAC4D0),
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
         ),
       ),
+      scaffoldBackgroundColor: AppColors.darkBackground,
     );
   }
 }
