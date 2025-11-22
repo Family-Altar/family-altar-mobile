@@ -377,11 +377,6 @@ class _SettingsBottomSheet extends StatelessWidget {
                 const SizedBox(height: 6),
                 const _FontSizeControl(),
                 const SizedBox(height: 24),
-                Text(
-                  'Theme',
-                  style: AppFonts.bold(context).copyWith(fontSize: 18),
-                ),
-                const SizedBox(height: 8),
                 RadioGroup<ThemeMode>(
                   groupValue: mode,
                   onChanged: (value) {
