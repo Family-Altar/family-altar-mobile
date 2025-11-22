@@ -107,21 +107,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 size: AppIcons.getIconSize(IconSize.medium),
               ),
               onPressed: () async {
-                    final reading = state.reading;
-                          // ${reading.date} // Consider adding volume number
-                                final shareContent = """
-                          ${reading.scripture.replaceAll('\n', '')} \n
-                          ${reading.quote.replaceAll('\n', '')} \n
-                          Daily Reading:
-                          ${reading.dailyReading}
-                          """;
+                  final reading = state.reading;
 
-                          final fullShareText = '''
-                          Family Altar Reading for ${reading.date} \n
-                          $shareContent
-                          ''';
+                  final shareContent = """
+                  ${reading.scripture.replaceAll('\n', ' ')}
 
-            await Share.share(fullShareText);
+                  ${reading.quote.replaceAll('\n', ' ')}
+
+                  Daily Reading:
+                  ${reading.dailyReading}
+                  """;
+
+                  final fullShareText = """
+                  Family Altar Reading
+                  ${reading.date}
+
+                  $shareContent
+                  """;
+
+                  // Share
+                  await Share.share(fullShareText);
+
 
     },
   ),
