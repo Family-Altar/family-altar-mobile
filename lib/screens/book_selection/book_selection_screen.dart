@@ -336,54 +336,52 @@ class _BookInnerPage extends StatelessWidget {
           children: [
             IgnorePointer(
               ignoring: progress < 0.65,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: AppFonts.bold(context, size: FontSize.large),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Choose a section to begin reading:',
-                      style: AppFonts.normal(context, size: FontSize.small),
-                    ),
-                    const SizedBox(height: 16),
-                    ...sections.map(
-                      (section) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            alignment: Alignment.centerLeft,
-                            foregroundColor: Colors.black,
-                            textStyle: AppFonts.bold(context),
-                          ),
-                          onPressed: () => onSectionTap(section),
-                          child: Text(section.displayName),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        title,
+                        style: AppFonts.bold(context, size: FontSize.large),
+                      ),
+                      AnimatedOpacity(
+                        opacity: progress > 0.6 ? 1 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: IconButton(
+                          iconSize: 18,
+                          padding: EdgeInsets.zero,
+                          onPressed: onClose,
+                          icon: Icon(Icons.close, color: context.textColor),
+                          splashRadius: 20,
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Choose a section to begin reading:',
+                    style: AppFonts.normal(context, size: FontSize.small),
+                  ),
+                  const SizedBox(height: 16),
+                  ...sections.map(
+                    (section) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          alignment: Alignment.centerLeft,
+                          foregroundColor: Colors.black,
+                          textStyle: AppFonts.bold(context),
+                        ),
+                        onPressed: () => onSectionTap(section),
+                        child: Text(section.displayName),
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: AnimatedOpacity(
-                opacity: progress > 0.6 ? 1 : 0,
-                duration: const Duration(milliseconds: 200),
-                child: IconButton(
-                  iconSize: 18,
-                  padding: EdgeInsets.zero,
-                  onPressed: onClose,
-                  icon: Icon(Icons.close, color: context.textColor),
-                  splashRadius: 20,
-                ),
+                  ),
+                ],
               ),
             ),
           ],
