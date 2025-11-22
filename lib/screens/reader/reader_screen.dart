@@ -1,44 +1,36 @@
-import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
-import 'package:family_altar/theme/bloc/theme_bloc.dart';        // ADD THIS
-import 'package:family_altar/theme/bloc/theme_event.dart';      // ADD THIS
-import 'package:family_altar/theme/bloc/theme_state.dart';       // ADD THIS
+import 'package:family_altar/theme/bloc/theme_bloc.dart';
+import 'package:family_altar/theme/bloc/theme_event.dart';
+import 'package:family_altar/theme/bloc/theme_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class ReaderScreenProvider extends StatefulWidget {
   const ReaderScreenProvider({required this.date, super.key});
-
   final DateTime date;
 
   @override
-  Widget build(BuildContext context) {
-    final repo = context.read<ReadingRepository>();
+  State<ReaderScreenProvider> createState() => _ReaderScreenProviderState();
+}
 
-    return BlocProvider(
-      create: (_) {
-        return ReadingBloc(
-          readingRepository: repo,
-        )..add(LoadReadingEvent(date: date));
-      },
-      child: ReaderScreen(
-        date: date,
-      ),
-    );
+class _ReaderScreenProviderState extends State<ReaderScreenProvider> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<ReadingBloc>().add(LoadReadingEvent(date: widget.date));
   }
+
+  @override
+  Widget build(BuildContext context) => ReaderScreen(date: widget.date);
 }
 
 class ReaderScreen extends StatefulWidget {
-  const ReaderScreen({
-    this.date,
-    super.key,
-  });
-
-  final DateTime? date;
+  const ReaderScreen({required this.date, super.key});
+  final DateTime date;
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -50,19 +42,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void initState() {
     super.initState();
-    _scrollController = ScrollController();
+    _scrollController = ScrollController()..addListener(_onScrollEnd);
+  }
 
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels ==
-          _scrollController.position.maxScrollExtent) {
-        context.read<ReadingBloc>().add(MarkAsReadEvent(widget.date));
-      }
-    });
+  void _onScrollEnd() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      context.read<ReadingBloc>().add(
+            MarkAsReadEvent(widget.date),
+          );
+    }
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _scrollController
+      ..removeListener(_onScrollEnd)
+      ..dispose();
     super.dispose();
   }
 
@@ -72,157 +68,267 @@ class _ReaderScreenState extends State<ReaderScreen> {
       builder: (context, state) {
         if (state is ReadingLoading) {
           return const Center(child: CircularProgressIndicator());
-        } else if (state is ReadingLoaded) {
-          return Scaffold(
-            backgroundColor: context.backgroundColor,
-            appBar: AppBar(
-              toolbarHeight: 48,
-              backgroundColor: context.appBarColor,
-              centerTitle: true,
-              title: Text(state.reading.date, style: AppFonts.bold(context)),
-              leading: IconButton(
-                onPressed: () => context.pop(),
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: context.textColor,
-                  size: AppIcons.getIconSize(IconSize.medium),
-                ),
-              ),
-               actions: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.settings,
-                        color: context.textColor,
-                        size: AppIcons.getIconSize(IconSize.medium),
-                      ),
-                      onPressed: () {
-                        showModalBottomSheet(
-                          context: context,
-                          backgroundColor: Colors.transparent,
-                          barrierColor: Colors.transparent,
-                          isScrollControlled: true,
-                          enableDrag: true,
-                          useSafeArea: true,
-                          builder: (_) => const _SettingsBottomSheet(),
-                        );
-                      },
-                    ),
-                  ],
-            ),
-            body: SingleChildScrollView(
-              controller: _scrollController,
-              child: Scrollbar(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        Text(
-                          textAlign: TextAlign.center,
-                          state.reading.scripture.replaceAll('\n', ''),
-                       style: AppFonts.italics(context).copyWith(
-                                fontSize: themeState.readingFontSize,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          textAlign: TextAlign.left,
-                          state.reading.quote.replaceAll('\n', ''),
-                         style: AppFonts.normal(context).copyWith(
-                                fontSize: themeState.readingFontSize,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Divider(),
-                        Text(
-                          'Daily Reading:',
-                          textAlign: TextAlign.center,
-                         style: AppFonts.bold(context).copyWith(
-                                fontSize: themeState.readingFontSize,
-                              ),
-                        ),
-                        Text(
-                          textAlign: TextAlign.left,
-                          state.reading.dailyReading,
-                             style: AppFonts.bold(context).copyWith(
-                                fontSize: themeState.readingFontSize,
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            bottomNavigationBar: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: context.appBarColor,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_circle_left_outlined),
-                        iconSize: 50,
-                        onPressed: () {
-                          context.read<ReadingBloc>().add(const PreviousReadingEvent());
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.arrow_circle_right_outlined),
-                        iconSize: 50,
-                        onPressed: () {
-                          context.read<ReadingBloc>().add(const NextReadingEvent());
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-          );
-        } else {
-          // ReadingInitial or any other unhandled state
+        }
+
+        if (state is! ReadingLoaded) {
           return const SizedBox.shrink();
         }
 
-        return const SizedBox.shrink();
+        return BlocBuilder<ThemeBloc, ThemeState>(
+          builder: (context, themeState) {
+            final fontSize = themeState.readingFontSize;
+
+            return Scaffold(
+              backgroundColor: context.backgroundColor,
+              appBar: AppBar(
+                toolbarHeight: 48,
+                backgroundColor: context.appBarColor,
+                centerTitle: true,
+                title: Text(
+                  state.reading.date,
+                  style: AppFonts.bold(context),
+                ),
+                leading: IconButton(
+                  onPressed: context.pop,
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: context.textColor,
+                    size: AppIcons.getIconSize(IconSize.medium),
+                  ),
+                ),
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.settings,
+                      color: context.textColor,
+                      size: AppIcons.getIconSize(IconSize.medium),
+                    ),
+                    onPressed: () {
+                      showModalBottomSheet<void>(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        barrierColor: Colors.transparent,
+                        isScrollControlled: true,
+                        useSafeArea: true,
+                        builder: (_) => const _SettingsBottomSheet(),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              body: SingleChildScrollView(
+                controller: _scrollController,
+                child: Scrollbar(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          Text(
+                            state.reading.scripture.replaceAll('\n', ''),
+                            textAlign: TextAlign.center,
+                            style: AppFonts.italics(context).copyWith(
+                              fontSize: fontSize,
+                            ),
+                            textScaler: TextScaler.noScaling,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            state.reading.quote.replaceAll('\n', ''),
+                            textAlign: TextAlign.left,
+                            style: AppFonts.normal(context).copyWith(
+                              fontSize: fontSize,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Divider(),
+                          Text(
+                            'Daily Reading:',
+                            textAlign: TextAlign.center,
+                            style: AppFonts.bold(context).copyWith(
+                              fontSize: fontSize,
+                            ),
+                          ),
+                          Text(
+                            state.reading.dailyReading,
+                            textAlign: TextAlign.left,
+                            style: AppFonts.bold(context).copyWith(
+                              fontSize: fontSize,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              bottomNavigationBar: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: context.appBarColor,
+                  border: Border(
+                    top: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      color: context.textColor,
+                      icon: const Icon(Icons.arrow_circle_left_outlined),
+                      iconSize: 50,
+                      onPressed: () => context
+                          .read<ReadingBloc>()
+                          .add(const PreviousReadingEvent()),
+                    ),
+                    IconButton(
+                      color: context.textColor,
+                      icon: const Icon(Icons.arrow_circle_right_outlined),
+                      iconSize: 50,
+                      onPressed: () => context
+                          .read<ReadingBloc>()
+                          .add(const NextReadingEvent()),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
       },
     );
   }
 }
 
-// ====================== SETTINGS BOTTOM SHEET ======================
+class _FontSizeControl extends StatelessWidget {
+  const _FontSizeControl();
+
+  static const double _min = 12;
+  static const double _max = 28;
+  static const int _step = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<ThemeBloc, ThemeState>(
+      builder: (context, themeState) {
+        final current = themeState.readingFontSize;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: GestureDetector(
+            onTapDown: (details) {
+              final width = context.size?.width ?? 300;
+              final x = details.localPosition.dx;
+
+              final nextValue =
+                  x < width / 2 ? current - _step : current + _step;
+
+              final newSize = nextValue.clamp(_min, _max);
+
+              if (newSize != current) {
+                context
+                    .read<ThemeBloc>()
+                    .add(ThemeReadingFontSizeChanged(newSize));
+              }
+            },
+            child: Container(
+              height: 64,
+              decoration: BoxDecoration(
+                color: context.accent.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Opacity(
+                      opacity: current > _min ? 1.0 : 0.4,
+                      child: Center(
+                        child: Text(
+                          'A',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: context.accent,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    color: context.accent.withValues(alpha: 0.1),
+                  ),
+                  Expanded(
+                    child: Opacity(
+                      opacity: current < _max ? 1.0 : 0.4,
+                      child: Center(
+                        child: Text(
+                          'A',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: context.accent,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
 
 class _SettingsBottomSheet extends StatelessWidget {
   const _SettingsBottomSheet();
 
-  static const double _minFontSize = 12.0;
-  static const double _maxFontSize = 28.0;
-  static const double _fontStep = 1.0;
-
-  static const List<_ThemeOption> _themeOptions = [
-    _ThemeOption(title: 'Light', subtitle: 'Always use light theme', value: ThemeMode.light),
-    _ThemeOption(title: 'Dark', subtitle: 'Always use dark theme', value: ThemeMode.dark),
-    _ThemeOption(title: 'System', subtitle: 'Follow system theme', value: ThemeMode.system),
+  static const _options = [
+    _ThemeOption(
+      title: 'Light',
+      subtitle: 'Always use light theme',
+      value: ThemeMode.light,
+    ),
+    _ThemeOption(
+      title: 'Dark',
+      subtitle: 'Always use dark theme',
+      value: ThemeMode.dark,
+    ),
+    _ThemeOption(
+      title: 'System',
+      subtitle: 'Follow system theme',
+      value: ThemeMode.system,
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.5,
+      height: MediaQuery.sizeOf(context).height * 0.5,
       decoration: BoxDecoration(
         color: context.appBarColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
         border: Border.all(
-          color: isDark ? Colors.grey.shade700 : Colors.black.withOpacity(0.2),
+          color: dark
+              ? Colors.grey.shade700
+              : context.accent.withValues(alpha: 0.2),
           width: 0.3,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+            color: Colors.black.withValues(
+              alpha: dark ? 0.3 : 0.1,
+            ),
             blurRadius: 20,
             offset: const Offset(0, -2),
           ),
@@ -230,8 +336,7 @@ class _SettingsBottomSheet extends StatelessWidget {
       ),
       child: BlocBuilder<ThemeBloc, ThemeState>(
         builder: (context, themeState) {
-          final currentFontSize = themeState.readingFontSize;
-          final currentMode = themeState.themeMode;
+          final mode = themeState.themeMode;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -240,126 +345,88 @@ class _SettingsBottomSheet extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 6),
+                const _FontSizeControl(),
+                const SizedBox(height: 24),
+                Text(
+                  'Theme',
+                  style: AppFonts.bold(context).copyWith(fontSize: 18),
+                ),
+                const SizedBox(height: 8),
+                RadioGroup<ThemeMode>(
+                  groupValue: mode,
+                  onChanged: (value) {
+                    if (value != null) {
+                      context.read<ThemeBloc>().add(
+                            ThemeSetEvent(value),
+                          );
+                    }
+                  },
+                  child: Column(
+                    children: _options.map((o) {
+                      final isSelected = mode == o.value;
 
-                // Font size controls
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: currentFontSize > _minFontSize
-                            ? () {
-                                final newSize = (currentFontSize - _fontStep)
-                                    .clamp(_minFontSize, _maxFontSize);
-                                context.read<ThemeBloc>().add(
-                                  ThemeReadingFontSizeChanged(newSize),
-                                );
-                              }
-                            : null,
-                        child: _buildFontButton(
-                          context: context,
-                          text: 'A',
-                          size: 20,
-                          circleSize: 56,
-                          enabled: currentFontSize > _minFontSize,
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () => context
+                              .read<ThemeBloc>()
+                              .add(ThemeSetEvent(o.value)),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? context.accent.withValues(alpha: 0.05)
+                                  : null,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Radio<ThemeMode>(
+                                  value: o.value,
+                                  activeColor: context.accent,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        o.title,
+                                        style: AppFonts.normal(context)
+                                            .copyWith(
+                                          color: context.textColor,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                      Text(
+                                        o.subtitle,
+                                        style: AppFonts.normal(
+                                          context,
+                                          size: FontSize.small,
+                                        ).copyWith(
+                                          color: context.textColor
+                                              .withValues(alpha: 0.7),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${currentFontSize.round()}',
-                        style: AppFonts.normal(context, size: FontSize.large),
-                      ),
-                      GestureDetector(
-                        onTap: currentFontSize < _maxFontSize
-                            ? () {
-                                final newSize = (currentFontSize + _fontStep)
-                                    .clamp(_minFontSize, _maxFontSize);
-                                context.read<ThemeBloc>().add(
-                                  ThemeReadingFontSizeChanged(newSize),
-                                );
-                              }
-                            : null,
-                        child: _buildFontButton(
-                          context: context,
-                          text: 'A',
-                          size: 36,
-                          circleSize: 72,
-                          enabled: currentFontSize < _maxFontSize,
-                        ),
-                      ),
-                    ],
+                      );
+                    }).toList(),
                   ),
                 ),
-
-                const SizedBox(height: 16),
-
-                // Theme mode options
-                 ..._themeOptions.map((_ThemeOption option) {
-                  final isSelected = currentMode == option.value;
-
-                  return RadioListTile<ThemeMode>(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                    title: Text(
-                      option.title,
-                      style: AppFonts.normal(context).copyWith(
-                        color: context.textColor,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
-                    subtitle: Text(
-                      option.subtitle,
-                      style: AppFonts.normal(context, size: FontSize.small).copyWith(
-                        color: context.textColor,
-                      ),
-                    ),
-                    value: option.value,
-                    groupValue: currentMode,
-                    onChanged: (ThemeMode? value) {
-                      if (value != null) {
-                        context.read<ThemeBloc>().add(ThemeSetEvent(value));
-                      }
-                    },
-                    activeColor: context.accent,
-                    selected: isSelected,
-                    selectedTileColor: context.accent.withOpacity(0.12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    tileColor: Colors.transparent,
-                    dense: true,
-                  );
-                }).toList(),
               ],
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildFontButton({
-    required BuildContext context,
-    required String text,
-    required double size,
-    required double circleSize,
-    required bool enabled,
-  }) {
-    final color = context.accent;
-    return Container(
-      width: circleSize,
-      height: circleSize,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: enabled ? color.withOpacity(0.12) : Colors.grey.shade200,
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: size,
-          fontWeight: FontWeight.bold,
-          color: enabled ? color : Colors.grey.shade500,
-        ),
       ),
     );
   }

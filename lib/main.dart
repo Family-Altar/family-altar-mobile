@@ -19,26 +19,22 @@ final GoRouter _router = GoRouter(
   routes: <RouteBase>[
     GoRoute(
       path: '/',
-      builder: (BuildContext context, GoRouterState state) {
-        return const HomeScreen(title: appTitle);
-      },
+      builder: (context, state) => const HomeScreen(title: appTitle),
       routes: <RouteBase>[
         GoRoute(
           path: 'settings',
-          builder: (BuildContext context, GoRouterState state) {
-            return const SettingsScreen();
-          },
+          builder: (context, state) => const SettingsScreen(),
         ),
         GoRoute(
           path: 'book-selection',
-          builder: (BuildContext context, GoRouterState state) {
+          builder: (context, state) {
             final title = state.uri.queryParameters['title'] ?? appTitle;
             return BookSelectionScreen(title: title);
           },
         ),
         GoRoute(
           path: 'reader',
-          builder: (BuildContext context, GoRouterState state) {
+          builder: (context, state) {
             final date = state.extra as DateTime?;
             return ReaderScreenProvider(date: date!);
           },
@@ -47,48 +43,41 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(
       path: '/missed-days/book-:volumeId',
-      builder: (BuildContext context, GoRouterState state) {
+      builder: (context, state) {
         final volumeId = state.pathParameters['volumeId'] ?? '1';
         return MissedDaysScreen(volumeId: volumeId);
       },
     ),
   ],
 );
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize your repositories
   final localReadingStorage = LocalReadingStorage();
   final readingRepository = ReadingRepository(localReadingStorage);
-  WidgetsFlutterBinding.ensureInitialized();
+
   runApp(
     TranslationProvider(
       child: MultiRepositoryProvider(
         providers: [
-          RepositoryProvider<LocalReadingStorage>.value(
-            value: localReadingStorage,
-          ),
-          RepositoryProvider<ReadingRepository>.value(
-            value: readingRepository,
-          ),
-          BlocProvider(
-            create:
-                (_) => ReadingBloc(
-                  readingRepository: readingRepository,
-                )..add(LoadReadingEvent(date: DateTime.now())),
-          ),
+          RepositoryProvider.value(value: localReadingStorage),
+          RepositoryProvider.value(value: readingRepository),
         ],
-        child: const MyApp(),
+        child: MultiBlocProvider(
+          providers: [
+            // Global ReadingBloc
+            BlocProvider(
+              create: (_) => ReadingBloc(readingRepository: readingRepository)
+                ..add(LoadReadingEvent(date: DateTime.now())),
+            ),
+          ],
+          child: ThemeProvider(
+            router: _router,
+          ), 
+        ),
       ),
     ),
   );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ThemeProvider(
-      router: _router,
-      child: const SizedBox.shrink(),
-    );
-  }
 }

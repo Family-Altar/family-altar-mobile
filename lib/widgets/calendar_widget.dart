@@ -5,6 +5,7 @@ import 'package:family_altar/theme/app_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 class FamilyAltarCalendar extends StatefulWidget {
@@ -15,16 +16,12 @@ class FamilyAltarCalendar extends StatefulWidget {
 }
 
 class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
-  /// Currently displayed month/year in the calendar
   late DateTime _currentDate;
-
-  /// Syncfusion calendar controller for programmatic calendar control
   late CalendarController _calendarController;
 
   @override
   void initState() {
     super.initState();
-    // Initialize to first day of current month
     _currentDate = DateTime(DateTime.now().year, DateTime.now().month);
     _calendarController = CalendarController();
   }
@@ -44,121 +41,61 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
 
     showDialog<void>(
       context: context,
-      builder:
-          (dialogContext) => AlertDialog(
-            backgroundColor: context.dialogBG,
-            title: Text(
-              isRead ? 'Mark as Unread' : 'Mark as Read',
-              style: AppFonts.bold(context).copyWith(
-                color: context.dialogTitle,
-              ),
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: context.dialogBG,
+        title: Text(
+          isRead ? 'Mark as Unread' : 'Mark as Read',
+          style: AppFonts.bold(context)
+              .copyWith(color: context.dialogTitle),
+        ),
+        content: Text(
+          isRead
+              ? 'Do you want to mark this day as unread?'
+              : 'Do you want to mark this day as read?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: context.dialogCancel),
             ),
-            content: Text(
-              isRead
-                  ? 'Do you want to mark this day as unread?'
-                  : 'Do you want to mark this day as read?',
-              style: AppFonts.normal(context).copyWith(
-                color: context.dialogContent,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: Text(
-                  'Cancel',
-                  style: AppFonts.normal(context).copyWith(
-                    color: context.dialogCancel,
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  if (isRead) {
-                    context.read<ReadingBloc>().add(
-                      MarkAsUnreadEvent(date),
-                    );
-                  } else {
-                    context.read<ReadingBloc>().add(
-                      MarkAsReadEvent(date),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      isRead
-                          ? AppColors.dialogMarkUnreadBG
-                          : AppColors.dialogMarkReadBG,
-                ),
-                child: Text(
-                  isRead ? 'Mark Unread' : 'Mark Read',
-                  style: AppFonts.normal(context).copyWith(
-                    color: AppColors.dialogButtonText,
-                  ),
-                ),
-              ),
-            ],
           ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<ReadingBloc>().add(
+                    isRead
+                        ? MarkAsUnreadEvent(date)
+                        : MarkAsReadEvent(date),
+                  );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isRead
+                  ? AppColors.dialogMarkUnreadBG
+                  : AppColors.dialogMarkReadBG,
+            ),
+            child: Text(
+              isRead ? 'Mark Unread' : 'Mark Read',
+              style: const TextStyle(color: AppColors.dialogButtonText),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Color _getStatusColor(
-    ReadingStatus status,
-    bool isToday,
-    BuildContext context,
-  ) {
-    if (isToday) {
-      return context.calendarTodayBG;
-    }
-
-    switch (status) {
-      case ReadingStatus.completed:
-        return context.calendarCompletedBG;
-      case ReadingStatus.missed:
-        return context.calendarMissedBG;
-      case ReadingStatus.upcoming:
-        return context.calendarUpcomingBG;
-    }
-  }
-
-  Color _getStatusBorderColor(
-    ReadingStatus status,
-    bool isToday,
-    BuildContext context,
-  ) {
-    if (isToday) {
-      return AppColors.calendarTodayBorder;
-    }
-
-    switch (status) {
-      case ReadingStatus.completed:
-        return AppColors.calendarCompletedBorder;
-      case ReadingStatus.missed:
-        return AppColors.calendarMissedBorder;
-      case ReadingStatus.upcoming:
-        return context.calendarUpcomingBorder;
-    }
-  }
-
-  Widget? _getStatusIcon(ReadingStatus status, bool isToday) {
-    if (isToday) return null;
-
-    switch (status) {
-      case ReadingStatus.completed:
-        return const Icon(
-          Icons.check,
-          size: 12,
-          color: AppColors.calendarCompletedIcon,
-        );
-      case ReadingStatus.missed:
-        return const Icon(
-          Icons.close,
-          size: 12,
-          color: AppColors.calendarMissedIcon,
-        );
-      case ReadingStatus.upcoming:
-        return null;
-    }
+  Widget _navButton(IconData icon, VoidCallback onPressed) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        onPressed: onPressed,
+        icon: Icon(icon, size: 28, color: context.calendarMonthText),
+      ),
+    );
   }
 
   @override
@@ -166,68 +103,46 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
     return BlocBuilder<ReadingBloc, ReadingState>(
       builder: (context, state) {
         final loadedState = state is ReadingLoaded ? state : null;
+        final missedDaysCount =
+            loadedState?.getTotalMissedDaysCount() ?? 0;
+        final headerDate =
+            DateFormat('MMM yyyy').format(_currentDate);
 
-        // Get total missed days (all time, not just current month)
-        final missedDaysCount = loadedState?.getTotalMissedDaysCount() ?? 0;
-
-        return Container(
+        return Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // Header with month navigation and missed days count
+              // Header
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Month navigation
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _currentDate = DateTime(
-                              _currentDate.year,
-                              _currentDate.month - 1,
-                            );
-                          });
-                          _calendarController.displayDate = _currentDate;
-                        },
-                        icon: Icon(
-                          Icons.chevron_left,
-                          color: context.calendarMonthText,
-                        ),
-                      ),
-                      Text(
-                        _getMonthName(_currentDate.month),
-                        style: AppFonts.bold(
-                          context,
-                          size: FontSize.large,
-                        ).copyWith(
-                          color: context.calendarMonthText,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _currentDate = DateTime(
-                              _currentDate.year,
-                              _currentDate.month + 1,
-                            );
-                          });
-                          _calendarController.displayDate = _currentDate;
-                        },
-                        icon: Icon(
-                          Icons.chevron_right,
-                          color: context.calendarMonthText,
-                        ),
-                      ),
-                    ],
+                  _navButton(Icons.chevron_left, () {
+                    setState(() {
+                      _currentDate = DateTime(
+                        _currentDate.year,
+                        _currentDate.month - 1,
+                      );
+                      _calendarController.displayDate = _currentDate;
+                    });
+                  }),
+                  const SizedBox(width: 12),
+                  Text(
+                    headerDate,
+                    style: AppFonts.bold(context, size: FontSize.large)
+                        .copyWith(color: context.calendarMonthText),
                   ),
-                  // Missed days count - clickable
+                  const SizedBox(width: 12),
+                  _navButton(Icons.chevron_right, () {
+                    setState(() {
+                      _currentDate = DateTime(
+                        _currentDate.year,
+                        _currentDate.month + 1,
+                      );
+                      _calendarController.displayDate = _currentDate;
+                    });
+                  }),
+                  const Spacer(),
                   GestureDetector(
-                    onTap: () {
-                      // Navigate to books/book-1
-                      context.push('/missed-days/book-1');
-                    },
+                    onTap: () => context.push('/missed-days/book-1'),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
@@ -237,107 +152,109 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                         color: context.missedDaysBadgeBG,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '$missedDaysCount missed days',
-                            style: AppFonts.normal(
-                              context,
-                              size: FontSize.small,
-                            ).copyWith(
-                              color: context.missedDaysBadgeText,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        '$missedDaysCount missed',
+                        style: AppFonts.normal(
+                          context,
+                          size: FontSize.small,
+                        ).copyWith(color: context.missedDaysBadgeText),
                       ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
+
               // Calendar
               SfCalendar(
                 controller: _calendarController,
                 view: CalendarView.month,
                 initialDisplayDate: _currentDate,
-                headerHeight: 0, // Hide default header
-                monthViewSettings: MonthViewSettings(
+                headerHeight: 0,
+                monthViewSettings: const MonthViewSettings(
                   dayFormat: 'E',
                   showTrailingAndLeadingDates: false,
-                  appointmentDisplayMode: MonthAppointmentDisplayMode.none,
-                  monthCellStyle: MonthCellStyle(
-                    textStyle: AppFonts.normal(
-                      context,
-                      size: FontSize.small,
-                    ).copyWith(
-                      color: context.calendarDayText,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    trailingDatesTextStyle: AppFonts.normal(
-                      context,
-                      size: FontSize.small,
-                    ).copyWith(
-                      color: context.calendarTrailingDate,
-                    ),
-                    leadingDatesTextStyle: AppFonts.normal(
-                      context,
-                      size: FontSize.small,
-                    ).copyWith(
-                      color: context.calendarTrailingDate,
-                    ),
-                  ),
+                  appointmentDisplayMode:
+                      MonthAppointmentDisplayMode.none,
                 ),
-                cellBorderColor: context.calendarCellBorder,
-                todayHighlightColor: Colors.transparent,
+                cellBorderColor: Colors.transparent,
+                todayHighlightColor: context.calendarTodayBorder,
                 selectionDecoration: const BoxDecoration(),
-                onViewChanged: (ViewChangedDetails details) {
-                  if (details.visibleDates.isNotEmpty) {
-                    final firstDate = details.visibleDates.first;
-                    if (firstDate.month != _currentDate.month ||
-                        firstDate.year != _currentDate.year) {
-                      setState(() {
-                        _currentDate = DateTime(
-                          firstDate.year,
-                          firstDate.month,
-                        );
-                      });
-                    }
+                onViewChanged: (details) {
+                  if (details.visibleDates.isEmpty) return;
+                  final first = details.visibleDates.first;
+                  if (first.month != _currentDate.month ||
+                      first.year != _currentDate.year) {
+                    setState(() {
+                      _currentDate =
+                          DateTime(first.year, first.month);
+                    });
                   }
                 },
-                onTap: (CalendarTapDetails details) {
-                  // Tap to navigate to that day's reading page
+                onTap: (details) {
                   if (details.date != null) {
                     context.push('/reader', extra: details.date);
                   }
                 },
-                onLongPress: (CalendarLongPressDetails details) {
-                  if (details.date != null && loadedState != null) {
-                    final dayStatus = loadedState.getStatus(details.date!);
-                    _showLongPressDialog(context, details.date!, dayStatus);
+                onLongPress: (details) {
+                  if (details.date == null || loadedState == null) {
+                    return;
                   }
+                  final status = loadedState.getStatus(details.date!);
+                  _showLongPressDialog(context, details.date!, status);
                 },
                 monthCellBuilder: (context, details) {
-                  final dayStatus =
-                      loadedState?.getStatus(details.date) ??
+                  final date = details.date;
+                  final status = loadedState?.getStatus(date) ??
                       ReadingStatus.upcoming;
-                  final isToday =
-                      ReadingEntry(
-                        date: details.date,
-                        status: ReadingStatus.upcoming,
-                      ).isToday;
+
+                  final isToday = DateTime.now().year == date.year &&
+                      DateTime.now().month == date.month &&
+                      DateTime.now().day == date.day;
+
+                  final borderColor = isToday
+                      ? context.calendarTodayBorder
+                          .withValues(alpha: 0.7)
+                      : status == ReadingStatus.completed
+                          ? context.calendarCompletedBorder
+                              .withValues(alpha: 0.3)
+                          : status == ReadingStatus.missed
+                              ? context.calendarMissedBorder
+                                  .withValues(alpha: 0.3)
+                              : context.calendarUpcomingBorder
+                                  .withValues(alpha: 0.3);
+
+                  Widget? statusIcon;
+                  if (status == ReadingStatus.completed) {
+                    statusIcon = Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Icon(
+                        Icons.check,
+                        size: 12,
+                        color: context.calendarCompletedIcon
+                            .withValues(alpha: 0.4),
+                      ),
+                    );
+                  } else if (status == ReadingStatus.missed) {
+                    statusIcon = Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Icon(
+                        Icons.close,
+                        size: 12,
+                        color: context.calendarMissedIcon
+                            .withValues(alpha: 0.4),
+                      ),
+                    );
+                  }
 
                   return Container(
                     margin: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(dayStatus, isToday, context),
                       border: Border.all(
-                        color: _getStatusBorderColor(
-                          dayStatus,
-                          isToday,
-                          context,
-                        ),
-                        width: isToday ? 2 : 1,
+                        color: borderColor,
+                        width: isToday ? 2.5 : 1.5,
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -345,53 +262,47 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
                       children: [
                         Center(
                           child: Text(
-                            details.date.day.toString(),
+                            date.day.toString(),
                             style: AppFonts.normal(
                               context,
                               size: FontSize.small,
                             ).copyWith(
                               fontWeight: FontWeight.w500,
-                              color:
-                                  dayStatus == ReadingStatus.upcoming
-                                      ? context.calendarUpcomingDayText
-                                      : context.calendarDayTextSecondary,
+                              color: status == ReadingStatus.upcoming
+                                  ? context.calendarUpcomingDayText
+                                  : context.calendarDayTextSecondary,
                             ),
                           ),
                         ),
-                        if (_getStatusIcon(dayStatus, isToday) != null)
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: _getStatusIcon(dayStatus, isToday)!,
-                          ),
+                        if (statusIcon != null) statusIcon,
                       ],
                     ),
                   );
                 },
               ),
-              // Legend
-              Row(
+
+              const SizedBox(height: 16),
+
+        Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildLegendItem(
-                    _getStatusColor(ReadingStatus.completed, false, context),
+                  _legendItem(
+                    context.calendarCompletedBorder
+                        .withValues(alpha: 0.3),
                     'Completed',
-                    context,
                   ),
-                  _buildLegendItem(
-                    _getStatusColor(ReadingStatus.upcoming, true, context),
+                  _legendItem(
+                    context.calendarTodayBorder.withValues(alpha: 0.7),
                     'Today',
-                    context,
                   ),
-                  _buildLegendItem(
-                    _getStatusColor(ReadingStatus.missed, false, context),
+                  _legendItem(
+                    context.calendarMissedBorder.withValues(alpha: 0.3),
                     'Missed',
-                    context,
                   ),
-                  _buildLegendItem(
-                    _getStatusColor(ReadingStatus.upcoming, false, context),
+                  _legendItem(
+                    context.calendarUpcomingBorder
+                        .withValues(alpha: 0.3),
                     'Upcoming',
-                    context,
                   ),
                 ],
               ),
@@ -402,53 +313,26 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar> {
     );
   }
 
-  Widget _buildLegendItem(
-    Color color,
-    String label,
-    BuildContext context,
-  ) {
+  Widget _legendItem(Color borderColor, String label, {Color? fill}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Color swatch
         Container(
-          width: 12,
-          height: 12,
+          width: 16,
+          height: 16,
           decoration: BoxDecoration(
-            color: color,
-            border: Border.all(
-              color: context.legendBorder,
-            ),
-            borderRadius: BorderRadius.circular(2),
+            color: fill ?? Colors.transparent,
+            border: Border.all(color: borderColor, width: 2),
+            borderRadius: BorderRadius.circular(4),
           ),
         ),
-        const SizedBox(width: 4),
-        // Label text
+        const SizedBox(width: 6),
         Text(
           label,
-          style: AppFonts.normal(context, size: FontSize.small).copyWith(
-            color: context.legendText,
-          ),
+          style: AppFonts.normal(context, size: FontSize.small)
+              .copyWith(color: context.legendText),
         ),
       ],
     );
-  }
-
-  String _getMonthName(int month) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return months[month - 1];
   }
 }
