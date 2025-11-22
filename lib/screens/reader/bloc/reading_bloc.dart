@@ -244,19 +244,6 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     }
   }
 
-  static Future<DateTime?> getLastAccessedDay() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final dateString = prefs.getString(_lastAccessedKey);
-      if (dateString != null) {
-        return DateTime.parse(dateString);
-      }
-    } on Exception {
-      // Error getting last accessed day - fail silently
-    }
-    return null;
-  }
-
   String _dateToKey(DateTime date) {
     final normalized = _normalizeDate(date);
     final month = normalized.month.toString().padLeft(2, '0');

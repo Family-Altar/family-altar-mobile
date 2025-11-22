@@ -1,21 +1,18 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 class Utils {
-  static DateTime fromDayToDate(int dayOfYear, int year) {
-    final firstDayOfYear = DateTime(year);
-    return firstDayOfYear.add(Duration(days: dayOfYear - 1));
-  }
+  static const String _lastAccessedKey = 'last_accessed_day';
 
-  /// Convert a DateTime to its day-of-year number (1–366).
-  /// Example: Jan 1 -> 1, Feb 1 -> 32
-  static int fromDateToDay(DateTime date) {
-    final firstDayOfYear = DateTime(date.year);
-    return date.difference(firstDayOfYear).inDays + 1;
-  }
-
-  static int getTotalDays() {
-    final now = DateTime.now();
-    final year = now.year;
-    // Check if it's a leap year
-    final isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-    return isLeapYear ? 366 : 365;
+  static Future<DateTime?> getLastAccessedDay() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final dateString = prefs.getString(_lastAccessedKey);
+      if (dateString != null) {
+        return DateTime.parse(dateString);
+      }
+    } on Exception {
+      // Error getting last accessed day - fail silently
+    }
+    return null;
   }
 }
