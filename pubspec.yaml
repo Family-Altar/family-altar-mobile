@@ -79,8 +79,7 @@ flutter:
   assets:
     - assets/images/
     - assets/volume_I/daily_readings/
-    - assets/volume_I/Foreword.txt
-    - assets/volume_I/Preface.txt
+    - assets/volume_I/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
