@@ -8,8 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-
- class ThemeOption {
+class ThemeOption {
   const ThemeOption({
     required this.title,
     required this.subtitle,
@@ -20,6 +19,7 @@ import 'package:go_router/go_router.dart';
   final String subtitle;
   final ThemeMode value;
 }
+
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -48,12 +48,9 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(
         toolbarHeight: 48,
         backgroundColor: context.appBarColor,
-        title: Text(
-          'Settings',
-          style: AppFonts.bold(context),
-        ),
+        title: Text('Settings', style: AppFonts.bold(context)),
         leading: IconButton(
-          onPressed: () => context.pop(),
+          onPressed: context.pop,
           icon: Icon(
             Icons.arrow_back,
             color: context.textColor,
@@ -67,6 +64,11 @@ class SettingsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Card(
+              color: context.backgroundColor.withValues(alpha: 0.8),
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -76,43 +78,74 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.palette_outlined,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: context.accent,
                           size: AppIcons.getIconSize(IconSize.medium),
                         ),
                         const SizedBox(width: 12),
                         Text(
                           'Theme Settings',
-                          style: AppFonts.bold(context, size: FontSize.large),
+                          style: AppFonts.bold(
+                            context,
+                            size: FontSize.large,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
+
                     BlocBuilder<ThemeBloc, ThemeState>(
                       builder: (context, state) {
+                        final currentMode = state.themeMode;
+
                         return RadioGroup<ThemeMode>(
-                          groupValue: state.themeMode,
-                          onChanged: (ThemeMode? value) {
+                          groupValue: currentMode,
+                          onChanged: (value) {
                             if (value != null) {
-                              context.read<ThemeBloc>().add(
-                                ThemeSetEvent(value),
-                              );
+                              context
+                                  .read<ThemeBloc>()
+                                  .add(ThemeSetEvent(value));
                             }
                           },
                           child: Column(
                             children: themeOptions.map((option) {
-                              return RadioListTile<ThemeMode>(
+                              final isSelected =
+                                  currentMode == option.value;
+
+                              return RadioListTile<ThemeMode>.adaptive(
+                                contentPadding:
+                                    const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
                                 title: Text(
                                   option.title,
-                                  style: AppFonts.normal(context),
+                                  style: AppFonts.normal(context).copyWith(
+                                    color: context.textColor,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
                                 ),
                                 subtitle: Text(
                                   option.subtitle,
                                   style: AppFonts.normal(
                                     context,
                                     size: FontSize.small,
+                                  ).copyWith(
+                                    color: context.textColor,
                                   ),
                                 ),
                                 value: option.value,
+                                activeColor: context.accent,
+                                selected: isSelected,
+                                selectedTileColor: context.accent
+                                    .withValues(alpha: 0.12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(10),
+                                ),
+                                tileColor: Colors.transparent,
+                                dense: true,
+
                               );
                             }).toList(),
                           ),
@@ -129,4 +162,3 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
-

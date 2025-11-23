@@ -8,9 +8,12 @@ import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/screens/reader/reader_screen.dart';
 import 'package:family_altar/screens/settings/settings_screen.dart';
 import 'package:family_altar/storage/local_reading_storage.dart';
-import 'package:family_altar/theme/bloc/theme_provider.dart';
+import 'package:family_altar/theme/bloc/theme_bloc.dart';
+import 'package:family_altar/theme/bloc/theme_event.dart';
+import 'package:family_altar/theme/bloc/theme_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 final GoRouter _router = GoRouter(
@@ -24,9 +27,7 @@ final GoRouter _router = GoRouter(
       routes: <RouteBase>[
         GoRoute(
           path: 'settings',
-          builder: (BuildContext context, GoRouterState state) {
-            return const SettingsScreen();
-          },
+          builder: (context, state) => const SettingsScreen(),
         ),
         GoRoute(
           path: 'book-selection',
@@ -36,7 +37,7 @@ final GoRouter _router = GoRouter(
         ),
         GoRoute(
           path: 'reader',
-          builder: (BuildContext context, GoRouterState state) {
+          builder: (context, state) {
             final date = state.extra as DateTime?;
             return ReaderScreenProvider(date: date!);
           },
@@ -52,43 +53,80 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(
       path: '/missed-days/book-:volumeId',
-      builder: (BuildContext context, GoRouterState state) {
+      builder: (context, state) {
         final volumeId = state.pathParameters['volumeId'] ?? '1';
         return MissedDaysScreen(volumeId: volumeId);
       },
     ),
   ],
 );
-void main() {
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize your repositories
   final localReadingStorage = LocalReadingStorage();
   final readingRepository = ReadingRepository(localReadingStorage);
-  WidgetsFlutterBinding.ensureInitialized();
+
   runApp(
     TranslationProvider(
       child: MultiRepositoryProvider(
         providers: [
-          RepositoryProvider<LocalReadingStorage>.value(
-            value: localReadingStorage,
-          ),
-          RepositoryProvider<ReadingRepository>.value(value: readingRepository),
-          BlocProvider(
-            create:
-                (_) =>
-                    ReadingBloc(readingRepository: readingRepository)
-                      ..add(LoadReadingEvent(date: DateTime.now())),
-          ),
+          RepositoryProvider.value(value: localReadingStorage),
+          RepositoryProvider.value(value: readingRepository),
         ],
-        child: const MyApp(),
+        child: MultiBlocProvider(
+          providers: [
+            // Global ReadingBloc
+            BlocProvider(
+              create:
+                  (_) =>
+                      ReadingBloc(readingRepository: readingRepository)
+                        ..add(LoadReadingEvent(date: DateTime.now())),
+            ),
+            BlocProvider(
+              create: (_) => ThemeBloc()..add(const ThemeInitializeEvent()),
+            ),
+          ],
+          child: MyApp(router: _router),
+        ),
       ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({required this.router, super.key});
+
+  final GoRouter router;
 
   @override
   Widget build(BuildContext context) {
-    return ThemeProvider(router: _router, child: const SizedBox.shrink());
+    return BlocBuilder<ThemeBloc, ThemeState>(
+      builder: (context, themeState) {
+        return MaterialApp.router(
+          routerConfig: router,
+          title: 'The Family Altar',
+          debugShowCheckedModeBanner: false,
+          theme: themeState.lightTheme,
+          darkTheme: themeState.darkTheme,
+          themeMode: themeState.themeMode,
+          locale: TranslationProvider.of(context).flutterLocale,
+          supportedLocales: AppLocaleUtils.supportedLocales,
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          builder: (context, child) {
+            final mediaQuery = MediaQuery.of(context);
+            return MediaQuery(
+              data: mediaQuery.copyWith(textScaler: TextScaler.noScaling),
+              child: child!,
+            );
+          },
+        );
+      },
+    );
   }
 }
