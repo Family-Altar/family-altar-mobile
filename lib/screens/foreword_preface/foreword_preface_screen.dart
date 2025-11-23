@@ -127,10 +127,18 @@ class _ContentBody extends StatelessWidget {
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              loadedState.page.text.replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), ' '),
-              textAlign: TextAlign.left,
-              style: AppFonts.normal(context),
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey(loadedState.section),
+              duration: const Duration(milliseconds: 200),
+              tween: Tween(begin: 0, end: 1),
+              builder: (context, value, child) {
+                return Opacity(opacity: value, child: child);
+              },
+              child: Text(
+                loadedState.page.text.replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), ' '),
+                textAlign: TextAlign.left,
+                style: AppFonts.normal(context),
+              ),
             ),
           ),
         ),
