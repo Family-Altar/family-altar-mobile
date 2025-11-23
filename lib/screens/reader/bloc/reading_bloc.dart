@@ -21,6 +21,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
   }
 
   final ReadingRepository readingRepository;
+  final Map<DateTime, Reading> _readingCache = {};
 
   static const String _storageKey = 'reading_entries';
   static const String _lastAccessedKey = 'last_accessed_day';
@@ -36,18 +37,25 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       final entries = await _loadEntries();
 
       // Load the actual reading content
-      final reading = await readingRepository.fetchReading(date: event.date);
+      final normalizedDate = _normalizeDate(event.date);
+      _readingCache
+        ..clear()
+        ..[normalizedDate] = await readingRepository.fetchReading(
+          date: normalizedDate,
+        );
 
       // Save last accessed day
-      await _saveLastAccessedDay(event.date);
+      await _saveLastAccessedDay(normalizedDate);
 
       emit(
         ReadingLoaded(
-          reading: reading,
-          currentDate: event.date,
+          reading: _readingCache[normalizedDate]!,
+          currentDate: normalizedDate,
           entries: entries,
         ),
       );
+
+      await _prefetchSurroundingDays(normalizedDate);
     } on Exception catch (e) {
       emit(ReadingError('Failed to load reading: $e'));
     }
@@ -61,15 +69,16 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
     final currentState = state as ReadingLoaded;
 
-    final nextDate = currentState.currentDate.add(const Duration(days: 1));
-
-    emit(ReadingLoading());
+    final nextDate = _normalizeDate(
+      currentState.currentDate.add(const Duration(days: 1)),
+    );
 
     try {
-      final reading = await readingRepository.fetchReading(date: nextDate);
+      final reading = await _getOrFetchReading(nextDate);
       await _saveLastAccessedDay(nextDate);
 
       emit(currentState.copyWith(reading: reading, currentDate: nextDate));
+      await _prefetchSurroundingDays(nextDate);
     } on Exception catch (e) {
       emit(ReadingError('Failed to load next reading: $e'));
     }
@@ -83,15 +92,16 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
     final currentState = state as ReadingLoaded;
 
-    emit(ReadingLoading());
-
-    final prevDate = currentState.currentDate.subtract(const Duration(days: 1));
+    final prevDate = _normalizeDate(
+      currentState.currentDate.subtract(const Duration(days: 1)),
+    );
 
     try {
-      final reading = await readingRepository.fetchReading(date: prevDate);
+      final reading = await _getOrFetchReading(prevDate);
       await _saveLastAccessedDay(prevDate);
 
       emit(currentState.copyWith(reading: reading, currentDate: prevDate));
+      await _prefetchSurroundingDays(prevDate);
     } on Exception catch (e) {
       emit(ReadingError('Failed to load previous reading: $e'));
     }
@@ -241,6 +251,39 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       await prefs.setString(_lastAccessedKey, date.toIso8601String());
     } on Exception {
       // Error saving last accessed day - fail silently
+    }
+  }
+
+  Future<Reading> _getOrFetchReading(DateTime date) async {
+    final normalized = _normalizeDate(date);
+    final cached = _readingCache[normalized];
+    if (cached != null) return cached;
+
+    final reading = await readingRepository.fetchReading(date: normalized);
+    _readingCache[normalized] = reading;
+    return reading;
+  }
+
+  Future<void> _prefetchSurroundingDays(DateTime date) async {
+    final prev = date.subtract(const Duration(days: 1));
+    final next = date.add(const Duration(days: 1));
+
+    await Future.wait([
+      _maybePrefetch(prev),
+      _maybePrefetch(next),
+    ]);
+  }
+
+  Future<void> _maybePrefetch(DateTime date) async {
+    final normalized = _normalizeDate(date);
+    if (_readingCache.containsKey(normalized)) return;
+
+    try {
+      _readingCache[normalized] = await readingRepository.fetchReading(
+        date: normalized,
+      );
+    } on Exception {
+      // Ignore prefetch failures - we'll fetch on demand later
     }
   }
 
