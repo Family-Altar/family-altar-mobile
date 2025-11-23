@@ -16,6 +16,7 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
   }
 
   final ReadingRepository readingRepository;
+  final Map<Section, Page> _pageCache = {};
 
   static const List<Section> _sectionOrder = [
     Section.foreword,
@@ -27,7 +28,7 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
     LoadPageEvent event,
     Emitter<ForewordPrefaceState> emit,
   ) async {
-    await _loadSection(event.sect, emit);
+    await _loadSection(event.sect, emit, showLoading: true);
   }
 
   Future<void> _onNext(
@@ -38,7 +39,7 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
     final currentState = state as PageLoaded;
     final nextSection = _nextSection(currentState.section);
     if (nextSection == null) return;
-    await _loadSection(nextSection, emit);
+    await _loadSection(nextSection, emit, showLoading: false);
   }
 
   Future<void> _onPrevious(
@@ -49,16 +50,19 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
     final currentState = state as PageLoaded;
     final previousSection = _previousSection(currentState.section);
     if (previousSection == null) return;
-    await _loadSection(previousSection, emit);
+    await _loadSection(previousSection, emit, showLoading: false);
   }
 
   Future<void> _loadSection(
     Section section,
-    Emitter<ForewordPrefaceState> emit,
-  ) async {
-    emit(PageLoading());
+    Emitter<ForewordPrefaceState> emit, {
+    required bool showLoading,
+  }) async {
+    if (showLoading) {
+      emit(PageLoading());
+    }
     try {
-      final page = await readingRepository.fetchPage(sect: section);
+      final page = await _getOrFetchPage(section);
       emit(
         PageLoaded(
           page: page,
@@ -67,6 +71,7 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
           hasPrevious: _hasPrevious(section),
         ),
       );
+      await _prefetchSurroundingSections(section);
     } on Exception catch (e) {
       emit(PageError('Failed to load $section: $e'));
     }
@@ -89,4 +94,37 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
   bool _hasNext(Section section) => _nextSection(section) != null;
 
   bool _hasPrevious(Section section) => _previousSection(section) != null;
+
+  Future<Page> _getOrFetchPage(Section section) async {
+    final cached = _pageCache[section];
+    if (cached != null) return cached;
+
+    final page = await readingRepository.fetchPage(sect: section);
+    _pageCache[section] = page;
+    return page;
+  }
+
+  Future<void> _prefetchSurroundingSections(Section section) async {
+    final futures = <Future<void>>[];
+    final next = _nextSection(section);
+    final previous = _previousSection(section);
+
+    if (next != null) {
+      futures.add(_maybePrefetch(next));
+    }
+    if (previous != null) {
+      futures.add(_maybePrefetch(previous));
+    }
+
+    await Future.wait(futures);
+  }
+
+  Future<void> _maybePrefetch(Section section) async {
+    if (_pageCache.containsKey(section)) return;
+    try {
+      _pageCache[section] = await readingRepository.fetchPage(sect: section);
+    } on Exception {
+      // Ignore prefetch errors; section will be fetched on demand later.
+    }
+  }
 }

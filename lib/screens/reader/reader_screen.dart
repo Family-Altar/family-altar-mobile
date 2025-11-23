@@ -149,41 +149,49 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Text(
-                            state.reading.scripture.replaceAll('\n', ' '),
-                            textAlign: TextAlign.center,
-                            style: AppFonts.italics(
-                              context,
-                            ).copyWith(fontSize: fontSize),
-                            textScaler: TextScaler.noScaling,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            state.reading.quote.replaceAll('\n', ' '),
-                            textAlign: TextAlign.left,
-                            style: AppFonts.normal(
-                              context,
-                            ).copyWith(fontSize: fontSize),
-                          ),
-                          const SizedBox(height: 8),
-                          const Divider(),
-                          Text(
-                            'Daily Reading:',
-                            textAlign: TextAlign.center,
-                            style: AppFonts.bold(
-                              context,
-                            ).copyWith(fontSize: fontSize),
-                          ),
-                          Text(
-                            state.reading.dailyReading,
-                            textAlign: TextAlign.left,
-                            style: AppFonts.bold(
-                              context,
-                            ).copyWith(fontSize: fontSize),
-                          ),
-                        ],
+                      child: TweenAnimationBuilder<double>(
+                        key: ValueKey(state.reading.date),
+                        duration: const Duration(milliseconds: 200),
+                        tween: Tween(begin: 0, end: 1),
+                        builder: (context, value, child) {
+                          return Opacity(opacity: value, child: child);
+                        },
+                        child: Column(
+                          children: [
+                            Text(
+                              state.reading.scripture.replaceAll('\n', ' '),
+                              textAlign: TextAlign.center,
+                              style: AppFonts.italics(
+                                context,
+                              ).copyWith(fontSize: fontSize),
+                              textScaler: TextScaler.noScaling,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              state.reading.quote.replaceAll('\n', ' '),
+                              textAlign: TextAlign.left,
+                              style: AppFonts.normal(
+                                context,
+                              ).copyWith(fontSize: fontSize),
+                            ),
+                            const SizedBox(height: 8),
+                            const Divider(),
+                            Text(
+                              'Daily Reading:',
+                              textAlign: TextAlign.center,
+                              style: AppFonts.bold(
+                                context,
+                              ).copyWith(fontSize: fontSize),
+                            ),
+                            Text(
+                              state.reading.dailyReading,
+                              textAlign: TextAlign.left,
+                              style: AppFonts.bold(
+                                context,
+                              ).copyWith(fontSize: fontSize),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
