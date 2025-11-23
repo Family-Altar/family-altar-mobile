@@ -1,3 +1,5 @@
+import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
+import 'package:family_altar/screens/reader/domain/page.dart';
 import 'package:family_altar/screens/reader/domain/reading.dart';
 import 'package:family_altar/storage/local_reading_storage.dart';
 
@@ -31,24 +33,13 @@ class ReadingRepository {
 
     // --- Extract sections based on indices ---
     final scripture =
-        text
-            .substring(
-              dateIndex + dateText.length,
-              scriptureEndIndex,
-            )
-            .trim();
+        text.substring(dateIndex + dateText.length, scriptureEndIndex).trim();
     const dailyReadingSearch = 'Daily Reading:';
     final dailyReadingIndex = text.indexOf(dailyReadingSearch);
     final dailyReading =
         text.substring(dailyReadingIndex + dailyReadingSearch.length).trim();
 
-    final quote =
-        text
-            .substring(
-              scriptureEndIndex,
-              dailyReadingIndex,
-            )
-            .trim();
+    final quote = text.substring(scriptureEndIndex, dailyReadingIndex).trim();
 
     // --- Construct Reading object ---
     final reading = Reading(
@@ -59,5 +50,10 @@ class ReadingRepository {
     );
 
     return reading;
+  }
+
+  Future<Page> fetchPage({required Section sect}) async {
+    final text = await _localReadingStorage.fetchPage(sect: sect);
+    return Page(text: text);
   }
 }

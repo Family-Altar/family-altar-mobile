@@ -30,7 +30,7 @@ environment:
 dependencies:
   bloc: ^8.1.0
   cupertino_icons: ^1.0.8
-  equatable: ^2.0.5
+  equatable: ^2.0.5 
   flutter:
     sdk: flutter
   flutter_bloc: ^8.1.6
@@ -47,6 +47,7 @@ dependencies:
   slang_build_runner: ^4.8.1
   slang_flutter: ^4.8.0
   syncfusion_flutter_calendar: ^31.1.23
+  transparent_image: ^2.0.1
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -80,6 +81,7 @@ flutter:
   assets:
     - assets/images/
     - assets/volume_I/daily_readings/
+    - assets/volume_I/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

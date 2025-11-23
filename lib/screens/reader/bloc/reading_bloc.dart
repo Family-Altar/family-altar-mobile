@@ -101,8 +101,6 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     MarkAsReadEvent event,
     Emitter<ReadingState> emit,
   ) async {
-    if (state is! ReadingLoaded) return;
-
     final currentState = state as ReadingLoaded;
     final dateKey = _dateToKey(event.date);
 
@@ -244,19 +242,6 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     } on Exception {
       // Error saving last accessed day - fail silently
     }
-  }
-
-  static Future<DateTime?> getLastAccessedDay() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final dateString = prefs.getString(_lastAccessedKey);
-      if (dateString != null) {
-        return DateTime.parse(dateString);
-      }
-    } on Exception {
-      // Error getting last accessed day - fail silently
-    }
-    return null;
   }
 
   String _dateToKey(DateTime date) {

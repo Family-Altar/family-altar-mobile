@@ -1,7 +1,7 @@
-import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
+import 'package:family_altar/utils/utilities.dart';
 import 'package:family_altar/widgets/banner_widget.dart';
 import 'package:family_altar/widgets/calendar_widget.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Future<DateTime> _getLastReadingOrToday() async {
     // Try to get the last accessed day from storage
-    final lastAccessed = await ReadingBloc.getLastAccessedDay();
+    final lastAccessed = await Utils.getLastAccessedDay();
     if (lastAccessed != null) {
       return lastAccessed;
     }
@@ -33,10 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         toolbarHeight: 48,
         backgroundColor: context.appBarColor,
-        title: Text(
-          widget.title,
-          style: AppFonts.bold(context),
-        ),
+        title: Text(widget.title, style: AppFonts.bold(context)),
         actions: [
           // Button to navigate to Book Selection screen
           Container(
@@ -53,10 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 foregroundColor:
                     context.isDarkMode ? Colors.white : Colors.black,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -70,10 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Settings screen
           IconButton(
             onPressed: () => context.push('/settings'),
-            icon: Icon(
-              Icons.settings,
-              color: context.textColor,
-            ),
+            icon: Icon(Icons.settings, color: context.textColor),
             tooltip: 'Settings',
             iconSize: AppIcons.getIconSize(IconSize.medium),
           ),

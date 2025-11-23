@@ -10,7 +10,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
-
 class ReaderScreenProvider extends StatefulWidget {
   const ReaderScreenProvider({required this.date, super.key});
   final DateTime date;
@@ -50,9 +49,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void _onScrollEnd() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      context.read<ReadingBloc>().add(
-            MarkAsReadEvent(widget.date),
-          );
+      context.read<ReadingBloc>().add(MarkAsReadEvent(widget.date));
     }
   }
 
@@ -86,10 +83,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 toolbarHeight: 48,
                 backgroundColor: context.appBarColor,
                 centerTitle: true,
-                title: Text(
-                  state.reading.date,
-                  style: AppFonts.bold(context),
-                ),
+                title: Text(state.reading.date, style: AppFonts.bold(context)),
                 leading: IconButton(
                   onPressed: context.pop,
                   icon: Icon(
@@ -98,18 +92,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     size: AppIcons.getIconSize(IconSize.medium),
                   ),
                 ),
-              actions: [
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.share,
+                      color: context.textColor,
+                      size: AppIcons.getIconSize(IconSize.medium),
+                    ),
+                    onPressed: () async {
+                      final reading = state.reading;
 
-            IconButton(
-              icon: Icon(
-                Icons.share,
-                color: context.textColor,
-                size: AppIcons.getIconSize(IconSize.medium),
-              ),
-              onPressed: () async {
-                final reading = state.reading;
-
-                final shareContent = '''
+                      final shareContent =
+                          '''
                 ${reading.scripture.replaceAll('\n', '')}
 
                 ${reading.quote.replaceAll('\n', '')}
@@ -118,38 +112,36 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 ${reading.dailyReading}
                 '''.trimLeft();
 
-                final fullShareText = '''
+                      final fullShareText =
+                          '''
                 Family Altar Reading
                 ${reading.date}
 
                 $shareContent
                 '''.trimLeft();
 
+                      await Share.share(fullShareText);
+                    },
+                  ),
 
-            await Share.share(fullShareText);
-
-    },
-  ),
-
-  IconButton(
-    icon: Icon(
-      Icons.settings,
-      color: context.textColor,
-      size: AppIcons.getIconSize(IconSize.medium),
-    ),
-    onPressed: () {
-      showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: Colors.transparent,
-        barrierColor: Colors.transparent,
-        isScrollControlled: true,
-        useSafeArea: true,
-        builder: (_) => const _SettingsBottomSheet(),
-      );
-    },
-  ),
-]
-
+                  IconButton(
+                    icon: Icon(
+                      Icons.settings,
+                      color: context.textColor,
+                      size: AppIcons.getIconSize(IconSize.medium),
+                    ),
+                    onPressed: () {
+                      showModalBottomSheet<void>(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        barrierColor: Colors.transparent,
+                        isScrollControlled: true,
+                        useSafeArea: true,
+                        builder: (_) => const _SettingsBottomSheet(),
+                      );
+                    },
+                  ),
+                ],
               ),
               body: SingleChildScrollView(
                 controller: _scrollController,
@@ -160,36 +152,36 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       child: Column(
                         children: [
                           Text(
-                            state.reading.scripture.replaceAll('\n', ''),
+                            state.reading.scripture.replaceAll('\n', ' '),
                             textAlign: TextAlign.center,
-                            style: AppFonts.italics(context).copyWith(
-                              fontSize: fontSize,
-                            ),
+                            style: AppFonts.italics(
+                              context,
+                            ).copyWith(fontSize: fontSize),
                             textScaler: TextScaler.noScaling,
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            state.reading.quote.replaceAll('\n', ''),
+                            state.reading.quote.replaceAll('\n', ' '),
                             textAlign: TextAlign.left,
-                            style: AppFonts.normal(context).copyWith(
-                              fontSize: fontSize,
-                            ),
+                            style: AppFonts.normal(
+                              context,
+                            ).copyWith(fontSize: fontSize),
                           ),
                           const SizedBox(height: 8),
                           const Divider(),
                           Text(
                             'Daily Reading:',
                             textAlign: TextAlign.center,
-                            style: AppFonts.bold(context).copyWith(
-                              fontSize: fontSize,
-                            ),
+                            style: AppFonts.bold(
+                              context,
+                            ).copyWith(fontSize: fontSize),
                           ),
                           Text(
                             state.reading.dailyReading,
                             textAlign: TextAlign.left,
-                            style: AppFonts.bold(context).copyWith(
-                              fontSize: fontSize,
-                            ),
+                            style: AppFonts.bold(
+                              context,
+                            ).copyWith(fontSize: fontSize),
                           ),
                         ],
                       ),
@@ -204,9 +196,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: context.appBarColor,
-                  border: Border(
-                    top: BorderSide(color: Colors.grey.shade300),
-                  ),
+                  border: Border(top: BorderSide(color: Colors.grey.shade300)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -215,17 +205,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       color: context.textColor,
                       icon: const Icon(Icons.arrow_circle_left_outlined),
                       iconSize: 50,
-                      onPressed: () => context
-                          .read<ReadingBloc>()
-                          .add(const PreviousReadingEvent()),
+                      onPressed:
+                          () => context.read<ReadingBloc>().add(
+                            const PreviousReadingEvent(),
+                          ),
                     ),
                     IconButton(
                       color: context.textColor,
                       icon: const Icon(Icons.arrow_circle_right_outlined),
                       iconSize: 50,
-                      onPressed: () => context
-                          .read<ReadingBloc>()
-                          .add(const NextReadingEvent()),
+                      onPressed:
+                          () => context.read<ReadingBloc>().add(
+                            const NextReadingEvent(),
+                          ),
                     ),
                   ],
                 ),
@@ -264,9 +256,9 @@ class _FontSizeControl extends StatelessWidget {
               final newSize = nextValue.clamp(_min, _max);
 
               if (newSize != current) {
-                context
-                    .read<ThemeBloc>()
-                    .add(ThemeReadingFontSizeChanged(newSize));
+                context.read<ThemeBloc>().add(
+                  ThemeReadingFontSizeChanged(newSize),
+                );
               }
             },
             child: Container(
@@ -350,20 +342,17 @@ class _SettingsBottomSheet extends StatelessWidget {
       height: MediaQuery.sizeOf(context).height * 0.5,
       decoration: BoxDecoration(
         color: context.appBarColor,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         border: Border.all(
-          color: dark
-              ? Colors.grey.shade700
-              : context.accent.withValues(alpha: 0.2),
+          color:
+              dark
+                  ? Colors.grey.shade700
+                  : context.accent.withValues(alpha: 0.2),
           width: 0.3,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: dark ? 0.3 : 0.1,
-            ),
+            color: Colors.black.withValues(alpha: dark ? 0.3 : 0.1),
             blurRadius: 20,
             offset: const Offset(0, -2),
           ),
@@ -386,71 +375,76 @@ class _SettingsBottomSheet extends StatelessWidget {
                   groupValue: mode,
                   onChanged: (value) {
                     if (value != null) {
-                      context.read<ThemeBloc>().add(
-                            ThemeSetEvent(value),
-                          );
+                      context.read<ThemeBloc>().add(ThemeSetEvent(value));
                     }
                   },
                   child: Column(
-                    children: _options.map((o) {
-                      final isSelected = mode == o.value;
+                    children:
+                        _options.map((o) {
+                          final isSelected = mode == o.value;
 
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(10),
-                          onTap: () => context
-                              .read<ThemeBloc>()
-                              .add(ThemeSetEvent(o.value)),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? context.accent.withValues(alpha: 0.05)
-                                  : null,
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: InkWell(
                               borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              children: [
-                                Radio<ThemeMode>(
-                                  value: o.value,
-                                  activeColor: context.accent,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        o.title,
-                                        style: AppFonts.normal(context)
-                                            .copyWith(
-                                          color: context.textColor,
-                                          fontWeight: isSelected
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                        ),
-                                      ),
-                                      Text(
-                                        o.subtitle,
-                                        style: AppFonts.normal(
-                                          context,
-                                          size: FontSize.small,
-                                        ).copyWith(
-                                          color: context.textColor
-                                              .withValues(alpha: 0.7),
-                                        ),
-                                      ),
-                                    ],
+                              onTap:
+                                  () => context.read<ThemeBloc>().add(
+                                    ThemeSetEvent(o.value),
                                   ),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isSelected
+                                          ? context.accent.withValues(
+                                            alpha: 0.05,
+                                          )
+                                          : null,
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                              ],
+                                child: Row(
+                                  children: [
+                                    Radio<ThemeMode>(
+                                      value: o.value,
+                                      activeColor: context.accent,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            o.title,
+                                            style: AppFonts.normal(
+                                              context,
+                                            ).copyWith(
+                                              color: context.textColor,
+                                              fontWeight:
+                                                  isSelected
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
+                                            ),
+                                          ),
+                                          Text(
+                                            o.subtitle,
+                                            style: AppFonts.normal(
+                                              context,
+                                              size: FontSize.small,
+                                            ).copyWith(
+                                              color: context.textColor
+                                                  .withValues(alpha: 0.7),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                          );
+                        }).toList(),
                   ),
                 ),
               ],

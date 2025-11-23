@@ -1,6 +1,7 @@
 import 'package:family_altar/i18n/strings.g.dart';
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
+import 'package:family_altar/screens/foreword_preface/foreword_preface_screen.dart';
 import 'package:family_altar/screens/home/home_screen.dart';
 import 'package:family_altar/screens/missed_days/missed_days_screen.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
@@ -15,14 +16,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
-const String appTitle = 'The Family Altar - Tim Dodd';
-
 final GoRouter _router = GoRouter(
   initialLocation: '/',
   routes: <RouteBase>[
     GoRoute(
       path: '/',
-      builder: (context, state) => const HomeScreen(title: appTitle),
+      builder: (BuildContext context, GoRouterState state) {
+        return const HomeScreen(title: 'The Family Altar - Tim Dodd');
+      },
       routes: <RouteBase>[
         GoRoute(
           path: 'settings',
@@ -30,9 +31,8 @@ final GoRouter _router = GoRouter(
         ),
         GoRoute(
           path: 'book-selection',
-          builder: (context, state) {
-            final title = state.uri.queryParameters['title'] ?? appTitle;
-            return BookSelectionScreen(title: title);
+          builder: (BuildContext context, GoRouterState state) {
+            return const BookSelectionScreen(title: 'Book Selection');
           },
         ),
         GoRoute(
@@ -40,6 +40,13 @@ final GoRouter _router = GoRouter(
           builder: (context, state) {
             final date = state.extra as DateTime?;
             return ReaderScreenProvider(date: date!);
+          },
+        ),
+        GoRoute(
+          path: 'foreword-preface',
+          builder: (BuildContext context, GoRouterState state) {
+            final section = state.extra as Section? ?? Section.foreword;
+            return ForewordPrefaceScreenProvider(section: section);
           },
         ),
       ],
