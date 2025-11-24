@@ -1,4 +1,5 @@
 import 'package:family_altar/i18n/strings.g.dart';
+import 'package:family_altar/noti_service.dart';
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/screens/foreword_preface/foreword_preface_screen.dart';
@@ -63,6 +64,8 @@ final GoRouter _router = GoRouter(
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await NotiService().initNotification();
 
   // Initialize your repositories
   final localReadingStorage = LocalReadingStorage();

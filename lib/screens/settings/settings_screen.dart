@@ -1,3 +1,4 @@
+import 'package:family_altar/noti_service.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
@@ -63,6 +64,30 @@ class SettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Column(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    NotiService().showNotification(
+                      title: 'title',
+                      body: 'read now',
+                    );
+                  },
+                  child: const Text('hi'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    NotiService().scheduleNotification(
+                      title: 'title',
+                      body: 'read now',
+                      hour: 22,
+                      minute: 50,
+                    );
+                  },
+                  child: const Text('schedule'),
+                ),
+              ],
+            ),
             Card(
               color: context.backgroundColor.withValues(alpha: 0.8),
               elevation: 2,
@@ -84,10 +109,7 @@ class SettingsScreen extends StatelessWidget {
                         const SizedBox(width: 12),
                         Text(
                           'Theme Settings',
-                          style: AppFonts.bold(
-                            context,
-                            size: FontSize.large,
-                          ),
+                          style: AppFonts.bold(context, size: FontSize.large),
                         ),
                       ],
                     ),
@@ -101,53 +123,50 @@ class SettingsScreen extends StatelessWidget {
                           groupValue: currentMode,
                           onChanged: (value) {
                             if (value != null) {
-                              context
-                                  .read<ThemeBloc>()
-                                  .add(ThemeSetEvent(value));
+                              context.read<ThemeBloc>().add(
+                                ThemeSetEvent(value),
+                              );
                             }
                           },
                           child: Column(
-                            children: themeOptions.map((option) {
-                              final isSelected =
-                                  currentMode == option.value;
+                            children:
+                                themeOptions.map((option) {
+                                  final isSelected =
+                                      currentMode == option.value;
 
-                              return RadioListTile<ThemeMode>.adaptive(
-                                contentPadding:
-                                    const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                                title: Text(
-                                  option.title,
-                                  style: AppFonts.normal(context).copyWith(
-                                    color: context.textColor,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  option.subtitle,
-                                  style: AppFonts.normal(
-                                    context,
-                                    size: FontSize.small,
-                                  ).copyWith(
-                                    color: context.textColor,
-                                  ),
-                                ),
-                                value: option.value,
-                                activeColor: context.accent,
-                                selected: isSelected,
-                                selectedTileColor: context.accent
-                                    .withValues(alpha: 0.12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.circular(10),
-                                ),
-                                tileColor: Colors.transparent,
-                                dense: true,
-
-                              );
-                            }).toList(),
+                                  return RadioListTile<ThemeMode>.adaptive(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                    ),
+                                    title: Text(
+                                      option.title,
+                                      style: AppFonts.normal(context).copyWith(
+                                        color: context.textColor,
+                                        fontWeight:
+                                            isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      option.subtitle,
+                                      style: AppFonts.normal(
+                                        context,
+                                        size: FontSize.small,
+                                      ).copyWith(color: context.textColor),
+                                    ),
+                                    value: option.value,
+                                    activeColor: context.accent,
+                                    selected: isSelected,
+                                    selectedTileColor: context.accent
+                                        .withValues(alpha: 0.12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    tileColor: Colors.transparent,
+                                    dense: true,
+                                  );
+                                }).toList(),
                           ),
                         );
                       },
