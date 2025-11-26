@@ -73,18 +73,13 @@ class SettingsScreen extends StatelessWidget {
                       body: 'read now',
                     );
                   },
-                  child: const Text('hi'),
+                  child: const Text('instant notification'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    NotiService().scheduleNotification(
-                      title: 'title',
-                      body: 'read now',
-                      hour: 22,
-                      minute: 50,
-                    );
+                  child: const Text('Scheduled notification'),
+                  onPressed: () async {
+                    await NotiService().scheduleDailyTenAMNotification();
                   },
-                  child: const Text('schedule'),
                 ),
               ],
             ),
