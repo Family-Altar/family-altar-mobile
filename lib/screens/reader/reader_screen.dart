@@ -5,6 +5,7 @@ import 'package:family_altar/theme/app_icons.dart';
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:family_altar/theme/bloc/theme_event.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
+import 'package:family_altar/utils/utilities.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -81,7 +82,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               backgroundColor: context.backgroundColor,
               appBar: AppBar(
                 toolbarHeight: 48,
-                backgroundColor: context.appBarColor,
+                backgroundColor: context.backgroundColor,
                 centerTitle: true,
                 title: Text(state.reading.date, style: AppFonts.bold(context)),
                 leading: IconButton(
@@ -103,24 +104,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       final reading = state.reading;
 
                       final shareContent =
-                          '''
-                ${reading.scripture.replaceAll('\n', '')}
+                          Utils.unindent('''
+    ${reading.scripture.replaceAll('\n', '')}
 
-                ${reading.quote.replaceAll('\n', '')}
-
-                Daily Reading:
-                ${reading.dailyReading}
-                '''.trimLeft();
+    ${reading.quote.replaceAll('\n', '')}
+    Daily Reading:
+    ${reading.dailyReading}
+''').trim();
 
                       final fullShareText =
-                          '''
-                Family Altar Reading
-                ${reading.date}
+                          Utils.unindent('''
+    Family Altar Reading\n${reading.date}
 
-                $shareContent
-                '''.trimLeft();
+    $shareContent
+''').trim();
 
-                      await Share.share(fullShareText);
+                      await Share.share(fullShareText.trim());
                     },
                   ),
 
@@ -203,8 +202,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: context.appBarColor,
-                  border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                  color: context.backgroundColor,
+                  border: const Border(
+                    top: BorderSide(color: Color.fromARGB(58, 137, 136, 136)),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -349,7 +350,7 @@ class _SettingsBottomSheet extends StatelessWidget {
     return Container(
       height: MediaQuery.sizeOf(context).height * 0.5,
       decoration: BoxDecoration(
-        color: context.appBarColor,
+        color: context.backgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         border: Border.all(
           color:

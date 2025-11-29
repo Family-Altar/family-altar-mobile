@@ -60,7 +60,7 @@ class ForewordPrefaceScreen extends StatelessWidget {
             backgroundColor: context.backgroundColor,
             appBar: AppBar(
               toolbarHeight: 48,
-              backgroundColor: context.appBarColor,
+              backgroundColor: context.backgroundColor,
               centerTitle: true,
               title: Text(title, style: AppFonts.bold(context)),
               leading: IconButton(
@@ -135,7 +135,10 @@ class _ContentBody extends StatelessWidget {
                 return Opacity(opacity: value, child: child);
               },
               child: Text(
-                loadedState.page.text.replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), ' '),
+                loadedState.page.text.replaceAll(
+                  RegExp(r'(?<!\n)\n(?!\n)'),
+                  ' ',
+                ),
                 textAlign: TextAlign.left,
                 style: AppFonts.normal(context),
               ),

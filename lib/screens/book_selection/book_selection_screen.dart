@@ -35,7 +35,7 @@ class BookSelectionScreen extends StatelessWidget {
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         toolbarHeight: 48,
-        backgroundColor: context.appBarColor,
+        backgroundColor: context.backgroundColor,
         title: Text(title, style: AppFonts.bold(context, size: FontSize.large)),
         leading: IconButton(
           onPressed: () => context.pop(),
@@ -259,15 +259,15 @@ class _BookCoverInterior extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: context.surfaceColor.withValues(alpha: 0.95),
+        color: Color.fromARGB(235, 255, 246, 213).withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(12),
         // border: Border.all(color: const Color.fromARGB(255, 253, 233, 152)),
-        gradient: LinearGradient(
-          colors: [
-            const Color.fromARGB(235, 248, 231, 126).withValues(alpha: 0.25),
-            const Color.fromARGB(255, 255, 221, 136).withValues(alpha: 0.15),
-          ],
-        ),
+        // gradient: LinearGradient(
+        //   colors: [
+        //     const Color.fromARGB(235, 228, 197, 85).withValues(alpha: 0.25),
+        //     const Color.fromARGB(255, 255, 230, 165).withValues(alpha: 0.15),
+        //   ],
+        // ),
       ),
     );
   }
@@ -351,7 +351,10 @@ class _BookInnerPage extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: AppFonts.bold(context, size: FontSize.large),
+                        style: AppFonts.bold(
+                          context,
+                          size: FontSize.large,
+                        ).copyWith(color: Colors.black),
                       ),
                       AnimatedOpacity(
                         opacity: progress > 0.6 ? 1 : 0,
@@ -369,7 +372,10 @@ class _BookInnerPage extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Choose a section to begin reading:',
-                    style: AppFonts.normal(context, size: FontSize.small),
+                    style: AppFonts.normal(
+                      context,
+                      size: FontSize.small,
+                    ).copyWith(color: Colors.black),
                   ),
                   const SizedBox(height: 16),
                   ...sections.map(

@@ -128,7 +128,8 @@ extension ThemeColors on BuildContext {
   Color get backgroundColor =>
       isDarkMode ? AppColors.darkBackground : AppColors.lightBackground;
 
-  Color get surfaceColor => Theme.of(this).colorScheme.surface;
+  Color get surfaceColor =>
+      isDarkMode ? AppColors.darkAccent : AppColors.darkAccent;
   Color get textColor =>
       isDarkMode ? AppColors.darkOnBackground : AppColors.lightOnBackground;
 
@@ -136,84 +137,102 @@ extension ThemeColors on BuildContext {
   Color get appBarColor =>
       isDarkMode ? AppColors.darkSurface : AppColors.lightAppBar;
 
-  Color get primaryButtonBGColor => isDarkMode
-      ? AppColors.primaryButtonBGColorDark
-      : AppColors.primaryButtonBGColorLight;
+  Color get primaryButtonBGColor =>
+      isDarkMode
+          ? AppColors.primaryButtonBGColorDark
+          : AppColors.primaryButtonBGColorLight;
 
   // Calendar – Backgrounds
-  Color get calendarTodayBG => isDarkMode
-      ? AppColors.calendarTodayBGDark
-      : AppColors.calendarTodayBGLight;
+  Color get calendarTodayBG =>
+      isDarkMode
+          ? AppColors.calendarTodayBGDark
+          : AppColors.calendarTodayBGLight;
 
-  Color get calendarCompletedBG => isDarkMode
-      ? AppColors.calendarCompletedBGDark
-      : AppColors.calendarCompletedBGLight;
+  Color get calendarCompletedBG =>
+      isDarkMode
+          ? AppColors.calendarCompletedBGDark
+          : AppColors.calendarCompletedBGLight;
 
-  Color get calendarMissedBG => isDarkMode
-      ? AppColors.calendarMissedBGDark
-      : AppColors.calendarMissedBGLight;
+  Color get calendarMissedBG =>
+      isDarkMode
+          ? AppColors.calendarMissedBGDark
+          : AppColors.calendarMissedBGLight;
 
-  Color get calendarUpcomingBG => isDarkMode
-      ? AppColors.calendarUpcomingBGDark
-      : AppColors.calendarUpcomingBGLight;
+  Color get calendarUpcomingBG =>
+      isDarkMode
+          ? AppColors.calendarUpcomingBGDark
+          : AppColors.calendarUpcomingBGLight;
 
   // Calendar – Borders
-  Color get calendarTodayBorder => isDarkMode
-      ? AppColors.calendarTodayBorderDark
-      : AppColors.calendarTodayBorderLight;
+  Color get calendarTodayBorder =>
+      isDarkMode
+          ? AppColors.calendarTodayBorderDark
+          : AppColors.calendarTodayBorderLight;
 
-  Color get calendarCompletedBorder => isDarkMode
-      ? AppColors.calendarCompletedBorderDark
-      : AppColors.calendarCompletedBorderLight;
+  Color get calendarCompletedBorder =>
+      isDarkMode
+          ? AppColors.calendarCompletedBorderDark
+          : AppColors.calendarCompletedBorderLight;
 
-  Color get calendarMissedBorder => isDarkMode
-      ? AppColors.calendarMissedBorderDark
-      : AppColors.calendarMissedBorderLight;
+  Color get calendarMissedBorder =>
+      isDarkMode
+          ? AppColors.calendarMissedBorderDark
+          : AppColors.calendarMissedBorderLight;
 
-  Color get calendarUpcomingBorder => isDarkMode
-      ? AppColors.calendarUpcomingBorderDark
-      : AppColors.calendarUpcomingBorderLight;
+  Color get calendarUpcomingBorder =>
+      isDarkMode
+          ? AppColors.calendarUpcomingBorderDark
+          : AppColors.calendarUpcomingBorderLight;
 
   // Calendar – Icons & misc
   Color get calendarCompletedIcon => AppColors.calendarCompletedIcon;
   Color get calendarMissedIcon => AppColors.calendarMissedIcon;
 
-  Color get calendarDayHeader => isDarkMode
-      ? AppColors.calendarDayHeaderDark
-      : AppColors.calendarDayHeaderLight;
+  Color get calendarDayHeader =>
+      isDarkMode
+          ? AppColors.calendarDayHeaderDark
+          : AppColors.calendarDayHeaderLight;
 
-  Color get calendarCellBorder => isDarkMode
-      ? AppColors.calendarCellBorderDark
-      : AppColors.calendarCellBorderLight;
+  Color get calendarCellBorder =>
+      isDarkMode
+          ? AppColors.calendarCellBorderDark
+          : AppColors.calendarCellBorderLight;
 
-  Color get calendarTrailingDate => isDarkMode
-      ? AppColors.calendarTrailingDateDark
-      : AppColors.calendarTrailingDateLight;
+  Color get calendarTrailingDate =>
+      isDarkMode
+          ? AppColors.calendarTrailingDateDark
+          : AppColors.calendarTrailingDateLight;
 
-  Color get calendarDayText => isDarkMode
-      ? AppColors.calendarDayTextDark
-      : AppColors.calendarDayTextLight;
+  Color get calendarDayText =>
+      isDarkMode
+          ? AppColors.calendarDayTextDark
+          : AppColors.calendarDayTextLight;
 
-  Color get calendarDayTextSecondary => isDarkMode
-      ? AppColors.calendarDayTextSecondaryDark
-      : AppColors.calendarDayTextSecondaryLight;
+  Color get calendarDayTextSecondary =>
+      isDarkMode
+          ? AppColors.calendarDayTextSecondaryDark
+          : AppColors.calendarDayTextSecondaryLight;
 
-  Color get calendarUpcomingDayText => isDarkMode
-      ? AppColors.calendarUpcomingDayTextDark
-      : AppColors.calendarUpcomingDayTextLight;
+  Color get calendarUpcomingDayText =>
+      isDarkMode
+          ? AppColors.calendarUpcomingDayTextDark
+          : AppColors.calendarUpcomingDayTextLight;
 
-  Color get calendarMonthText => isDarkMode
-      ? AppColors.calendarMonthTextDark
-      : AppColors.calendarMonthTextLight;
+  Color get calendarMonthText =>
+      isDarkMode
+          ? AppColors.calendarMonthTextDark
+          : AppColors.calendarMonthTextLight;
 
   // Missed days badge
-  Color get missedDaysBadgeBG => isDarkMode
-      ? AppColors.missedDaysBadgeBGDark
-      : AppColors.missedDaysBadgeBGLight;
+  Color get missedDaysBadgeBG =>
+      isDarkMode
+          ? AppColors.missedDaysBadgeBGDark
+          : AppColors.missedDaysBadgeBGLight;
 
-  Color get missedDaysBadgeText => isDarkMode
-      ? AppColors.missedDaysBadgeTextDark
-      : AppColors.missedDaysBadgeTextLight;
+  Color get missedDaysBadgeText =>
+      isDarkMode
+          ? AppColors.missedDaysBadgeTextDark
+          : AppColors.missedDaysBadgeTextLight;
 
   // Legend
   Color get legendBorder =>

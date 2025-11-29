@@ -108,10 +108,10 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
           ),
           Text(
             headerDate,
-            style: AppFonts.bold(context, size: FontSize.small).copyWith(
-              color: context.calendarMonthText,
-              letterSpacing: 0.5,
-            ),
+            style: AppFonts.bold(
+              context,
+              size: FontSize.small,
+            ).copyWith(color: context.calendarMonthText, letterSpacing: 0.5),
           ),
           IconButton(
             onPressed: () => _changeMonth(1),
@@ -123,7 +123,10 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
   }
 
   Widget _buildStatsBar(
-      BuildContext context, String percentage, int missedCount) {
+    BuildContext context,
+    String percentage,
+    int missedCount,
+  ) {
     return Container(
       // MODIFIED: Reduced bottom margin from 12 to 6 (Less space before button)
       margin: const EdgeInsets.only(bottom: 6),
@@ -136,8 +139,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
       child: Row(
         children: [
           // Completed Stat
-          Icon(Icons.check,
-              size: 18, color: Colors.green.shade400),
+          Icon(Icons.check, size: 18, color: Colors.green.shade400),
           const SizedBox(width: 8),
           Text(
             "$percentage% Completed",
@@ -155,8 +157,10 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                 onTap: () => context.push('/missed-days/book-1'),
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     // UPDATED: Using cardColor/Surface instead of Red
                     color: context.backgroundColor,
@@ -168,20 +172,24 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.circle,
-                          size: 8, color: Colors.red.shade400),
+                      Icon(Icons.circle, size: 8, color: Colors.red.shade400),
                       const SizedBox(width: 2),
                       Text(
-                        "$missedCount Missed",
-                        style: AppFonts.normal(context, size: FontSize.small)
-                            .copyWith(
-                          color: const Color.fromARGB(255, 255, 255, 255),
+                        "  $missedCount Missed ",
+                        style: AppFonts.normal(
+                          context,
+                          size: FontSize.small,
+                        ).copyWith(
+                          color: Colors.grey,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Icon(Icons.arrow_forward,
-                          size: 8, color: Colors.red.shade400),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 16,
+                        color: Colors.red.shade400,
+                      ),
                     ],
                   ),
                 ),
@@ -213,11 +221,9 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
           icon: const Icon(Icons.auto_stories, size: 20),
           label: Text(
             'Continue were you left off',
-            style: AppFonts.bold(context).copyWith(
-              fontSize: 12,
-              color: Colors.white,
-              letterSpacing: 0.5,
-            ),
+            style: AppFonts.bold(
+              context,
+            ).copyWith(fontSize: 12, color: Colors.white, letterSpacing: 0.5),
           ),
         ),
       ),
@@ -230,23 +236,22 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
       builder: (context, state) {
         final loadedState = state is ReadingLoaded ? state : null;
         final missedDaysCount = loadedState?.getTotalMissedDaysCount() ?? 0;
-        final completionPercentage =
-            _calculateCompletionPercentage(missedDaysCount);
+        final completionPercentage = _calculateCompletionPercentage(
+          missedDaysCount,
+        );
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-                            // 2. Stats Dashboard
+              // 2. Stats Dashboard
               _buildStatsBar(context, completionPercentage, missedDaysCount),
-
 
               // 3. Primary CTA
               // _buildContinueButton(context),
-                            // 1. Navigation Header
+              // 1. Navigation Header
               _buildHeader(context),
-
 
               // 4. Calendar Grid
               Container(
@@ -282,11 +287,13 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                       _showLongPressDialog(context, details.date!, status);
                     }
                   },
-                  monthCellBuilder: (context, details) => _CalendarCell(
-                    date: details.date,
-                    status: loadedState?.getStatus(details.date) ??
-                        ReadingStatus.upcoming,
-                  ),
+                  monthCellBuilder:
+                      (context, details) => _CalendarCell(
+                        date: details.date,
+                        status:
+                            loadedState?.getStatus(details.date) ??
+                            ReadingStatus.upcoming,
+                      ),
                 ),
               ),
             ],
@@ -304,44 +311,52 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
     final isRead = status == ReadingStatus.completed;
     showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: context.dialogBG,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          isRead ? 'Mark as Unread' : 'Mark as Read',
-          style: AppFonts.bold(context).copyWith(color: context.dialogTitle),
-        ),
-        content: Text(
-          isRead
-              ? 'Do you want to mark this day as unread?'
-              : 'Do you want to mark this day as read?',
-          style: AppFonts.normal(context),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child:
-                Text('Cancel', style: TextStyle(color: context.dialogCancel)),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              context.read<ReadingBloc>().add(
+      builder:
+          (dialogContext) => AlertDialog(
+            backgroundColor: context.dialogBG,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Text(
+              isRead ? 'Mark as Unread' : 'Mark as Read',
+              style: AppFonts.bold(
+                context,
+              ).copyWith(color: context.dialogTitle),
+            ),
+            content: Text(
+              isRead
+                  ? 'Do you want to mark this day as unread?'
+                  : 'Do you want to mark this day as read?',
+              style: AppFonts.normal(context),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: context.dialogCancel),
+                ),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  context.read<ReadingBloc>().add(
                     isRead ? MarkAsUnreadEvent(date) : MarkAsReadEvent(date),
                   );
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: isRead
-                  ? AppColors.dialogMarkUnreadBG
-                  : AppColors.dialogMarkReadBG,
-            ),
-            child: Text(
-              isRead ? 'Mark Unread' : 'Mark Read',
-              style: const TextStyle(color: AppColors.dialogButtonText),
-            ),
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor:
+                      isRead
+                          ? AppColors.dialogMarkUnreadBG
+                          : AppColors.dialogMarkReadBG,
+                ),
+                child: Text(
+                  isRead ? 'Mark Unread' : 'Mark Read',
+                  style: const TextStyle(color: AppColors.dialogButtonText),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 }
@@ -357,7 +372,8 @@ class _CalendarCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isToday = DateTime.now().year == date.year &&
+    final isToday =
+        DateTime.now().year == date.year &&
         DateTime.now().month == date.month &&
         DateTime.now().day == date.day;
 
@@ -398,7 +414,7 @@ class _CalendarCell extends StatelessWidget {
         border: Border.all(
           color: borderColor,
           // Used determined border width. Reduced to 1.5 for non-today, but kept 2.0 for today.
-          width: isToday ? 2.0 : 1.0, 
+          width: isToday ? 2.0 : 1.0,
         ),
         borderRadius: BorderRadius.circular(10),
       ),
@@ -409,9 +425,10 @@ class _CalendarCell extends StatelessWidget {
               date.day.toString(),
               style: AppFonts.normal(context, size: FontSize.small).copyWith(
                 fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
-                color: status == ReadingStatus.upcoming
-                    ? context.calendarUpcomingDayText
-                    : context.calendarDayTextSecondary,
+                color:
+                    status == ReadingStatus.upcoming
+                        ? context.calendarUpcomingDayText
+                        : context.calendarDayTextSecondary,
               ),
             ),
           ),

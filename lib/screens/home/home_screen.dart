@@ -24,13 +24,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: context.backgroundColor,
-      
+
       // Drawer (Side Sheet) implementation remains the same
       drawer: Drawer(
-        backgroundColor: context.backgroundColor, // Assuming a theme color for drawer background
+        backgroundColor:
+            context
+                .backgroundColor, // Assuming a theme color for drawer background
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
@@ -41,15 +42,20 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text(
                 widget.title,
                 style: AppFonts.bold(context).copyWith(
-                  color: const Color(0xFFE0C097), // Assuming a theme color for title
+                  color: const Color(
+                    0xFFE0C097,
+                  ), // Assuming a theme color for title
                   fontSize: 24,
                 ),
               ),
             ),
-            
+
             ListTile(
               leading: Icon(Icons.menu_book, color: context.textColor),
-              title: Text('Select Volume', style: TextStyle(color: context.textColor)),
+              title: Text(
+                'Select Volume',
+                style: TextStyle(color: context.textColor),
+              ),
               onTap: () {
                 context.pop();
                 context.push(
@@ -57,10 +63,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-            
+
             ListTile(
               leading: Icon(Icons.settings, color: context.textColor),
-              title: Text('Settings', style: TextStyle(color: context.textColor)),
+              title: Text(
+                'Settings',
+                style: TextStyle(color: context.textColor),
+              ),
               onTap: () {
                 context.pop();
                 context.push('/settings');
@@ -69,42 +78,59 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      
+
       appBar: AppBar(
         toolbarHeight: 60,
         backgroundColor: context.appBarColor, // Revert to original AppBar color
         centerTitle: true,
         leading: Builder(
-           builder: (context) => IconButton(
-             icon: Icon(Icons.menu, color: context.textColor), // Revert to original text color
-             onPressed: () => Scaffold.of(context).openDrawer(),
-           ),
+          builder:
+              (context) => IconButton(
+                icon: Icon(
+                  Icons.menu,
+                  color: context.textColor,
+                ), // Revert to original text color
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
         ),
-        
-        title: Text(
-          widget.title,
-          style: AppFonts.bold(context).copyWith(
-            color: const Color(0xFFE0C097), // Revert to original text color
-            fontSize: 26,
-            fontFamily: 'Cursive',
-            fontWeight: FontWeight.w400,
-          ),
+
+        title: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              widget.title,
+              style: AppFonts.bold(context).copyWith(
+                color: const Color(0xFFE0C097), // Revert to original text color
+                fontSize: 20,
+                fontFamily: 'Cursive',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            Text(
+              '  Volume I',
+              style: AppFonts.bold(context).copyWith(
+                color: const Color(0xFFE0C097), // Revert to original text color
+                fontSize: 14,
+                fontFamily: 'Cursive',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
         ),
-        
-        actions: const [
-          SizedBox(width: 48), 
-        ],
+
+        actions: const [SizedBox(width: 48)],
       ),
-      
+
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
             // Banner
             const FamilyAltarBanner(),
-            
+
             // Calendar widget
             const FamilyAltarCalendar(),
-            
+
             // Continue reading button
             // Container(
             //   margin: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -133,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
             //       style: AppFonts.bold(context).copyWith(
             //         color: Colors.white, // Keeping white for contrast as per original block
             //         fontSize: 18,
-            //         fontFamily: 'Monospace', 
+            //         fontFamily: 'Monospace',
             //       ),
             //     ),
             //   ),
