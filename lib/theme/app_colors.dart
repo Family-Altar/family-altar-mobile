@@ -10,7 +10,7 @@ class AppColors {
   // Light theme
   static const Color lightBackground = Color(0xFFFFFFFF);
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightAppBar = Color(0xFFFFFFFF);
+  static const Color lightAppBar = Color(0xFF8B1A1A);
   static const Color lightOnBackground = Color(0xFF1A1A1A);
   static const Color lightOnSurface = Color(0xFFD6D6D6);
   static const Color lightError = Color(0xFFBA1A1A);
@@ -18,7 +18,8 @@ class AppColors {
 
   // Dark theme
   static const Color darkBackground = Color(0xFF1A1A1A);
-  static const Color darkSurface = Color(0xFF131313);
+  // static const Color darkSurface = Color(0xFF131313);
+  static const Color darkSurface = Color(0xFF8B1A1A);
   static const Color darkOnBackground = Color(0xFFE6E1E5);
   static const Color darkOnSurface = Color(0xFFE6E1E5);
   static const Color darkError = Color(0xFFFFB4AB);

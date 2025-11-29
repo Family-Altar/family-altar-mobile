@@ -22,7 +22,7 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/',
       builder: (BuildContext context, GoRouterState state) {
-        return const HomeScreen(title: 'The Family Altar - Tim Dodd');
+        return const HomeScreen(title: 'The Family Altar - Volume I');
       },
       routes: <RouteBase>[
         GoRoute(
