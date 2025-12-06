@@ -2,7 +2,6 @@ import 'package:family_altar/models/reading_entry.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
-import 'package:family_altar/utils/utilities.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -42,7 +41,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+    _pulseAnimation = Tween<double>(begin: 1, end: 1.05).animate(
       CurvedAnimation(parent: _alertController, curve: Curves.easeInOut),
     );
   }
@@ -58,19 +57,19 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 
   String _calculateCompletionPercentage(int missedDaysCount) {
     final currentDay = DateTime.now().dayOfYear;
-    if (currentDay <= 0) return "0";
+    if (currentDay <= 0) return '0';
     final daysCompleted = currentDay - missedDaysCount;
     final percentage = (daysCompleted / currentDay) * 100;
     return percentage.clamp(0.0, 100.0).toStringAsFixed(0);
   }
 
-  Future<void> _handleContinueReading() async {
-    final lastAccessed = await Utils.getLastAccessedDay();
-    final dateToOpen = lastAccessed ?? DateTime.now();
-    if (mounted) {
-      context.push('/reader', extra: dateToOpen);
-    }
-  }
+  // Future<void> _handleContinueReading() async {
+  //   final lastAccessed = await Utils.getLastAccessedDay();
+  //   final dateToOpen = lastAccessed ?? DateTime.now();
+  //   if (mounted) {
+  //     context.push('/reader', extra: dateToOpen);
+  //   }
+  // }
 
   void _onCalendarViewChanged(ViewChangedDetails details) {
     if (details.visibleDates.isEmpty) return;
@@ -98,7 +97,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
     final headerDate = DateFormat('MMMM yyyy').format(_currentDate);
     return Padding(
       // MODIFIED: Reduced vertical padding from 8.0 to 4.0 (Smaller Header)
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -132,9 +131,9 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: context.backgroundColor.withOpacity(0.5),
+        color: context.backgroundColor.withValues(alpha:0.5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha:0.1)),
       ),
       child: Row(
         children: [
@@ -142,7 +141,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
           Icon(Icons.check, size: 18, color: Colors.green.shade400),
           const SizedBox(width: 8),
           Text(
-            "$percentage% Completed",
+            '$percentage% Completed',
             style: AppFonts.normal(context, size: FontSize.small).copyWith(
               fontWeight: FontWeight.w600,
               color: context.calendarDayTextSecondary,
@@ -167,7 +166,9 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                     borderRadius: BorderRadius.circular(20),
                     // UPDATED: Subtle border instead of typo
                     border: Border.all(
-                      color: Theme.of(context).dividerColor.withOpacity(0.3),
+                      color: 
+                      Theme.of(context)
+                      .dividerColor.withValues(alpha:0.3),
                     ),
                   ),
                   child: Row(
@@ -175,7 +176,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                       Icon(Icons.circle, size: 8, color: Colors.red.shade400),
                       const SizedBox(width: 2),
                       Text(
-                        "  $missedCount Missed ",
+                        '  $missedCount Missed ',
                         style: AppFonts.normal(
                           context,
                           size: FontSize.small,
@@ -200,35 +201,39 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
     );
   }
 
-  Widget _buildContinueButton(BuildContext context) {
-    return Padding(
-      // MODIFIED: Reduced bottom padding from 16.0 to 6.0 (Less space before calendar)
-      padding: const EdgeInsets.only(bottom: 6.0),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: _handleContinueReading,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: context.primaryButtonBGColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 2,
-            shadowColor: context.primaryButtonBGColor.withOpacity(0.4),
-          ),
-          icon: const Icon(Icons.auto_stories, size: 20),
-          label: Text(
-            'Continue were you left off',
-            style: AppFonts.bold(
-              context,
-            ).copyWith(fontSize: 12, color: Colors.white, letterSpacing: 0.5),
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _buildContinueButton(BuildContext context) {
+  //   return Padding(
+  //     // MODIFIED: Reduced bottom padding from 16.0 to 6.0 (Less space before calendar)
+  //     padding: const EdgeInsets.only(bottom: 6),
+  //     child: SizedBox(
+  //       width: double.infinity,
+  //       child: ElevatedButton.icon(
+  //         onPressed: _handleContinueReading,
+  //         style: ElevatedButton.styleFrom(
+  //           backgroundColor: context.primaryButtonBGColor,
+  //           foregroundColor: Colors.white,
+  //           padding: const EdgeInsets.symmetric(vertical: 8),
+  //           shape: RoundedRectangleBorder(
+  //             borderRadius: BorderRadius.circular(16),
+  //           ),
+  //           elevation: 2,
+  //           shadowColor: context.primaryButtonBGColor.withValues(alpha:0.4),
+  //         ),
+  //         icon: const Icon(Icons.auto_stories, size: 20),
+  //         label: Text(
+  //           'Continue were you left off',
+  //           style: AppFonts.bold(
+  //             context,
+  //           )
+  //               .copyWith(
+  //                   fontSize: 12, 
+  //                   color: Colors.white,
+  //                   letterSpacing: 0.5),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +274,6 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                   backgroundColor: Colors.transparent,
                   monthViewSettings: const MonthViewSettings(
                     dayFormat: 'EEE',
-                    numberOfWeeksInView: 6,
                     showTrailingAndLeadingDates: false,
                     appointmentDisplayMode: MonthAppointmentDisplayMode.none,
                   ),
@@ -365,10 +369,10 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 // Extracted Widget: Clean Calendar Cell
 // -----------------------------------------------------------
 class _CalendarCell extends StatelessWidget {
-  final DateTime date;
-  final ReadingStatus status;
 
   const _CalendarCell({required this.date, required this.status});
+  final DateTime date;
+  final ReadingStatus status;
 
   @override
   Widget build(BuildContext context) {
@@ -379,32 +383,32 @@ class _CalendarCell extends StatelessWidget {
 
     Color borderColor;
     Color? fillColor;
-    double borderWidth = 1.0; // Default subtle border width
 
     // STEP 1: Set a universal subtle border for ALL cells (including upcoming/default)
-    borderColor = Theme.of(context).dividerColor.withOpacity(0.2);
+    borderColor = Theme.of(context).dividerColor.withValues(alpha:0.2);
 
     // STEP 2: Override border and fill based on status or 'isToday'
     if (isToday) {
       borderColor = context.calendarTodayBorder;
-      fillColor = context.calendarTodayBorder.withOpacity(0.1);
-      borderWidth = 2.0; // Thicker border for today
+      fillColor = context.calendarTodayBorder.withValues(alpha:0.1);
     } else {
       switch (status) {
-        case ReadingStatus.completed:
-          borderColor = context.calendarCompletedBorder.withOpacity(0.5);
-          fillColor = context.calendarCompletedBorder.withOpacity(0.05);
-          break;
-        case ReadingStatus.missed:
-          borderColor = context.calendarMissedBorder.withOpacity(0.5);
-          fillColor = context.calendarMissedBorder.withOpacity(0.05);
-          break;
-        case ReadingStatus.upcoming:
-        default:
-          // Crucial Fix: Keep the default 'borderColor' set in Step 1.
-          fillColor = Colors.transparent;
-          break;
-      }
+  case ReadingStatus.completed:
+    borderColor =
+        context.calendarCompletedBorder.withValues(alpha: 0.5);
+    fillColor =
+        context.calendarCompletedBorder.withValues(alpha: 0.05);
+
+  case ReadingStatus.missed:
+    borderColor =
+        context.calendarMissedBorder.withValues(alpha: 0.5);
+    fillColor =
+        context.calendarMissedBorder.withValues(alpha: 0.05);
+
+  case ReadingStatus.upcoming:
+    fillColor = Colors.transparent;
+}
+
     }
 
     return Container(
@@ -413,7 +417,6 @@ class _CalendarCell extends StatelessWidget {
         color: fillColor,
         border: Border.all(
           color: borderColor,
-          // Used determined border width. Reduced to 1.5 for non-today, but kept 2.0 for today.
           width: isToday ? 2.0 : 1.0,
         ),
         borderRadius: BorderRadius.circular(10),
@@ -449,7 +452,7 @@ class _CalendarCell extends StatelessWidget {
               child: Icon(
                 Icons.circle,
                 size: 6,
-                color: context.calendarMissedIcon.withOpacity(0.6),
+                color: context.calendarMissedIcon.withValues(alpha:0.6),
               ),
             ),
         ],

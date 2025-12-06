@@ -23,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Drawer (Side Sheet) implementation remains the same
       drawer: Drawer(
         backgroundColor:
-            context.backgroundColor, // Assuming a theme color for drawer background
+            context.backgroundColor, 
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
@@ -49,8 +49,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(color: context.textColor),
               ),
               onTap: () {
-                context.pop();
-                context.push(
+                context..pop()
+                ..push(
                   '/book-selection?title=${Uri.encodeComponent(widget.title)}',
                 );
               },
@@ -63,8 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(color: context.textColor),
               ),
               onTap: () {
-                context.pop();
-                context.push('/settings');
+                context..pop()
+                ..push('/settings');
               },
             ),
           ],
@@ -116,14 +116,14 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: const [SizedBox(width: 48)],
       ),
 
-      body: SingleChildScrollView(
+      body: const SingleChildScrollView(
         child: Column(
           children: <Widget>[
             // Banner
-            const FamilyAltarBanner(),
+            FamilyAltarBanner(),
 
             // Calendar widget
-            const FamilyAltarCalendar(),
+            FamilyAltarCalendar(),
          
           ],
         ),
