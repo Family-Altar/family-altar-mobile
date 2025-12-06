@@ -101,25 +101,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       size: AppIcons.getIconSize(IconSize.medium),
                     ),
                     onPressed: () async {
-                      final reading = state.reading;
+                    final reading = state.reading;
+                    final fullShareText = formatReadingForSharing(reading);
 
-                      final shareContent =
-                          Utils.unindent('''
-    ${reading.scripture.replaceAll('\n', '')}
 
-    ${reading.quote.replaceAll('\n', '')}
-    Daily Reading:
-    ${reading.dailyReading}
-''').trim();
-
-                      final fullShareText =
-                          Utils.unindent('''
-    Family Altar Reading\n${reading.date}
-
-    $shareContent
-''').trim();
-
-                      await Share.share(fullShareText.trim());
+                    await Share.share(fullShareText.trim());
                     },
                   ),
 

@@ -1,3 +1,4 @@
+import 'package:family_altar/screens/reader/domain/reading.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Utils {
@@ -27,4 +28,37 @@ class Utils {
         .map((l) => l.length >= indent ? l.substring(indent) : l)
         .join('\n');
   }
+}
+extension StripMargin on String {
+  String stripMargin([String margin = '|']) {
+    return split('\n')
+        .map((line) {
+          final index = line.indexOf(margin);
+          return index >= 0 ? line.substring(index + margin.length) : line;
+        })
+        .join('\n');
+  }
+}
+
+String formatReadingForSharing(Reading reading) {
+  final scripture = reading.scripture.replaceAll('\n', '').trim();
+  final quote = reading.quote.replaceAll('\n', '').trim();
+  final dailyReading =reading.dailyReading.replaceAll('\n', '').trim();
+
+  final shareContent = '''
+    |$scripture
+    |
+    |$quote\n
+    |Daily Reading:
+    |$dailyReading
+  '''.stripMargin();
+
+  final fullShareText = '''
+    |Family Altar - Volume I
+    |${reading.date}
+    |
+    |$shareContent
+  '''.stripMargin();
+
+  return fullShareText;
 }

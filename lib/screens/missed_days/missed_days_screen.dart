@@ -18,7 +18,7 @@ class MissedDaysScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
-        backgroundColor: context.appBarColor,
+        backgroundColor: context.backgroundColor,
         title: Text(
           'Book $volumeId',
           style: AppFonts.bold(context),

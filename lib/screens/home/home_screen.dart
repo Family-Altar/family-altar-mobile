@@ -14,13 +14,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Future<DateTime> _getLastReadingOrToday() async {
-  //   final lastAccessed = await Utils.getLastAccessedDay();
-  //   if (lastAccessed != null) {
-  //     return lastAccessed;
-  //   }
-  //   return DateTime.now();
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Drawer (Side Sheet) implementation remains the same
       drawer: Drawer(
         backgroundColor:
-            context
-                .backgroundColor, // Assuming a theme color for drawer background
+            context.backgroundColor, // Assuming a theme color for drawer background
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
@@ -82,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         toolbarHeight: 60,
         backgroundColor: context.appBarColor, // Revert to original AppBar color
-        centerTitle: true,
+      centerTitle: true,
         leading: Builder(
           builder:
               (context) => IconButton(
@@ -94,14 +86,15 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
         ),
 
-        title: Row(
+        title: Center(
+          child: Row(
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(
               widget.title,
               style: AppFonts.bold(context).copyWith(
-                color: const Color(0xFFE0C097), // Revert to original text color
+                color: const Color(0xFFE0C097), 
                 fontSize: 20,
                 fontFamily: 'Cursive',
                 fontWeight: FontWeight.w400,
@@ -110,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               '  Volume I',
               style: AppFonts.bold(context).copyWith(
-                color: const Color(0xFFE0C097), // Revert to original text color
+                color: const Color(0xFFE0C097), 
                 fontSize: 14,
                 fontFamily: 'Cursive',
                 fontWeight: FontWeight.w400,
@@ -118,6 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+      ),
 
         actions: const [SizedBox(width: 48)],
       ),
@@ -130,40 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // Calendar widget
             const FamilyAltarCalendar(),
-
-            // Continue reading button
-            // Container(
-            //   margin: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            //   width: double.infinity,
-            //   child: ElevatedButton(
-            //     onPressed: () async {
-            //       final date = await _getLastReadingOrToday();
-            //       if (context.mounted) {
-            //         await context.push('/reader', extra: date);
-            //       }
-            //     },
-            //     style: ElevatedButton.styleFrom(
-            //       backgroundColor: context.primaryButtonBGColor, // Revert to primary button color
-            //       foregroundColor: context.textColor, // Revert to primary button text color
-            //       elevation: 4,
-            //       padding: const EdgeInsets.symmetric(
-            //         horizontal: 24,
-            //         vertical: 18,
-            //       ),
-            //       shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.circular(16),
-            //       ),
-            //     ),
-            //     child: Text(
-            //       'Continue where you left off',
-            //       style: AppFonts.bold(context).copyWith(
-            //         color: Colors.white, // Keeping white for contrast as per original block
-            //         fontSize: 18,
-            //         fontFamily: 'Monospace',
-            //       ),
-            //     ),
-            //   ),
-            // ),
+         
           ],
         ),
       ),
