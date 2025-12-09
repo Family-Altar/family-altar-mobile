@@ -71,6 +71,19 @@ class ForewordPrefaceScreen extends StatelessWidget {
                   size: AppIcons.getIconSize(IconSize.medium),
                 ),
               ),
+              // WE SHOULD CONSIDER 
+              //ADDING THE SHARE BUTTON HERE 
+              //TOO AND THE SETTINGS BUTTON
+              actions: [
+                IconButton(
+                  onPressed: () => context.go('/'),
+                  icon: Icon(
+                    Icons.home,
+                    color: context.textColor,
+                    size: AppIcons.getIconSize(IconSize.medium),
+                  ),
+                ),
+              ],
             ),
             body: _ContentBody(state: state),
             bottomNavigationBar: _NavigationBar(state: state),
@@ -135,7 +148,10 @@ class _ContentBody extends StatelessWidget {
                 return Opacity(opacity: value, child: child);
               },
               child: Text(
-                loadedState.page.text.replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), ' '),
+                loadedState.page.text.replaceAll(
+                  RegExp(r'(?<!\n)\n(?!\n)'),
+                  ' ',
+                ),
                 textAlign: TextAlign.left,
                 style: AppFonts.normal(context),
               ),
