@@ -103,11 +103,42 @@ void main() async {
 
   tz.setLocalLocation(tz.getLocation(currentTimeZone));
 
+  // await flutterLocalNotificationsPlugin.zonedSchedule(
+  //   0,
+  //   'scheduled title',
+  //   'scheduled body',
+  //   tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)),
+  //   const NotificationDetails(
+  //     android: AndroidNotificationDetails(
+  //       'your channel id',
+  //       'your channel name',
+  //       channelDescription: 'your channel description',
+  //     ),
+  //   ),
+  //   androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+  // );
+
+  tz.TZDateTime _nextInstanceOfTenAM() {
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    tz.TZDateTime scheduledDate = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      22,
+      25,
+    );
+    if (scheduledDate.isBefore(now)) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+    return scheduledDate;
+  }
+
   await flutterLocalNotificationsPlugin.zonedSchedule(
-    0,
-    'scheduled title',
-    'scheduled body',
-    tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)),
+    1,
+    'daily scheduled notification title',
+    'daily scheduled notification body',
+    _nextInstanceOfTenAM(),
     const NotificationDetails(
       android: AndroidNotificationDetails(
         'your channel id',
@@ -116,6 +147,7 @@ void main() async {
       ),
     ),
     androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    matchDateTimeComponents: DateTimeComponents.time,
   );
 
   // Initialize your repositories
