@@ -13,8 +13,13 @@ import 'package:family_altar/theme/bloc/theme_event.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path/path.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 final GoRouter _router = GoRouter(
   initialLocation: '/',
@@ -61,8 +66,57 @@ final GoRouter _router = GoRouter(
   ],
 );
 
+// void onDidReceiveNotificationResponse(
+//   NotificationResponse notificationResponse,
+// ) async {
+//   final String? payload = notificationResponse.payload;
+//   if (notificationResponse.payload != null) {
+//     debugPrint('notification payload: $payload');
+//   }
+//   await context.push('/reader', extra: Date());
+// }
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('app_icon');
+
+  final DarwinInitializationSettings initializationSettingsDarwin =
+      DarwinInitializationSettings();
+
+  final InitializationSettings initializationSettings = InitializationSettings(
+    android: initializationSettingsAndroid,
+    iOS: initializationSettingsDarwin,
+  );
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    // onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
+  );
+
+  tz.initializeTimeZones();
+  final tzInfo = await FlutterTimezone.getLocalTimezone();
+  final String currentTimeZone = tzInfo.identifier;
+  print(currentTimeZone);
+
+  tz.setLocalLocation(tz.getLocation(currentTimeZone));
+
+  await flutterLocalNotificationsPlugin.zonedSchedule(
+    0,
+    'scheduled title',
+    'scheduled body',
+    tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)),
+    const NotificationDetails(
+      android: AndroidNotificationDetails(
+        'your channel id',
+        'your channel name',
+        channelDescription: 'your channel description',
+      ),
+    ),
+    androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+  );
 
   // Initialize your repositories
   final localReadingStorage = LocalReadingStorage();
