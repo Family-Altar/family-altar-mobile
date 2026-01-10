@@ -6,6 +6,7 @@ import 'package:family_altar/theme/app_icons.dart';
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:family_altar/theme/bloc/theme_event.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -194,10 +195,13 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
   }
 
   Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _time,
-    );
+    final picked =
+        Theme.of(context).platform == TargetPlatform.iOS
+            ? await _showCupertinoTimePicker()
+            : await showTimePicker(
+              context: context,
+              initialTime: _time,
+            );
     if (picked == null) {
       return;
     }
@@ -209,6 +213,56 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
       _time = picked;
     });
     await NotificationService().initAndScheduleDaily();
+  }
+
+  Future<TimeOfDay?> _showCupertinoTimePicker() async {
+    TimeOfDay selected = _time;
+    final initialDateTime = DateTime(
+      0,
+      1,
+      1,
+      _time.hour,
+      _time.minute,
+    );
+
+    return showCupertinoModalPopup<TimeOfDay>(
+      context: context,
+      builder: (context) {
+        return Container(
+          height: 260,
+          color: CupertinoColors.systemBackground.resolveFrom(context),
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: CupertinoButton(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  onPressed: () => Navigator.pop(context, selected),
+                  child: const Text('Done'),
+                ),
+              ),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.time,
+                  initialDateTime: initialDateTime,
+                  use24hFormat:
+                      MediaQuery.of(context).alwaysUse24HourFormat,
+                  onDateTimeChanged: (dateTime) {
+                    selected = TimeOfDay(
+                      hour: dateTime.hour,
+                      minute: dateTime.minute,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
