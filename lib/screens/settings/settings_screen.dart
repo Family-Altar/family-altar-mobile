@@ -1,3 +1,5 @@
+import 'package:family_altar/notification_service.dart';
+import 'package:family_altar/notification_settings.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
@@ -155,6 +157,121 @@ class SettingsScreen extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 16),
+            const _NotificationTimeCard(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationTimeCard extends StatefulWidget {
+  const _NotificationTimeCard();
+
+  @override
+  State<_NotificationTimeCard> createState() => _NotificationTimeCardState();
+}
+
+class _NotificationTimeCardState extends State<_NotificationTimeCard> {
+  TimeOfDay _time = NotificationSettings.defaultTime;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTime();
+  }
+
+  Future<void> _loadTime() async {
+    final time = await NotificationSettings.getTimeOfDay();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _time = time;
+    });
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _time,
+    );
+    if (picked == null) {
+      return;
+    }
+    await NotificationSettings.setTimeOfDay(picked);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _time = picked;
+    });
+    await NotificationService().initAndScheduleDaily();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final timeLabel = MaterialLocalizations.of(context).formatTimeOfDay(_time);
+
+    return Card(
+      color: context.backgroundColor.withValues(alpha: 0.8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.notifications_outlined,
+                  color: context.accent,
+                  size: AppIcons.getIconSize(IconSize.medium),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Notification Settings',
+                  style: AppFonts.bold(context, size: FontSize.large),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              onTap: _pickTime,
+              title: Text(
+                'Daily reminder time',
+                style: AppFonts.normal(context).copyWith(
+                  color: context.textColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                'Choose when to receive notifications',
+                style: AppFonts.normal(context, size: FontSize.small).copyWith(
+                  color: context.textColor,
+                ),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(timeLabel, style: AppFonts.bold(context)),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.access_time,
+                    color: context.textColor.withValues(alpha: 0.7),
+                    size: AppIcons.getIconSize(IconSize.small),
+                  ),
+                ],
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              tileColor: Colors.transparent,
+              dense: true,
             ),
           ],
         ),
