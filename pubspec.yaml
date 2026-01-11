@@ -49,6 +49,7 @@ dependencies:
   slang_build_runner: ^4.8.1
   slang_flutter: ^4.8.0
   syncfusion_flutter_calendar: ^31.1.23
+  timezone: ^0.10.1
   transparent_image: ^2.0.1
 
 

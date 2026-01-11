@@ -1,4 +1,5 @@
 import 'package:family_altar/i18n/strings.g.dart';
+import 'package:family_altar/navigation_service.dart';
 import 'package:family_altar/notification_service.dart';
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
@@ -12,7 +13,6 @@ import 'package:family_altar/storage/local_reading_storage.dart';
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:family_altar/theme/bloc/theme_event.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
-import 'package:family_altar/navigation_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';

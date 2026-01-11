@@ -1,14 +1,14 @@
+import 'package:family_altar/navigation_service.dart';
+import 'package:family_altar/notification_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:family_altar/notification_settings.dart';
-import 'package:family_altar/navigation_service.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationBootstrapper extends StatefulWidget {
-  const NotificationBootstrapper({super.key, required this.child});
+  const NotificationBootstrapper({required this.child, super.key});
   final Widget child;
 
   @override
@@ -93,7 +93,6 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     } on PlatformException catch (e, st) {
-      // If this is exact-alarm related, fallback to inexact so the app doesn't “hang”
       debugPrint('Exact schedule failed: $e');
       debugPrint('$st');
 
