@@ -167,6 +167,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               textScaler: TextScaler.noScaling,
                             ),
                             const SizedBox(height: 8),
+                            Image.asset('assets/icon/divider.png'),
+                            const SizedBox(height: 8),
                             Text(
                               state.reading.quote.replaceAll('\n', ' '),
                               textAlign: TextAlign.left,
@@ -175,7 +177,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               ).copyWith(fontSize: fontSize),
                             ),
                             const SizedBox(height: 8),
-                            const Divider(),
+                            Image.asset('assets/icon/divider.png'),
+                            const SizedBox(height: 8),
                             Text(
                               'Daily Reading:',
                               textAlign: TextAlign.center,

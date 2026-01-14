@@ -85,6 +85,7 @@ flutter:
     - assets/images/
     - assets/volume_I/daily_readings/
     - assets/volume_I/
+    - assets/icon/divider.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
