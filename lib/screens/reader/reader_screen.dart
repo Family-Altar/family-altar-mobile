@@ -268,6 +268,28 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               ).copyWith(fontSize: fontSize),
                               dropCapPadding: const EdgeInsets.only(right: 8),
                             ),
+                            const SizedBox(height: 8),
+                            Image.asset(
+                              'assets/icon/divider.png',
+                              color: context.isDarkMode ? Colors.white : null,
+                              width: 200,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Daily Reading:',
+                              textAlign: TextAlign.center,
+                              style: AppFonts.bold(
+                                context,
+                              ).copyWith(fontSize: fontSize),
+                            ),
+                            Text(
+                              state.reading.dailyReading,
+                              textAlign: TextAlign.left,
+                              style: AppFonts.bold(
+                                context,
+                              ).copyWith(fontSize: fontSize),
+                            ),
+                          ],
                               const SizedBox(height: 8),
                               const Divider(),
                               Text(
