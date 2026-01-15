@@ -30,6 +30,10 @@ environment:
 dependencies:
   bloc: ^8.1.0
   cupertino_icons: ^1.0.8
+  drop_cap_text: 
+    git:
+      url: https://github.com/parlough/drop_cap_text.git
+      ref: feat/adapt-for-deprecations
   equatable: ^2.0.5 
   flutter:
     sdk: flutter
@@ -99,10 +103,10 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
+  fonts:
+    - family: OldEnglish
+      fonts:
+        - asset: assets/fonts/oldenglishtextmt.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro

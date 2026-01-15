@@ -1,3 +1,4 @@
+import 'package:drop_cap_text/drop_cap_text.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
@@ -172,12 +173,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               color: context.isDarkMode ? Colors.white : null,
                             ),
                             const SizedBox(height: 8),
-                            Text(
+                            DropCapText(
+                              dropCapStyle: TextStyle(
+                                fontFamily: 'OldEnglish',
+                                fontSize: 50,
+                                color: context.isDarkMode ? Colors.white : null,
+                              ),
                               state.reading.quote.replaceAll('\n', ' '),
                               textAlign: TextAlign.left,
                               style: AppFonts.normal(
                                 context,
                               ).copyWith(fontSize: fontSize),
+                              dropCapPadding: EdgeInsets.only(right: 8.0),
+                              dropCapChars:
+                                  1, // Only the first letter gets the treatment
                             ),
                             const SizedBox(height: 8),
                             Image.asset(
