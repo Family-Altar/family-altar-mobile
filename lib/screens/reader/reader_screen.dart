@@ -171,6 +171,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             Image.asset(
                               'assets/icon/divider.png',
                               color: context.isDarkMode ? Colors.white : null,
+                              width: 200,
                             ),
                             const SizedBox(height: 8),
                             DropCapText(
@@ -192,6 +193,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             Image.asset(
                               'assets/icon/divider.png',
                               color: context.isDarkMode ? Colors.white : null,
+                              width: 200,
                             ),
                             const SizedBox(height: 8),
                             Text(
