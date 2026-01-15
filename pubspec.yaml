@@ -107,10 +107,6 @@ flutter:
     - family: OldEnglish
       fonts:
         - asset: assets/fonts/oldenglishtextmt.ttf
-  fonts:
-    - family: OldEnglish
-      fonts:
-        - asset: assets/fonts/oldenglishtextmt.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro

@@ -260,6 +260,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 fontSize: 50,
                                 color: context.isDarkMode ? Colors.white : null,
                               ),
+                            DropCapText(
+                              dropCapStyle: TextStyle(
+                                fontFamily: 'OldEnglish',
+                                fontSize: 50,
+                                color: context.isDarkMode ? Colors.white : null,
+                              ),
                               state.reading.quote.replaceAll('\n', ' '),
                               textAlign: TextAlign.left,
                               style: AppFonts.normal(
