@@ -1,5 +1,4 @@
 import 'package:drop_cap_text/drop_cap_text.dart';
-import 'package:drop_cap_text/drop_cap_text.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
@@ -199,7 +198,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   _verticalDragDistance += details.delta.dy.abs();
                   if (_horizontalDragDistance.abs() +
                           _verticalDragDistance > 20) {
-                    _isHorizontalSwipe = _horizontalDragDistance.abs() > 
+                    _isHorizontalSwipe = _horizontalDragDistance.abs() >
                         _verticalDragDistance * 1.5;
                   }
                 },
@@ -247,16 +246,38 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 ).copyWith(fontSize: fontSize),
                                 textScaler: TextScaler.noScaling,
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                state.reading.quote.replaceAll('\n', ' '),
-                                textAlign: TextAlign.left,
-                                style: AppFonts.normal(
-                                  context,
-                                ).copyWith(fontSize: fontSize),
-                              ),
                             const SizedBox(height: 8),
-                            Image.asset('assets/icon/divider.png'),
+                            Image.asset(
+                              'assets/icon/divider.png',
+                              color: context.isDarkMode ? Colors.white : null,
+                            ),
+                              
+                            const SizedBox(height: 8),
+                            DropCapText(
+                              dropCapStyle: TextStyle(
+                                fontFamily: 'OldEnglish',
+                                fontSize: 50,
+                                color: context.isDarkMode ? Colors.white : null,
+                              ),
+                              state.reading.quote.replaceAll('\n', ' '),
+                              textAlign: TextAlign.left,
+                              style: AppFonts.normal(
+                                context,
+                              ).copyWith(fontSize: fontSize),
+                              dropCapPadding: EdgeInsets.only(right: 8.0)
+                            ),
+                            const SizedBox(height: 8),
+                             Image.asset(
+                              'assets/icon/divider.png',
+                             r color: context.isDarkMode ? Colors.white : null,
+                            ),
+                            Text(
+                              state.reading.title,
+                              textAlign: TextAlign.left,
+                              style: AppFonts.normal(
+                                context,
+                              ).copyWith(fontSize: fontSize),
+                            ),
                             const SizedBox(height: 8),
                             Text(
                               'Daily Reading:',
