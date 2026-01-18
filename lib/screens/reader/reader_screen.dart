@@ -214,18 +214,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       icon: const Icon(Icons.arrow_circle_left_outlined),
                       iconSize: 50,
                       onPressed:
-                          () => context.read<ReadingBloc>().add(
-                            const PreviousReadingEvent(),
-                          ),
+                          () => {
+                            _scrollController.jumpTo(0),
+                            context.read<ReadingBloc>().add(
+                              const PreviousReadingEvent(),
+                            ),
+                          },
                     ),
                     IconButton(
                       color: context.textColor,
                       icon: const Icon(Icons.arrow_circle_right_outlined),
                       iconSize: 50,
                       onPressed:
-                          () => context.read<ReadingBloc>().add(
-                            const NextReadingEvent(),
-                          ),
+                          () => {
+                            context.read<ReadingBloc>().add(
+                              const NextReadingEvent(),
+                            ),
+                            _scrollController.jumpTo(0),
+                          },
                     ),
                   ],
                 ),
