@@ -1,4 +1,6 @@
 import 'package:family_altar/i18n/strings.g.dart';
+import 'package:family_altar/navigation_service.dart';
+import 'package:family_altar/notification_service.dart';
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/screens/foreword_preface/foreword_preface_screen.dart';
@@ -17,6 +19,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 final GoRouter _router = GoRouter(
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/',
   routes: <RouteBase>[
     GoRoute(
@@ -88,7 +91,7 @@ void main() async {
               create: (_) => ThemeBloc()..add(const ThemeInitializeEvent()),
             ),
           ],
-          child: MyApp(router: _router),
+          child: NotificationBootstrapper(child: MyApp(router: _router)),
         ),
       ),
     ),

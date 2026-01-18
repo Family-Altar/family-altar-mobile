@@ -71,6 +71,19 @@ class ForewordPrefaceScreen extends StatelessWidget {
                   size: AppIcons.getIconSize(IconSize.medium),
                 ),
               ),
+              // WE SHOULD CONSIDER 
+              //ADDING THE SHARE BUTTON HERE 
+              //TOO AND THE SETTINGS BUTTON
+              actions: [
+                IconButton(
+                  onPressed: () => context.go('/'),
+                  icon: Icon(
+                    Icons.home,
+                    color: context.textColor,
+                    size: AppIcons.getIconSize(IconSize.medium),
+                  ),
+                ),
+              ],
             ),
             body: _ContentBody(state: state),
             bottomNavigationBar: _NavigationBar(state: state),
