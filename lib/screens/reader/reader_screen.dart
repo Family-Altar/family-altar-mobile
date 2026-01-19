@@ -105,9 +105,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
                       final shareContent =
                           '''
-                ${reading.scripture.replaceAll('\n', '')}
+                ${reading.scripture.replaceAll('\n', ' ')}
 
-                ${reading.quote.replaceAll('\n', '')}
+                ${reading.quote}
 
                 Daily Reading:
                 ${reading.dailyReading}
@@ -180,7 +180,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 fontSize: 50,
                                 color: context.isDarkMode ? Colors.white : null,
                               ),
-                              state.reading.quote.replaceAll('\n', ' '),
+                              state.reading.quote,
                               textAlign: TextAlign.left,
                               style: AppFonts.normal(
                                 context,
