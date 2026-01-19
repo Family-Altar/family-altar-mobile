@@ -253,6 +253,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 ).copyWith(fontSize: fontSize),
                               ),
                             const SizedBox(height: 8),
+                            DropCapText(
+                              dropCapStyle: TextStyle(
+                                fontFamily: 'OldEnglish',
+                                fontSize: 50,
+                                color: context.isDarkMode ? Colors.white : null,
+                              ),
+                              state.reading.quote,
                             Text(
                               state.reading.title,
                               textAlign: TextAlign.left,
