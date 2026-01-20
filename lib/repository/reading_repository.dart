@@ -21,11 +21,11 @@ class ReadingRepository {
     // --- Extract scripture reference ---
     final scriptureRegex = RegExp(
       r'\(('
-      r'[1-3]?\s?[A-Z][a-z]+' // First word (Song)
-      r'(?:\s+[A-Za-z][a-z]+)*' // Additional words (of Solomon)
+      r'[1-3]?\s?[A-Z][a-z]+\.?' // First word, optional period (Chron.)
+      r'(?:\s+[A-Za-z][a-z]+\.?)*' // Additional words, optional period (Sol.)
       r'\s+\d{1,3}:' // Chapter number + colon
       r'\d{1,3}(?:[-–]\d{1,3})?' // Verse or range
-      r'(?:\s*,\s*\d{1,3}(?:[-–]\d{1,3})?)*' // Optional more verses: ,15 or , 15-18 etc.
+      r'(?:\s*,\s*\d{1,3}(?:[-–]\d{1,3})?)*' // Optional more verses
       r')\)',
     );
     final scriptureMatch = scriptureRegex.firstMatch(text);
