@@ -17,6 +17,7 @@ class ReadingRepository {
     final dateText = dateMatch?.group(0) ?? '';
     final dateIndex = text.indexOf(dateText);
 
+    // --- Extract scripture reference ---
     final scriptureRegex = RegExp(
       r'\(('
       r'[1-3]?\s?[A-Z][a-z]+\.?' // First word, optional period (Chron.)

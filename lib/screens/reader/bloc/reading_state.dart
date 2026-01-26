@@ -74,6 +74,13 @@ class ReadingLoaded extends ReadingState {
     }).length;
   }
 
+  /// Get all reading entries marked as missed (for missed days screen)
+  List<ReadingEntry> getMissedEntries() {
+    return entries.values
+        .where((entry) => entry.status == ReadingStatus.missed)
+        .toList();
+  }
+
   /// Get total completed days count (days explicitly marked as read)
   int getTotalCompletedDaysCount() {
     int count = 0;
@@ -83,6 +90,13 @@ class ReadingLoaded extends ReadingState {
       }
     }
     return count;
+  }
+
+  /// Get all reading entries marked as completed (for logging/debug)
+  List<ReadingEntry> getCompletedEntries() {
+    return entries.values
+        .where((entry) => entry.status == ReadingStatus.completed)
+        .toList();
   }
 
   /// Get total number of entries tracked in SharedPreferences

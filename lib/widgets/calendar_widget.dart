@@ -55,15 +55,20 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 
   // --- Logic Helpers ---
 
+  static int _daysInYear(int year) {
+    final isLeapYear =
+        (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    return isLeapYear ? 366 : 365;
+  }
+
   String _calculateCompletionPercentage(ReadingLoaded? loadedState) {
     if (loadedState == null) return '0';
-    
-    final totalEntries = loadedState.getTotalEntriesCount();
-    if (totalEntries <= 0) return '0';
-    
-    final completedEntries = loadedState.getTotalCompletedDaysCount();
-    final percentage = (completedEntries / totalEntries) * 100;
-    
+
+    // Completed count only (excludes missed). Denominator = days in current year.
+    final completedCount = loadedState.getTotalCompletedDaysCount();
+    final daysInYear = _daysInYear(DateTime.now().year);
+    final percentage = (completedCount / daysInYear) * 100;
+
     return percentage.clamp(0.0, 100.0).toStringAsFixed(0);
   }
 
@@ -169,17 +174,17 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
             ),
           ),
           const Spacer(),
-          // Missed Stat (always visible; tappable when > 0)
-          missedCount > 0
-              ? ScaleTransition(
-                  scale: _pulseAnimation,
-                  child: InkWell(
-                    onTap: () => context.push('/missed-days/book-1'),
-                    borderRadius: BorderRadius.circular(20),
+          // Missed Stat (always visible and tappable)
+          InkWell(
+            onTap: () => context.push('/missed-days/book-1'),
+            borderRadius: BorderRadius.circular(20),
+            child: missedCount > 0
+                ? ScaleTransition(
+                    scale: _pulseAnimation,
                     child: _buildMissedBadge(context, missedCount),
-                  ),
-                )
-              : _buildMissedBadge(context, missedCount),
+                  )
+                : _buildMissedBadge(context, missedCount),
+          ),
         ],
       ),
     );
@@ -192,6 +197,15 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
         final loadedState = state is ReadingLoaded ? state : null;
         final missedDaysCount = loadedState?.getTotalMissedDaysCount() ?? 0;
         final completionPercentage = _calculateCompletionPercentage(loadedState);
+
+        // Console log completed reading entries (for debugging)
+        if (loadedState != null) {
+          final completedEntries = loadedState.getCompletedEntries();
+          debugPrint(
+            'Completed reading entries (${completedEntries.length}): '
+            '${completedEntries.map((e) => DateFormat('yyyy-MM-dd').format(e.date)).toList()}',
+          );
+        }
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
