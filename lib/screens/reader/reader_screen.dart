@@ -175,6 +175,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               ).copyWith(fontSize: fontSize),
                             ),
                             const SizedBox(height: 8),
+                            Text(
+                              state.reading.title,
+                              textAlign: TextAlign.left,
+                              style: AppFonts.normal(
+                                context,
+                              ).copyWith(fontSize: fontSize),
+                            ),
+                            const SizedBox(height: 8),
                             const Divider(),
                             Text(
                               'Daily Reading:',
