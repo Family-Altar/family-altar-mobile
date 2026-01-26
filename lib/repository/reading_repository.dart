@@ -2,7 +2,6 @@ import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/screens/reader/domain/page.dart';
 import 'package:family_altar/screens/reader/domain/reading.dart';
 import 'package:family_altar/storage/local_reading_storage.dart';
-import 'package:flutter/gestures.dart';
 
 class ReadingRepository {
   ReadingRepository(this._localReadingStorage);
@@ -18,8 +17,6 @@ class ReadingRepository {
     final dateMatch = dateRegex.allMatches(text).toList();
     final dateText = dateMatch[1].group(0) ?? '';
     final dateIndex = text.indexOf(dateText);
-
-    print(dateText);
 
     // --- Extract scripture reference ---
     final scriptureRegex = RegExp(
@@ -39,8 +36,6 @@ class ReadingRepository {
         text.substring(dateIndex + dateText.length, scriptureEndIndex).trim();
     const dailyReadingSearch = 'Daily Reading:';
     final dailyReadingIndex = text.indexOf(dailyReadingSearch);
-    // final dailyReading =
-    //     text.substring(dailyReadingIndex + dailyReadingSearch.length).trim();
     var dailyReading = '';
     if (dailyReadingIndex != -1) {
       final start = dailyReadingIndex + dailyReadingSearch.length;
