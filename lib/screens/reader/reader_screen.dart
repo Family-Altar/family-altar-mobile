@@ -77,171 +77,178 @@ class _ReaderScreenState extends State<ReaderScreen> {
           builder: (context, themeState) {
             final fontSize = themeState.readingFontSize;
 
-            return Scaffold(
-              backgroundColor: context.backgroundColor,
-              appBar: AppBar(
-                toolbarHeight: 48,
-                backgroundColor: context.appBarColor,
-                centerTitle: true,
-                title: Text(state.reading.date, style: AppFonts.bold(context)),
-                leading: IconButton(
-                  onPressed: context.pop,
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: context.textColor,
-                    size: AppIcons.getIconSize(IconSize.medium),
+            return SafeArea(
+              child: Scaffold(
+                backgroundColor: context.backgroundColor,
+                appBar: AppBar(
+                  toolbarHeight: 48,
+                  backgroundColor: context.appBarColor,
+                  centerTitle: true,
+                  title: Text(
+                    state.reading.date,
+                    style: AppFonts.bold(context),
                   ),
-                ),
-                actions: [
-                  IconButton(
+                  leading: IconButton(
+                    onPressed: context.pop,
                     icon: Icon(
-                      Icons.share,
+                      Icons.arrow_back,
                       color: context.textColor,
                       size: AppIcons.getIconSize(IconSize.medium),
                     ),
-                    onPressed: () async {
-                      final reading = state.reading;
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.share,
+                        color: context.textColor,
+                        size: AppIcons.getIconSize(IconSize.medium),
+                      ),
+                      onPressed: () async {
+                        final reading = state.reading;
 
-                      final shareContent =
-                          '''
+                        final shareContent =
+                            '''
                 ${reading.scripture.replaceAll('\n', '')}
-
+            
                 ${reading.quote.replaceAll('\n', '')}
-
+            
                 Daily Reading:
                 ${reading.dailyReading}
                 '''.trimLeft();
 
-                      final fullShareText =
-                          '''
+                        final fullShareText =
+                            '''
                 Family Altar Reading
                 ${reading.date}
-
+            
                 $shareContent
                 '''.trimLeft();
 
-                      await Share.share(fullShareText);
-                    },
-                  ),
-
-                  IconButton(
-                    icon: Icon(
-                      Icons.settings,
-                      color: context.textColor,
-                      size: AppIcons.getIconSize(IconSize.medium),
+                        await Share.share(fullShareText);
+                      },
                     ),
-                    onPressed: () {
-                      showModalBottomSheet<void>(
-                        context: context,
-                        backgroundColor: Colors.transparent,
-                        barrierColor: Colors.transparent,
-                        isScrollControlled: true,
-                        useSafeArea: true,
-                        builder: (_) => const _SettingsBottomSheet(),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              body: SingleChildScrollView(
-                controller: _scrollController,
-                child: Scrollbar(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: TweenAnimationBuilder<double>(
-                        key: ValueKey(state.reading.date),
-                        duration: const Duration(milliseconds: 200),
-                        tween: Tween(begin: 0, end: 1),
-                        builder: (context, value, child) {
-                          return Opacity(opacity: value, child: child);
-                        },
-                        child: Column(
-                          children: [
-                            Text(
-                              state.reading.scripture.replaceAll('\n', ' '),
-                              textAlign: TextAlign.center,
-                              style: AppFonts.italics(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                              textScaler: TextScaler.noScaling,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              state.reading.quote.replaceAll('\n', ' '),
-                              textAlign: TextAlign.left,
-                              style: AppFonts.normal(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              state.reading.title,
-                              textAlign: TextAlign.left,
-                              style: AppFonts.normal(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                            ),
-                            const SizedBox(height: 8),
-                            const Divider(),
-                            Text(
-                              'Daily Reading:',
-                              textAlign: TextAlign.center,
-                              style: AppFonts.bold(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                            ),
-                            Text(
-                              state.reading.dailyReading,
-                              textAlign: TextAlign.left,
-                              style: AppFonts.bold(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                            ),
-                          ],
+
+                    IconButton(
+                      icon: Icon(
+                        Icons.settings,
+                        color: context.textColor,
+                        size: AppIcons.getIconSize(IconSize.medium),
+                      ),
+                      onPressed: () {
+                        showModalBottomSheet<void>(
+                          context: context,
+                          backgroundColor: Colors.transparent,
+                          barrierColor: Colors.transparent,
+                          isScrollControlled: true,
+                          useSafeArea: true,
+                          builder: (_) => const _SettingsBottomSheet(),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                body: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Scrollbar(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: TweenAnimationBuilder<double>(
+                          key: ValueKey(state.reading.date),
+                          duration: const Duration(milliseconds: 200),
+                          tween: Tween(begin: 0, end: 1),
+                          builder: (context, value, child) {
+                            return Opacity(opacity: value, child: child);
+                          },
+                          child: Column(
+                            children: [
+                              Text(
+                                state.reading.scripture.replaceAll('\n', ' '),
+                                textAlign: TextAlign.center,
+                                style: AppFonts.italics(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                                textScaler: TextScaler.noScaling,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                state.reading.quote.replaceAll('\n', ' '),
+                                textAlign: TextAlign.left,
+                                style: AppFonts.normal(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                state.reading.title,
+                                textAlign: TextAlign.left,
+                                style: AppFonts.normal(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                              const SizedBox(height: 8),
+                              const Divider(),
+                              Text(
+                                'Daily Reading:',
+                                textAlign: TextAlign.center,
+                                style: AppFonts.bold(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                              Text(
+                                state.reading.dailyReading,
+                                textAlign: TextAlign.left,
+                                style: AppFonts.bold(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              bottomNavigationBar: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: context.appBarColor,
-                  border: Border(top: BorderSide(color: Colors.grey.shade300)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      color: context.textColor,
-                      icon: const Icon(Icons.arrow_circle_left_outlined),
-                      iconSize: 50,
-                      onPressed:
-                          () => {
-                            _scrollController.jumpTo(0),
-                            context.read<ReadingBloc>().add(
-                              const PreviousReadingEvent(),
-                            ),
-                          },
+                bottomNavigationBar: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: context.appBarColor,
+                    border: Border(
+                      top: BorderSide(color: Colors.grey.shade300),
                     ),
-                    IconButton(
-                      color: context.textColor,
-                      icon: const Icon(Icons.arrow_circle_right_outlined),
-                      iconSize: 50,
-                      onPressed:
-                          () => {
-                            context.read<ReadingBloc>().add(
-                              const NextReadingEvent(),
-                            ),
-                            _scrollController.jumpTo(0),
-                          },
-                    ),
-                  ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        color: context.textColor,
+                        icon: const Icon(Icons.arrow_circle_left_outlined),
+                        iconSize: 50,
+                        onPressed:
+                            () => {
+                              _scrollController.jumpTo(0),
+                              context.read<ReadingBloc>().add(
+                                const PreviousReadingEvent(),
+                              ),
+                            },
+                      ),
+                      IconButton(
+                        color: context.textColor,
+                        icon: const Icon(Icons.arrow_circle_right_outlined),
+                        iconSize: 50,
+                        onPressed:
+                            () => {
+                              context.read<ReadingBloc>().add(
+                                const NextReadingEvent(),
+                              ),
+                              _scrollController.jumpTo(0),
+                            },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

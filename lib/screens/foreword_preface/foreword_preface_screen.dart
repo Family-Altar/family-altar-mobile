@@ -56,24 +56,26 @@ class ForewordPrefaceScreen extends StatelessWidget {
         builder: (context, state) {
           final title =
               state is PageLoaded ? _sectionTitle(state.section) : 'Reading';
-          return Scaffold(
-            backgroundColor: context.backgroundColor,
-            appBar: AppBar(
-              toolbarHeight: 48,
-              backgroundColor: context.appBarColor,
-              centerTitle: true,
-              title: Text(title, style: AppFonts.bold(context)),
-              leading: IconButton(
-                onPressed: () => context.pop(),
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: context.textColor,
-                  size: AppIcons.getIconSize(IconSize.medium),
+          return SafeArea(
+            child: Scaffold(
+              backgroundColor: context.backgroundColor,
+              appBar: AppBar(
+                toolbarHeight: 48,
+                backgroundColor: context.appBarColor,
+                centerTitle: true,
+                title: Text(title, style: AppFonts.bold(context)),
+                leading: IconButton(
+                  onPressed: () => context.pop(),
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: context.textColor,
+                    size: AppIcons.getIconSize(IconSize.medium),
+                  ),
                 ),
               ),
+              body: _ContentBody(state: state),
+              bottomNavigationBar: _NavigationBar(state: state),
             ),
-            body: _ContentBody(state: state),
-            bottomNavigationBar: _NavigationBar(state: state),
           );
         },
       ),
@@ -135,7 +137,10 @@ class _ContentBody extends StatelessWidget {
                 return Opacity(opacity: value, child: child);
               },
               child: Text(
-                loadedState.page.text.replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), ' '),
+                loadedState.page.text.replaceAll(
+                  RegExp(r'(?<!\n)\n(?!\n)'),
+                  ' ',
+                ),
                 textAlign: TextAlign.left,
                 style: AppFonts.normal(context),
               ),
@@ -160,7 +165,7 @@ class _NavigationBar extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: context.backgroundColor,
         border: Border(top: BorderSide(color: Colors.grey.shade300)),
