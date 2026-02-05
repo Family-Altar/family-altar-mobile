@@ -261,13 +261,6 @@ class _BookCoverInterior extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color.fromARGB(235, 255, 246, 213).withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(12),
-        // border: Border.all(color: const Color.fromARGB(255, 253, 233, 152)),
-        // gradient: LinearGradient(
-        //   colors: [
-        //     const Color.fromARGB(235, 228, 197, 85).withValues(alpha: 0.25),
-        //     const Color.fromARGB(255, 255, 230, 165).withValues(alpha: 0.15),
-        //   ],
-        // ),
       ),
     );
   }

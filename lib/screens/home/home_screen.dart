@@ -20,7 +20,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: context.backgroundColor,
 
-      // Drawer (Side Sheet) implementation remains the same
       drawer: Drawer(
         backgroundColor:
             context.backgroundColor, 
@@ -29,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: <Widget>[
             DrawerHeader(
               decoration: BoxDecoration(
-                color: context.appBarColor, // Revert to original AppBar color
+                color: context.appBarColor,
               ),
               child: Text(
                 widget.title,
@@ -73,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       appBar: AppBar(
         toolbarHeight: 60,
-        backgroundColor: context.appBarColor, // Revert to original AppBar color
+        backgroundColor: context.appBarColor,
       centerTitle: true,
         leading: Builder(
           builder:
@@ -81,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icon(
                   Icons.menu,
                   color: context.textColor,
-                ), // Revert to original text color
+                ),
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
         ),
@@ -119,10 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: const SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            // Banner
             FamilyAltarBanner(),
-
-            // Calendar widget
             FamilyAltarCalendar(),
          
           ],
