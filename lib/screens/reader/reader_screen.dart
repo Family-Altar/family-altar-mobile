@@ -206,6 +206,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   }
                 },
                 onPanEnd: (details) {
+                  
                   // Only process if it was a horizontal swipe
                   if (_isHorizontalSwipe) {
                     final horizontalAbs = _horizontalDragDistance.abs();
