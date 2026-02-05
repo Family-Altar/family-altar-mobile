@@ -40,6 +40,9 @@ class ReaderScreen extends StatefulWidget {
 
 class _ReaderScreenState extends State<ReaderScreen> {
   late final ScrollController _scrollController;
+  double _horizontalDragDistance = 0.0;
+  double _verticalDragDistance = 0.0;
+  bool _isHorizontalSwipe = false;
 
   @override
   void initState() {
@@ -95,87 +98,186 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 ),
                 actions: [
                   IconButton(
+                    onPressed: () => context.go('/'),
                     icon: Icon(
-                      Icons.share,
+                      Icons.home,
                       color: context.textColor,
                       size: AppIcons.getIconSize(IconSize.medium),
                     ),
-                    onPressed: () async {
-                    final reading = state.reading;
-                    final fullShareText = formatReadingForSharing(reading);
-
-
-                    await Share.share(fullShareText.trim());
-                    },
                   ),
-
-                  IconButton(
-                    icon: Icon(
-                      Icons.settings,
-                      color: context.textColor,
-                      size: AppIcons.getIconSize(IconSize.medium),
+                  PopupMenuButton<String>(
+                    color: context.backgroundColor,
+                    offset: const Offset(0, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    onPressed: () {
-                      showModalBottomSheet<void>(
-                        context: context,
-                        backgroundColor: Colors.transparent,
-                        barrierColor: Colors.transparent,
-                        isScrollControlled: true,
-                        useSafeArea: true,
-                        builder: (_) => const _SettingsBottomSheet(),
-                      );
+                    child: Container(
+                      margin: const EdgeInsets.only(
+                        right: 8,
+                      ), // ← right margin
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey[800],
+                      ),
+                      child: CircleAvatar(
+                        radius: 12,
+                        backgroundColor: context.backgroundColor,
+                        child: Icon(
+                          Icons.more_horiz,
+                          color: context.textColor,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    onSelected: (value) {
+                      if (value == 'share') {
+                        final reading = state.reading;
+                        final fullShareText = formatReadingForSharing(reading);
+                        Share.share(fullShareText.trim());
+                      } else if (value == 'settings') {
+                        showModalBottomSheet<void>(
+                          context: context,
+                          backgroundColor: Colors.transparent,
+                          barrierColor: Colors.transparent,
+                          isScrollControlled: true,
+                          useSafeArea: true,
+                          builder: (_) => const _SettingsBottomSheet(),
+                        );
+                      }
                     },
+                    itemBuilder:
+                        (BuildContext context) => [
+                          PopupMenuItem<String>(
+                            value: 'share',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.share,
+                                  color: context.textColor,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Share Reading',
+                                  style: AppFonts.normal(context),
+                                ),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'settings',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.settings,
+                                  color: context.textColor,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Font and Settings',
+                                  style: AppFonts.normal(context),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                   ),
                 ],
               ),
-              body: SingleChildScrollView(
-                controller: _scrollController,
-                child: Scrollbar(
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: TweenAnimationBuilder<double>(
-                        key: ValueKey(state.reading.date),
-                        duration: const Duration(milliseconds: 200),
-                        tween: Tween(begin: 0, end: 1),
-                        builder: (context, value, child) {
-                          return Opacity(opacity: value, child: child);
-                        },
-                        child: Column(
-                          children: [
-                            Text(
-                              state.reading.scripture.replaceAll('\n', ' '),
-                              textAlign: TextAlign.center,
-                              style: AppFonts.italics(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                              textScaler: TextScaler.noScaling,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              state.reading.quote.replaceAll('\n', ' '),
-                              textAlign: TextAlign.left,
-                              style: AppFonts.normal(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                            ),
-                            const SizedBox(height: 8),
-                            const Divider(),
-                            Text(
-                              'Daily Reading:',
-                              textAlign: TextAlign.center,
-                              style: AppFonts.bold(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                            ),
-                            Text(
-                              state.reading.dailyReading,
-                              textAlign: TextAlign.left,
-                              style: AppFonts.bold(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                            ),
-                          ],
+              body: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onPanStart: (details) {
+                  _horizontalDragDistance = 0.0;
+                  _verticalDragDistance = 0.0;
+                  _isHorizontalSwipe = false;
+                },
+                onPanUpdate: (details) {
+                  _horizontalDragDistance += details.delta.dx;
+                  _verticalDragDistance += details.delta.dy.abs();
+                  
+                  // Determine if this is primarily a horizontal swipe
+                  // Check after some movement to avoid false positives
+                  if (_horizontalDragDistance.abs() + _verticalDragDistance > 20) {
+                    _isHorizontalSwipe = _horizontalDragDistance.abs() > 
+                        _verticalDragDistance * 1.5;
+                  }
+                },
+                onPanEnd: (details) {
+                  // Only process if it was a horizontal swipe
+                  if (_isHorizontalSwipe) {
+                    final horizontalAbs = _horizontalDragDistance.abs();
+                    final velocity = details.velocity.pixelsPerSecond.dx;
+                    
+                    // Check distance threshold (80px) or velocity threshold (400px/s)
+                    if (horizontalAbs > 80 || velocity.abs() > 400) {
+                      if (_horizontalDragDistance < 0 || velocity < 0) {
+                        // Swipe left - next page
+                        context.read<ReadingBloc>().add(const NextReadingEvent());
+                      } else {
+                        // Swipe right - previous page
+                        context.read<ReadingBloc>().add(
+                          const PreviousReadingEvent(),
+                        );
+                      }
+                    }
+                  }
+                  
+                  // Reset drag distances
+                  _horizontalDragDistance = 0.0;
+                  _verticalDragDistance = 0.0;
+                  _isHorizontalSwipe = false;
+                },
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Scrollbar(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: TweenAnimationBuilder<double>(
+                          key: ValueKey(state.reading.date),
+                          duration: const Duration(milliseconds: 200),
+                          tween: Tween(begin: 0, end: 1),
+                          builder: (context, value, child) {
+                            return Opacity(opacity: value, child: child);
+                          },
+                          child: Column(
+                            children: [
+                              Text(
+                                state.reading.scripture.replaceAll('\n', ' '),
+                                textAlign: TextAlign.center,
+                                style: AppFonts.italics(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                                textScaler: TextScaler.noScaling,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                state.reading.quote.replaceAll('\n', ' '),
+                                textAlign: TextAlign.left,
+                                style: AppFonts.normal(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                              const SizedBox(height: 8),
+                              const Divider(),
+                              Text(
+                                'Daily Reading:',
+                                textAlign: TextAlign.center,
+                                style: AppFonts.bold(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                              Text(
+                                state.reading.dailyReading,
+                                textAlign: TextAlign.left,
+                                style: AppFonts.bold(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

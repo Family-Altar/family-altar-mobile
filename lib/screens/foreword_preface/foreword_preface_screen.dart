@@ -85,7 +85,33 @@ class ForewordPrefaceScreen extends StatelessWidget {
                 ),
               ],
             ),
-            body: _ContentBody(state: state),
+            body: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragEnd: (details) {
+                if (state is! PageLoaded) return;
+                final loadedState = state as PageLoaded;
+                if (loadedState.section == Section.dailyReading) return;
+                
+                if (details.primaryVelocity != null) {
+                  if (details.primaryVelocity! < -500) {
+                    // Swipe left - next page
+                    if (loadedState.hasNext) {
+                      context.read<ForewordPrefaceBloc>().add(
+                        const NextPageEvent(),
+                      );
+                    }
+                  } else if (details.primaryVelocity! > 500) {
+                    // Swipe right - previous page
+                    if (loadedState.hasPrevious) {
+                      context.read<ForewordPrefaceBloc>().add(
+                        const PreviousPageEvent(),
+                      );
+                    }
+                  }
+                }
+              },
+              child: _ContentBody(state: state),
+            ),
             bottomNavigationBar: _NavigationBar(state: state),
           );
         },

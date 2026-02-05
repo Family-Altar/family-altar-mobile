@@ -67,6 +67,9 @@ final GoRouter _router = GoRouter(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize first launch date (app download date) - only sets it once
+  await ReadingBloc.initializeFirstLaunchDate();
+
   // Initialize your repositories
   final localReadingStorage = LocalReadingStorage();
   final readingRepository = ReadingRepository(localReadingStorage);
