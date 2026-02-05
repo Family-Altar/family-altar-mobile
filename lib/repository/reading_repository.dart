@@ -36,10 +36,26 @@ class ReadingRepository {
         text.substring(dateIndex + dateText.length, scriptureEndIndex).trim();
     const dailyReadingSearch = 'Daily Reading:';
     final dailyReadingIndex = text.indexOf(dailyReadingSearch);
-    final dailyReading =
-        text.substring(dailyReadingIndex + dailyReadingSearch.length).trim();
+    var dailyReading = '';
+    if (dailyReadingIndex != -1) {
+      final start = dailyReadingIndex + dailyReadingSearch.length;
+      final end = text.indexOf('\n', start);
+      dailyReading =
+          text.substring(start, end == -1 ? text.length : end).trim();
+    }
 
     final quote = text.substring(scriptureEndIndex, dailyReadingIndex).trim();
+
+    final sermonTitleAndDateRegex = RegExp(r'\[\[\[.*\]\]\]');
+
+    final sermonTitleAndDateMatch =
+        sermonTitleAndDateRegex.allMatches(text).toList();
+    final sermonTitleAndDate =
+        sermonTitleAndDateMatch[0]
+            .group(0)
+            ?.replaceAll('[', '')
+            .replaceAll(']', '') ??
+        '';
 
     // --- Construct Reading object ---
     final reading = Reading(
@@ -47,6 +63,7 @@ class ReadingRepository {
       scripture: scripture,
       quote: quote,
       dailyReading: dailyReading,
+      title: sermonTitleAndDate,
     );
 
     return reading;
