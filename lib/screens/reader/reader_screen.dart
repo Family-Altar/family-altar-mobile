@@ -1,3 +1,4 @@
+import 'package:drop_cap_text/drop_cap_text.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
@@ -108,10 +109,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
                         final shareContent =
                             '''
-                ${reading.scripture.replaceAll('\n', '')}
-            
-                ${reading.quote.replaceAll('\n', '')}
-            
+                ${reading.scripture.replaceAll('\n', ' ')}
+
+                ${reading.quote}
+
                 Daily Reading:
                 ${reading.dailyReading}
                 '''.trimLeft();
@@ -171,23 +172,33 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 textScaler: TextScaler.noScaling,
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                state.reading.quote.replaceAll('\n', ' '),
+                              Image.asset(
+                                'assets/icon/divider.png',
+                                color: context.isDarkMode ? Colors.white : null,
+                                width: 200,
+                              ),
+                              const SizedBox(height: 8),
+                              DropCapText(
+                                dropCapStyle: TextStyle(
+                                  fontFamily: 'OldEnglish',
+                                  fontSize: 50,
+                                  color:
+                                      context.isDarkMode ? Colors.white : null,
+                                ),
+                                state.reading.quote,
                                 textAlign: TextAlign.left,
                                 style: AppFonts.normal(
                                   context,
                                 ).copyWith(fontSize: fontSize),
+                                dropCapPadding: const EdgeInsets.only(right: 8),
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                state.reading.title,
-                                textAlign: TextAlign.left,
-                                style: AppFonts.normal(
-                                  context,
-                                ).copyWith(fontSize: fontSize),
+                              Image.asset(
+                                'assets/icon/divider.png',
+                                color: context.isDarkMode ? Colors.white : null,
+                                width: 200,
                               ),
                               const SizedBox(height: 8),
-                              const Divider(),
                               Text(
                                 'Daily Reading:',
                                 textAlign: TextAlign.center,
@@ -228,24 +239,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         icon: const Icon(Icons.arrow_circle_left_outlined),
                         iconSize: 50,
                         onPressed:
-                            () => {
-                              _scrollController.jumpTo(0),
-                              context.read<ReadingBloc>().add(
-                                const PreviousReadingEvent(),
-                              ),
-                            },
+                            () => context.read<ReadingBloc>().add(
+                              const PreviousReadingEvent(),
+                            ),
                       ),
                       IconButton(
                         color: context.textColor,
                         icon: const Icon(Icons.arrow_circle_right_outlined),
                         iconSize: 50,
                         onPressed:
-                            () => {
-                              context.read<ReadingBloc>().add(
-                                const NextReadingEvent(),
-                              ),
-                              _scrollController.jumpTo(0),
-                            },
+                            () => context.read<ReadingBloc>().add(
+                              const NextReadingEvent(),
+                            ),
                       ),
                     ],
                   ),
