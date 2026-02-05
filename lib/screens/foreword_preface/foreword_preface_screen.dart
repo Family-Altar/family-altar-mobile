@@ -9,10 +9,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-class ForewordPrefaceScreenProvider extends StatelessWidget {
+class ForewordPrefaceScreenProvider extends StatefulWidget {
   const ForewordPrefaceScreenProvider({required this.section, super.key});
 
   final Section section;
+
+  @override
+  State<ForewordPrefaceScreenProvider> createState() =>
+      _ForewordPrefaceScreenProviderState();
+}
+
+class _ForewordPrefaceScreenProviderState
+    extends State<ForewordPrefaceScreenProvider> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,14 +41,16 @@ class ForewordPrefaceScreenProvider extends StatelessWidget {
       create:
           (context) => ForewordPrefaceBloc(
             readingRepository: context.read<ReadingRepository>(),
-          )..add(LoadPageEvent(sect: section)),
-      child: const ForewordPrefaceScreen(),
+          )..add(LoadPageEvent(sect: widget.section)),
+      child: ForewordPrefaceScreen(scrollController: _scrollController),
     );
   }
 }
 
 class ForewordPrefaceScreen extends StatelessWidget {
-  const ForewordPrefaceScreen({super.key});
+  const ForewordPrefaceScreen({required this.scrollController, super.key});
+
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -73,8 +96,14 @@ class ForewordPrefaceScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              body: _ContentBody(state: state),
-              bottomNavigationBar: _NavigationBar(state: state),
+              body: _ContentBody(
+                state: state,
+                scrollController: scrollController,
+              ),
+              bottomNavigationBar: _NavigationBar(
+                state: state,
+                scrollController: scrollController,
+              ),
             ),
           );
         },
@@ -95,9 +124,10 @@ class ForewordPrefaceScreen extends StatelessWidget {
 }
 
 class _ContentBody extends StatelessWidget {
-  const _ContentBody({required this.state});
+  const _ContentBody({required this.state, required this.scrollController});
 
   final ForewordPrefaceState state;
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -125,6 +155,7 @@ class _ContentBody extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return SingleChildScrollView(
+      controller: scrollController,
       child: Scrollbar(
         child: Center(
           child: Padding(
@@ -153,9 +184,10 @@ class _ContentBody extends StatelessWidget {
 }
 
 class _NavigationBar extends StatelessWidget {
-  const _NavigationBar({required this.state});
+  const _NavigationBar({required this.state, required this.scrollController});
 
   final ForewordPrefaceState state;
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
@@ -178,9 +210,14 @@ class _NavigationBar extends StatelessWidget {
             iconSize: 50,
             onPressed:
                 loadedState.hasPrevious
-                    ? () => context.read<ForewordPrefaceBloc>().add(
-                      const PreviousPageEvent(),
-                    )
+                    ? () {
+                      context.read<ForewordPrefaceBloc>().add(
+                        const PreviousPageEvent(),
+                      );
+                      if (scrollController.hasClients) {
+                        scrollController.jumpTo(0);
+                      }
+                    }
                     : null,
           ),
           IconButton(
@@ -188,9 +225,14 @@ class _NavigationBar extends StatelessWidget {
             iconSize: 50,
             onPressed:
                 loadedState.hasNext
-                    ? () => context.read<ForewordPrefaceBloc>().add(
-                      const NextPageEvent(),
-                    )
+                    ? () {
+                      context.read<ForewordPrefaceBloc>().add(
+                        const NextPageEvent(),
+                      );
+                      if (scrollController.hasClients) {
+                        scrollController.jumpTo(0);
+                      }
+                    }
                     : null,
           ),
         ],
