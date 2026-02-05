@@ -40,8 +40,8 @@ class ReaderScreen extends StatefulWidget {
 
 class _ReaderScreenState extends State<ReaderScreen> {
   late final ScrollController _scrollController;
-  double _horizontalDragDistance = 0.0;
-  double _verticalDragDistance = 0.0;
+  double _horizontalDragDistance = 0;
+  double _verticalDragDistance = 0;
   bool _isHorizontalSwipe = false;
 
   @override
@@ -199,7 +199,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   
                   // Determine if this is primarily a horizontal swipe
                   // Check after some movement to avoid false positives
-                  if (_horizontalDragDistance.abs() + _verticalDragDistance > 20) {
+                  if (_horizontalDragDistance.abs() +
+                          _verticalDragDistance > 20) {
                     _isHorizontalSwipe = _horizontalDragDistance.abs() > 
                         _verticalDragDistance * 1.5;
                   }
@@ -211,10 +212,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     final velocity = details.velocity.pixelsPerSecond.dx;
                     
                     // Check distance threshold (80px) or velocity threshold (400px/s)
-                    if (horizontalAbs > 80 || velocity.abs() > 400) {
+                    if (horizontalAbs > 80 ||
+                        velocity.abs() > 400) {
                       if (_horizontalDragDistance < 0 || velocity < 0) {
                         // Swipe left - next page
-                        context.read<ReadingBloc>().add(const NextReadingEvent());
+                        context.read<ReadingBloc>().add(
+                          const NextReadingEvent(),
+                        );
                       } else {
                         // Swipe right - previous page
                         context.read<ReadingBloc>().add(

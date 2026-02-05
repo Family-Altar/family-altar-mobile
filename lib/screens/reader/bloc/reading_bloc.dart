@@ -201,7 +201,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       await prefs.remove(_storageKey);
       await prefs.remove(_lastAccessedKey);
       await prefs.remove(_firstLaunchKey);
-      await _ensureFirstLaunchDate();
+      await ReadingBloc.initializeFirstLaunchDate();
       
       // Reload the current state if it's ReadingLoaded
       if (state is ReadingLoaded) {
@@ -366,7 +366,8 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     } on Exception {
       // Error getting first launch date - fail silently
     }
-    // Fallback to today if not set (shouldn't happen if _ensureFirstLaunchDate is called)
+    // Fallback to today if not set
+    // (shouldn't happen if _ensureFirstLaunchDate is called)
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);
   }

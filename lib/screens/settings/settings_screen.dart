@@ -103,49 +103,45 @@ class SettingsScreen extends StatelessWidget {
                           onChanged: (value) {
                             if (value != null) {
                               context.read<ThemeBloc>().add(
-                                ThemeSetEvent(value),
-                              );
+                                    ThemeSetEvent(value),
+                                  );
                             }
                           },
                           child: Column(
-                            children:
-                                themeOptions.map((option) {
-                                  final isSelected =
-                                      currentMode == option.value;
+                            children: themeOptions.map((option) {
+                              final isSelected = currentMode == option.value;
 
-                                  return RadioListTile<ThemeMode>.adaptive(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                    ),
-                                    title: Text(
-                                      option.title,
-                                      style: AppFonts.normal(context).copyWith(
-                                        color: context.textColor,
-                                        fontWeight:
-                                            isSelected
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      option.subtitle,
-                                      style: AppFonts.normal(
-                                        context,
-                                        size: FontSize.small,
-                                      ).copyWith(color: context.textColor),
-                                    ),
-                                    value: option.value,
-                                    activeColor: context.accent,
-                                    selected: isSelected,
-                                    selectedTileColor: context.accent
-                                        .withValues(alpha: 0.12),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    tileColor: Colors.transparent,
-                                    dense: true,
-                                  );
-                                }).toList(),
+                              return RadioListTile<ThemeMode>.adaptive(
+                                contentPadding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                title: Text(
+                                  option.title,
+                                  style: AppFonts.normal(context).copyWith(
+                                    color: context.textColor,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  option.subtitle,
+                                  style: AppFonts.normal(
+                                    context,
+                                    size: FontSize.small,
+                                  ).copyWith(color: context.textColor),
+                                ),
+                                value: option.value,
+                                activeColor: context.accent,
+                                selected: isSelected,
+                                selectedTileColor:
+                                    context.accent.withValues(alpha: 0.12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                tileColor: Colors.transparent,
+                                dense: true,
+                              );
+                            }).toList(),
                           ),
                         );
                       },
@@ -183,32 +179,24 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
 
   Future<void> _loadTime() async {
     final time = await NotificationSettings.getTimeOfDay();
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     setState(() {
       _time = time;
     });
   }
 
   Future<void> _pickTime() async {
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     final picked = await _timePickerFuture();
-    if (!mounted) {
-      return;
-    }
-    if (picked == null) {
-      return;
-    }
+    if (!mounted || picked == null) return;
+
     await NotificationSettings.setTimeOfDay(picked);
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
+
     setState(() {
       _time = picked;
     });
+
     await NotificationService().initAndScheduleDaily();
   }
 
@@ -341,16 +329,35 @@ class _ResetReadingProgressCard extends StatelessWidget {
 
   Future<void> _showResetConfirmation(BuildContext context) async {
     final platform = Theme.of(context).platform;
-    
+    bool? shouldReset;
+
     if (platform == TargetPlatform.iOS) {
-      await _showCupertinoResetDialog(context);
+      shouldReset = await _showCupertinoResetDialog(context);
     } else {
-      await _showMaterialResetDialog(context);
+      shouldReset = await _showMaterialResetDialog(context);
     }
+
+    if (shouldReset != true || !context.mounted) {
+      return;
+    }
+
+    context.read<ReadingBloc>().add(const ResetReadingProgressEvent());
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Reading progress has been reset',
+          style: AppFonts.normal(context),
+        ),
+        backgroundColor: context.backgroundColor.withValues(alpha: 0.8),
+      ),
+    );
   }
 
-  Future<void> _showMaterialResetDialog(BuildContext context) async {
-    final result = await showDialog<bool>(
+  Future<bool?> _showMaterialResetDialog(BuildContext context) {
+    return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: context.backgroundColor,
@@ -367,16 +374,13 @@ class _ResetReadingProgressCard extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               'No, cancel',
-              style: AppFonts.normal(context).copyWith(
-                color: context.textColor,
-              ),
+              style: AppFonts.normal(context)
+                  .copyWith(color: context.textColor),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: Text(
               'Yes, reset',
               style: AppFonts.normal(context).copyWith(
@@ -388,25 +392,10 @@ class _ResetReadingProgressCard extends StatelessWidget {
         ],
       ),
     );
-
-    if (result == true && context.mounted) {
-      context.read<ReadingBloc>().add(const ResetReadingProgressEvent());
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Reading progress has been reset',
-              style: AppFonts.normal(context),
-            ),
-            backgroundColor: context.backgroundColor.withValues(alpha: 0.8),
-          ),
-        );
-      }
-    }
   }
 
-  Future<void> _showCupertinoResetDialog(BuildContext context) async {
-    final result = await showCupertinoDialog<bool>(
+  Future<bool?> _showCupertinoResetDialog(BuildContext context) {
+    return showCupertinoDialog<bool>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: Text(
@@ -422,9 +411,8 @@ class _ResetReadingProgressCard extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               'No, cancel',
-              style: AppFonts.normal(context).copyWith(
-                color: context.textColor,
-              ),
+              style: AppFonts.normal(context)
+                  .copyWith(color: context.textColor),
             ),
           ),
           CupertinoDialogAction(
@@ -441,21 +429,6 @@ class _ResetReadingProgressCard extends StatelessWidget {
         ],
       ),
     );
-
-    if (result == true && context.mounted) {
-      context.read<ReadingBloc>().add(const ResetReadingProgressEvent());
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Reading progress has been reset',
-              style: AppFonts.normal(context),
-            ),
-            backgroundColor: context.backgroundColor.withValues(alpha: 0.8),
-          ),
-        );
-      }
-    }
   }
 
   @override

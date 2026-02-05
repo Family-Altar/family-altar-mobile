@@ -89,7 +89,7 @@ class ForewordPrefaceScreen extends StatelessWidget {
               behavior: HitTestBehavior.translucent,
               onHorizontalDragEnd: (details) {
                 if (state is! PageLoaded) return;
-                final loadedState = state as PageLoaded;
+                final loadedState = state;
                 if (loadedState.section == Section.dailyReading) return;
                 
                 if (details.primaryVelocity != null) {
