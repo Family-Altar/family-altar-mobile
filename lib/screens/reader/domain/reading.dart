@@ -6,12 +6,14 @@ class Reading extends Equatable {
     required this.scripture,
     required this.quote,
     required this.dailyReading,
+    required this.title,
   });
   final String date;
   final String scripture;
   final String quote;
   final String dailyReading;
+  final String title;
 
   @override
-  List<Object> get props => [date, scripture, quote, dailyReading];
+  List<Object> get props => [date, scripture, quote, dailyReading, title];
 }

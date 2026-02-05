@@ -179,6 +179,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 ).copyWith(fontSize: fontSize),
                               ),
                               const SizedBox(height: 8),
+                              Text(
+                                state.reading.title,
+                                textAlign: TextAlign.left,
+                                style: AppFonts.normal(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                              const SizedBox(height: 8),
                               const Divider(),
                               Text(
                                 'Daily Reading:',
@@ -202,7 +210,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                 ),
                 bottomNavigationBar: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: context.appBarColor,
                     border: Border(
