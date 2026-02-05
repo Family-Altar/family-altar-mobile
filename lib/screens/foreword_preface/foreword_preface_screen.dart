@@ -79,29 +79,31 @@ class ForewordPrefaceScreen extends StatelessWidget {
         builder: (context, state) {
           final title =
               state is PageLoaded ? _sectionTitle(state.section) : 'Reading';
-          return Scaffold(
-            backgroundColor: context.backgroundColor,
-            appBar: AppBar(
-              toolbarHeight: 48,
-              backgroundColor: context.appBarColor,
-              centerTitle: true,
-              title: Text(title, style: AppFonts.bold(context)),
-              leading: IconButton(
-                onPressed: () => context.pop(),
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: context.textColor,
-                  size: AppIcons.getIconSize(IconSize.medium),
+          return SafeArea(
+            child: Scaffold(
+              backgroundColor: context.backgroundColor,
+              appBar: AppBar(
+                toolbarHeight: 48,
+                backgroundColor: context.appBarColor,
+                centerTitle: true,
+                title: Text(title, style: AppFonts.bold(context)),
+                leading: IconButton(
+                  onPressed: () => context.pop(),
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: context.textColor,
+                    size: AppIcons.getIconSize(IconSize.medium),
+                  ),
                 ),
               ),
-            ),
-            body: _ContentBody(
-              state: state,
-              scrollController: scrollController,
-            ),
-            bottomNavigationBar: _NavigationBar(
-              state: state,
-              scrollController: scrollController,
+              body: _ContentBody(
+                state: state,
+                scrollController: scrollController,
+              ),
+              bottomNavigationBar: _NavigationBar(
+                state: state,
+                scrollController: scrollController,
+              ),
             ),
           );
         },
@@ -195,7 +197,7 @@ class _NavigationBar extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: context.backgroundColor,
         border: Border(top: BorderSide(color: Colors.grey.shade300)),
