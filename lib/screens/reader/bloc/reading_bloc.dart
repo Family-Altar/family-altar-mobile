@@ -33,9 +33,14 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!prefs.containsKey(_firstLaunchKey)) {
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        await prefs.setString(_firstLaunchKey, today.toIso8601String());
+        // this will only execute if the first launch date is not set in the shared preferences
+        // to be safe i will also check if there is no reading entries in the shared preferences
+        final entries = await _loadEntries();
+        if (entries.isEmpty) {
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          await prefs.setString(_firstLaunchKey, today.toIso8601String());
+        }
       }
     } on Exception {
       // Error setting first launch date - fail silently

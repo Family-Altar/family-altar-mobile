@@ -259,8 +259,15 @@ class _BookCoverInterior extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color.fromARGB(235, 255, 246, 213).withValues(alpha: 0.25),
+        color: context.surfaceColor.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(12),
+        // border: Border.all(color: const Color.fromARGB(255, 253, 233, 152)),
+        gradient: LinearGradient(
+          colors: [
+            const Color.fromARGB(235, 248, 231, 126).withValues(alpha: 0.25),
+            const Color.fromARGB(255, 255, 221, 136).withValues(alpha: 0.15),
+          ],
+        ),
       ),
     );
   }
