@@ -114,14 +114,12 @@ class ForewordPrefaceScreen extends StatelessWidget {
                 
                 if (details.primaryVelocity != null) {
                   if (details.primaryVelocity! < -500) {
-                    // Swipe left - next page
                     if (loadedState.hasNext) {
                       context.read<ForewordPrefaceBloc>().add(
                         const NextPageEvent(),
                       );
                     }
                   } else if (details.primaryVelocity! > 500) {
-                    // Swipe right - previous page
                     if (loadedState.hasPrevious) {
                       context.read<ForewordPrefaceBloc>().add(
                         const PreviousPageEvent(),
@@ -130,9 +128,15 @@ class ForewordPrefaceScreen extends StatelessWidget {
                   }
                 }
               },
-              child: _ContentBody(state: state),
+              child: _ContentBody(
+                state: state,
+                scrollController: scrollController,
+              ),
             ),
-            bottomNavigationBar: _NavigationBar(state: state),
+            bottomNavigationBar: _NavigationBar(
+              state: state,
+              scrollController: scrollController,
+            ),
           );
         },
       ),

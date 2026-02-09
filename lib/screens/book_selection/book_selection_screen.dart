@@ -100,9 +100,7 @@ class _BookItemState extends State<BookItem>
     if (!widget.data.isAvailable) return;
     if (section == Section.dailyReading) {
       final date = await Utils.getLastAccessedDay();
-      // Convert date to day-of-year for reading navigation
       if (!mounted) return;
-      // valid context, navigate
       await context.push('/reader', extra: date);
     } else {
       if (!mounted) return;

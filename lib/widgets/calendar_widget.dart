@@ -55,11 +55,15 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 
   // --- Logic Helpers ---
 
-  String _calculateCompletionPercentage(int missedDaysCount) {
-    final currentDay = DateTime.now().dayOfYear;
-    if (currentDay <= 0) return '0';
-    final daysCompleted = currentDay - missedDaysCount;
-    final percentage = (daysCompleted / currentDay) * 100;
+  String _calculateCompletionPercentage(ReadingLoaded? loadedState) {
+    if (loadedState == null) return '0';
+    
+    final totalEntries = loadedState.getTotalEntriesCount();
+    if (totalEntries <= 0) return '0';
+    
+    final completedEntries = loadedState.getTotalCompletedDaysCount();
+    final percentage = (completedEntries / totalEntries) * 100;
+    
     return percentage.clamp(0.0, 100.0).toStringAsFixed(0);
   }
 
@@ -112,6 +116,34 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
     );
   }
 
+  Widget _buildMissedBadge(BuildContext context, int missedCount) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: context.backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.circle, size: 8, color: Colors.red.shade400),
+          const SizedBox(width: 2),
+          Text(
+            '  $missedCount Missed ',
+            style: AppFonts.normal(context, size: FontSize.small).copyWith(
+              color: Colors.grey,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.arrow_forward, size: 16, color: Colors.red.shade400),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatsBar(
     BuildContext context,
     String percentage,
@@ -137,52 +169,17 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
             ),
           ),
           const Spacer(),
-          // Missed Stat (Only show if > 0)
-          if (missedCount > 0)
-            ScaleTransition(
-              scale: _pulseAnimation,
-              child: InkWell(
-                onTap: () => context.push('/missed-days/book-1'),
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.backgroundColor,
+          // Missed Stat (always visible; tappable when > 0)
+          missedCount > 0
+              ? ScaleTransition(
+                  scale: _pulseAnimation,
+                  child: InkWell(
+                    onTap: () => context.push('/missed-days/book-1'),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: 
-                      Theme.of(context)
-                      .dividerColor.withValues(alpha:0.3),
-                    ),
+                    child: _buildMissedBadge(context, missedCount),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.circle, size: 8, color: Colors.red.shade400),
-                      const SizedBox(width: 2),
-                      Text(
-                        '  $missedCount Missed ',
-                        style: AppFonts.normal(
-                          context,
-                          size: FontSize.small,
-                        ).copyWith(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward,
-                        size: 16,
-                        color: Colors.red.shade400,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+                )
+              : _buildMissedBadge(context, missedCount),
         ],
       ),
     );
@@ -194,9 +191,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
       builder: (context, state) {
         final loadedState = state is ReadingLoaded ? state : null;
         final missedDaysCount = loadedState?.getTotalMissedDaysCount() ?? 0;
-        final completionPercentage = _calculateCompletionPercentage(
-          missedDaysCount,
-        );
+        final completionPercentage = _calculateCompletionPercentage(loadedState);
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -230,19 +225,25 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                       context.push('/reader', extra: details.date);
                     }
                   },
-                  onLongPress: (details) {
-                    if (details.date != null && loadedState != null) {
-                      final status = loadedState.getStatus(details.date!);
-                      _showLongPressDialog(context, details.date!, status);
-                    }
-                  },
-                  monthCellBuilder:
-                      (context, details) => _CalendarCell(
-                        date: details.date,
-                        status:
-                            loadedState?.getStatus(details.date) ??
-                            ReadingStatus.upcoming,
+                  monthCellBuilder: (context, details) {
+                    final cellDate = details.date;
+                    final cellStatus =
+                        loadedState?.getStatus(cellDate) ??
+                        ReadingStatus.upcoming;
+                    return GestureDetector(
+                      onLongPress: loadedState != null
+                          ? () => _showLongPressDialog(
+                                context,
+                                cellDate,
+                                cellStatus,
+                              )
+                          : null,
+                      child: _CalendarCell(
+                        date: cellDate,
+                        status: cellStatus,
                       ),
+                    );
+                  },
                 ),
               ),
             ],

@@ -74,6 +74,34 @@ class ReadingLoaded extends ReadingState {
     }).length;
   }
 
+  /// Get total completed days count (days explicitly marked as read)
+  int getTotalCompletedDaysCount() {
+    int count = 0;
+    for (final entry in entries.values) {
+      if (entry.status == ReadingStatus.completed) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /// Get total number of entries tracked in SharedPreferences
+  int getTotalEntriesCount() {
+    return entries.length;
+  }
+
+  /// Get the number of days from first launch to today (inclusive)
+  int getDaysSinceFirstLaunch() {
+    final now = DateTime.now();
+    final normalizedNow = DateTime(now.year, now.month, now.day);
+    final normalizedFirstLaunch = DateTime(
+      firstLaunchDate.year,
+      firstLaunchDate.month,
+      firstLaunchDate.day,
+    );
+    return normalizedNow.difference(normalizedFirstLaunch).inDays + 1;
+  }
+
   ReadingLoaded copyWith({
     Reading? reading,
     DateTime? currentDate,

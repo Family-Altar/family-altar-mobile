@@ -17,17 +17,6 @@ class Utils {
     return null;
   }
 
-  static String unindent(String text) {
-    final lines = text.split('\n');
-    final indent = lines
-        .where((l) => l.trim().isNotEmpty)
-        .map((l) => l.length - l.trimLeft().length)
-        .fold<int>(999, (a, b) => b < a ? b : a);
-
-    return lines
-        .map((l) => l.length >= indent ? l.substring(indent) : l)
-        .join('\n');
-  }
 }
 extension StripMargin on String {
   String stripMargin([String margin = '|']) {

@@ -21,8 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: context.backgroundColor,
 
       drawer: Drawer(
-        backgroundColor:
-            context.backgroundColor, 
+        backgroundColor: context.backgroundColor,
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
@@ -33,9 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text(
                 widget.title,
                 style: AppFonts.bold(context).copyWith(
-                  color: const Color(
-                    0xFFE0C097,
-                  ), // Assuming a theme color for title
+                  color: const Color(0xFFE0C097),
                   fontSize: 24,
                 ),
               ),
@@ -120,7 +117,6 @@ class _HomeScreenState extends State<HomeScreen> {
           children: <Widget>[
             FamilyAltarBanner(),
             FamilyAltarCalendar(),
-         
           ],
         ),
       ),

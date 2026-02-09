@@ -67,12 +67,11 @@ final GoRouter _router = GoRouter(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize first launch date (app download date) - only sets it once
-  await ReadingBloc.initializeFirstLaunchDate();
-
-  // Initialize your repositories
   final localReadingStorage = LocalReadingStorage();
   final readingRepository = ReadingRepository(localReadingStorage);
+  final readingBloc = ReadingBloc(readingRepository: readingRepository);
+  await readingBloc.initializeFirstLaunchDate();
+  readingBloc.add(LoadReadingEvent(date: DateTime.now()));
 
   runApp(
     TranslationProvider(
@@ -83,13 +82,7 @@ void main() async {
         ],
         child: MultiBlocProvider(
           providers: [
-            // Global ReadingBloc
-            BlocProvider(
-              create:
-                  (_) =>
-                      ReadingBloc(readingRepository: readingRepository)
-                        ..add(LoadReadingEvent(date: DateTime.now())),
-            ),
+            BlocProvider.value(value: readingBloc),
             BlocProvider(
               create: (_) => ThemeBloc()..add(const ThemeInitializeEvent()),
             ),

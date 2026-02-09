@@ -1,4 +1,3 @@
-import 'package:drop_cap_text/drop_cap_text.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
@@ -113,9 +112,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Container(
-                      margin: const EdgeInsets.only(
-                        right: 8,
-                      ), // ← right margin
+                      margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
@@ -197,9 +194,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 onPanUpdate: (details) {
                   _horizontalDragDistance += details.delta.dx;
                   _verticalDragDistance += details.delta.dy.abs();
-                  
-                  // Determine if this is primarily a horizontal swipe
-                  // Check after some movement to avoid false positives
                   if (_horizontalDragDistance.abs() +
                           _verticalDragDistance > 20) {
                     _isHorizontalSwipe = _horizontalDragDistance.abs() > 
@@ -207,30 +201,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   }
                 },
                 onPanEnd: (details) {
-                  
-                  // Only process if it was a horizontal swipe
                   if (_isHorizontalSwipe) {
                     final horizontalAbs = _horizontalDragDistance.abs();
                     final velocity = details.velocity.pixelsPerSecond.dx;
-                    
-                    // Check distance threshold (80px) or velocity threshold (400px/s)
                     if (horizontalAbs > 80 ||
                         velocity.abs() > 400) {
                       if (_horizontalDragDistance < 0 || velocity < 0) {
-                        // Swipe left - next page
                         context.read<ReadingBloc>().add(
                           const NextReadingEvent(),
                         );
                       } else {
-                        // Swipe right - previous page
                         context.read<ReadingBloc>().add(
                           const PreviousReadingEvent(),
                         );
                       }
                     }
                   }
-                  
-                  // Reset drag distances
                   _horizontalDragDistance = 0.0;
                   _verticalDragDistance = 0.0;
                   _isHorizontalSwipe = false;
@@ -313,30 +299,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             const PreviousReadingEvent(),
                           ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        color: context.textColor,
-                        icon: const Icon(Icons.arrow_circle_left_outlined),
-                        iconSize: 50,
-                        onPressed:
-                            () => context.read<ReadingBloc>().add(
-                              const PreviousReadingEvent(),
-                            ),
-                      ),
-                      IconButton(
-                        color: context.textColor,
-                        icon: const Icon(Icons.arrow_circle_right_outlined),
-                        iconSize: 50,
-                        onPressed:
-                            () => context.read<ReadingBloc>().add(
-                              const NextReadingEvent(),
-                            ),
-                      ),
-                    ],
-                  ),
+                    IconButton(
+                      color: context.textColor,
+                      icon: const Icon(Icons.arrow_circle_right_outlined),
+                      iconSize: 50,
+                      onPressed:
+                          () => context.read<ReadingBloc>().add(
+                            const NextReadingEvent(),
+                          ),
+                    ),
+                  ],
                 ),
               ),
             );
