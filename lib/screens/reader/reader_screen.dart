@@ -1,3 +1,4 @@
+import 'package:drop_cap_text/drop_cap_text.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
@@ -312,16 +313,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             const PreviousReadingEvent(),
                           ),
                     ),
-                    IconButton(
-                      color: context.textColor,
-                      icon: const Icon(Icons.arrow_circle_right_outlined),
-                      iconSize: 50,
-                      onPressed:
-                          () => context.read<ReadingBloc>().add(
-                            const NextReadingEvent(),
-                          ),
-                    ),
-                  ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        color: context.textColor,
+                        icon: const Icon(Icons.arrow_circle_left_outlined),
+                        iconSize: 50,
+                        onPressed:
+                            () => context.read<ReadingBloc>().add(
+                              const PreviousReadingEvent(),
+                            ),
+                      ),
+                      IconButton(
+                        color: context.textColor,
+                        icon: const Icon(Icons.arrow_circle_right_outlined),
+                        iconSize: 50,
+                        onPressed:
+                            () => context.read<ReadingBloc>().add(
+                              const NextReadingEvent(),
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

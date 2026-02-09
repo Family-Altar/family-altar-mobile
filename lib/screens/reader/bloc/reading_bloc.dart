@@ -99,7 +99,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
     try {
       final reading = await _getOrFetchReading(nextDate);
-      await _saveLastAccessedDay(nextDate);
+      await _saveLastAccessedDay(nextDate); //TODO: remove unused
 
       emit(currentState.copyWith(reading: reading, currentDate: nextDate));
       await _prefetchSurroundingDays(nextDate);
@@ -330,10 +330,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     final prev = date.subtract(const Duration(days: 1));
     final next = date.add(const Duration(days: 1));
 
-    await Future.wait([
-      _maybePrefetch(prev),
-      _maybePrefetch(next),
-    ]);
+    await Future.wait([_maybePrefetch(prev), _maybePrefetch(next)]);
   }
 
   Future<void> _maybePrefetch(DateTime date) async {

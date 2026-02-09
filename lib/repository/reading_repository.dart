@@ -21,11 +21,11 @@ class ReadingRepository {
     // --- Extract scripture reference ---
     final scriptureRegex = RegExp(
       r'\(('
-      r'[1-3]?\s?[A-Z][a-z]+' // First word (Song)
-      r'(?:\s+[A-Za-z][a-z]+)*' // Additional words (of Solomon)
+      r'[1-3]?\s?[A-Z][a-z]+\.?' // First word, optional period (Chron.)
+      r'(?:\s+[A-Za-z][a-z]+\.?)*' // Additional words, optional period (Sol.)
       r'\s+\d{1,3}:' // Chapter number + colon
       r'\d{1,3}(?:[-–]\d{1,3})?' // Verse or range
-      r'(?:\s*,\s*\d{1,3}(?:[-–]\d{1,3})?)*' // Optional more verses: ,15 or , 15-18 etc.
+      r'(?:\s*,\s*\d{1,3}(?:[-–]\d{1,3})?)*' // Optional more verses
       r')\)',
     );
     final scriptureMatch = scriptureRegex.firstMatch(text);
@@ -36,10 +36,26 @@ class ReadingRepository {
         text.substring(dateIndex + dateText.length, scriptureEndIndex).trim();
     const dailyReadingSearch = 'Daily Reading:';
     final dailyReadingIndex = text.indexOf(dailyReadingSearch);
-    final dailyReading =
-        text.substring(dailyReadingIndex + dailyReadingSearch.length).trim();
+    var dailyReading = '';
+    if (dailyReadingIndex != -1) {
+      final start = dailyReadingIndex + dailyReadingSearch.length;
+      final end = text.indexOf('\n', start);
+      dailyReading =
+          text.substring(start, end == -1 ? text.length : end).trim();
+    }
 
     final quote = text.substring(scriptureEndIndex, dailyReadingIndex).trim();
+
+    final sermonTitleAndDateRegex = RegExp(r'\[\[\[.*\]\]\]');
+
+    final sermonTitleAndDateMatch =
+        sermonTitleAndDateRegex.allMatches(text).toList();
+    final sermonTitleAndDate =
+        sermonTitleAndDateMatch[0]
+            .group(0)
+            ?.replaceAll('[', '')
+            .replaceAll(']', '') ??
+        '';
 
     // --- Construct Reading object ---
     final reading = Reading(
@@ -47,6 +63,7 @@ class ReadingRepository {
       scripture: scripture,
       quote: quote,
       dailyReading: dailyReading,
+      title: sermonTitleAndDate,
     );
 
     return reading;
