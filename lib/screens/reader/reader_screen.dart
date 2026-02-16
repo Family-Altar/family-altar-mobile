@@ -83,7 +83,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           builder: (context, themeState) {
             final fontSize = themeState.readingFontSize;
 
-            return Scaffold(
+            return Scaffold
+            (
               backgroundColor: context.backgroundColor,
               appBar: AppBar(
                 toolbarHeight: 48,
@@ -290,31 +291,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               ).copyWith(fontSize: fontSize),
                             ),
                           ],
-                              const SizedBox(height: 8),
-                              const Divider(),
-                              Text(
-                                'Daily Reading:',
-                                textAlign: TextAlign.center,
-                                style: AppFonts.bold(
-                                  context,
-                                ).copyWith(fontSize: fontSize),
-                              ),
-                              Text(
-                                state.reading.dailyReading,
-                                textAlign: TextAlign.left,
-                                style: AppFonts.bold(
-                                  context,
-                                ).copyWith(fontSize: fontSize),
-                              ),
-                            ],
-                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-              bottomNavigationBar: Container(
+            ),
+            bottomNavigationBar: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
