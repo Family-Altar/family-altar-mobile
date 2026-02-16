@@ -264,7 +264,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               style: AppFonts.normal(
                                 context,
                               ).copyWith(fontSize: fontSize),
-                              dropCapPadding: EdgeInsets.only(right: 8.0)
+                              dropCapPadding: const EdgeInsets.only(right: 8)
                             ),
                             const SizedBox(height: 8),
                              Image.asset(

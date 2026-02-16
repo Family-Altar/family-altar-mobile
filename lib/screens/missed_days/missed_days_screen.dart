@@ -5,7 +5,6 @@ import 'package:family_altar/theme/app_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 class MissedDaysScreen extends StatelessWidget {
   const MissedDaysScreen({
@@ -29,7 +28,7 @@ class MissedDaysScreen extends StatelessWidget {
         ),
         title: Text(
           '${_volumeTitle(volumeId)} · Missed Days',
-          style: AppFonts.bold(context, size: FontSize.medium),
+          style: AppFonts.bold(context),
         ),
       ),
       body: BlocBuilder<ReadingBloc, ReadingState>(
@@ -53,7 +52,8 @@ class MissedDaysScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${missedList.length} ${missedList.length == 1 ? 'day' : 'days'} to catch up',
+                        '${missedList.length} '
+                        '${missedList.length == 1 ? 'day' : 'days'} to catch up',
                         style: AppFonts.normal(
                           context,
                           size: FontSize.small,
@@ -188,7 +188,6 @@ class _MissedDayTile extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: Text(

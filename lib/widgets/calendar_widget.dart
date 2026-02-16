@@ -8,13 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
-// Extension for dayOfYear calculation
-extension on DateTime {
-  int get dayOfYear {
-    return difference(DateTime(year)).inDays + 1;
-  }
-}
-
 class FamilyAltarCalendar extends StatefulWidget {
   const FamilyAltarCalendar({super.key});
 
@@ -64,7 +57,8 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
   String _calculateCompletionPercentage(ReadingLoaded? loadedState) {
     if (loadedState == null) return '0';
 
-    // Completed count only (excludes missed). Denominator = days in current year.
+    // Completed count only (excludes missed).
+    // Denominator = days in current year.
     final completedCount = loadedState.getTotalCompletedDaysCount();
     final daysInYear = _daysInYear(DateTime.now().year);
     final percentage = (completedCount / daysInYear) * 100;
@@ -196,14 +190,17 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
       builder: (context, state) {
         final loadedState = state is ReadingLoaded ? state : null;
         final missedDaysCount = loadedState?.getTotalMissedDaysCount() ?? 0;
-        final completionPercentage = _calculateCompletionPercentage(loadedState);
+        final completionPercentage =
+            _calculateCompletionPercentage(loadedState);
 
         // Console log completed reading entries (for debugging)
         if (loadedState != null) {
           final completedEntries = loadedState.getCompletedEntries();
+          final dates = completedEntries
+              .map((e) => DateFormat('yyyy-MM-dd').format(e.date))
+              .toList();
           debugPrint(
-            'Completed reading entries (${completedEntries.length}): '
-            '${completedEntries.map((e) => DateFormat('yyyy-MM-dd').format(e.date)).toList()}',
+            'Completed reading entries (${completedEntries.length}): $dates',
           );
         }
 

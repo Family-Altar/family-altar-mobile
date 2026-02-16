@@ -83,7 +83,7 @@ class ReadingLoaded extends ReadingState {
 
   /// Get total completed days count (days explicitly marked as read)
   int getTotalCompletedDaysCount() {
-    int count = 0;
+    var count = 0;
     for (final entry in entries.values) {
       if (entry.status == ReadingStatus.completed) {
         count++;
