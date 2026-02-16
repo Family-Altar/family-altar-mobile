@@ -53,7 +53,8 @@ class MissedDaysScreen extends StatelessWidget {
                     children: [
                       Text(
                         '${missedList.length} '
-                        '${missedList.length == 1 ? 'day' : 'days'} to catch up',
+                        '${missedList.length == 1 ? 'day' : 'days'} '
+                        'to catch up',
                         style: AppFonts.normal(
                           context,
                           size: FontSize.small,
