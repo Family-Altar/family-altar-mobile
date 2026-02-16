@@ -269,7 +269,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             const SizedBox(height: 8),
                              Image.asset(
                               'assets/icon/divider.png',
-                             r color: context.isDarkMode ? Colors.white : null,
+                             color: context.isDarkMode ? Colors.white : null,
                             ),
                             Text(
                               state.reading.title,
