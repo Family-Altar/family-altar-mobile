@@ -6,6 +6,7 @@ import 'package:family_altar/theme/app_icons.dart';
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:family_altar/theme/bloc/theme_event.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
+import 'package:family_altar/utils/utilities.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -40,6 +41,9 @@ class ReaderScreen extends StatefulWidget {
 
 class _ReaderScreenState extends State<ReaderScreen> {
   late final ScrollController _scrollController;
+  double _horizontalDragDistance = 0;
+  double _verticalDragDistance = 0;
+  bool _isHorizontalSwipe = false;
 
   @override
   void initState() {
@@ -78,64 +82,59 @@ class _ReaderScreenState extends State<ReaderScreen> {
           builder: (context, themeState) {
             final fontSize = themeState.readingFontSize;
 
-            return SafeArea(
-              child: Scaffold(
+            return Scaffold(
+              backgroundColor: context.backgroundColor,
+              appBar: AppBar(
+                toolbarHeight: 48,
                 backgroundColor: context.backgroundColor,
-                appBar: AppBar(
-                  toolbarHeight: 48,
-                  backgroundColor: context.appBarColor,
-                  centerTitle: true,
-                  title: Text(
-                    state.reading.date,
-                    style: AppFonts.bold(context),
+                centerTitle: true,
+                title: Text(state.reading.date, style: AppFonts.bold(context)),
+                leading: IconButton(
+                  onPressed: context.pop,
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: context.textColor,
+                    size: AppIcons.getIconSize(IconSize.medium),
                   ),
-                  leading: IconButton(
-                    onPressed: context.pop,
+                ),
+                actions: [
+                  IconButton(
+                    onPressed: () => context.go('/'),
                     icon: Icon(
-                      Icons.arrow_back,
+                      Icons.home,
                       color: context.textColor,
                       size: AppIcons.getIconSize(IconSize.medium),
                     ),
                   ),
-                  actions: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.share,
-                        color: context.textColor,
-                        size: AppIcons.getIconSize(IconSize.medium),
-                      ),
-                      onPressed: () async {
-                        final reading = state.reading;
-
-                        final shareContent =
-                            '''
-                ${reading.scripture.replaceAll('\n', ' ')}
-
-                ${reading.quote}
-
-                Daily Reading:
-                ${reading.dailyReading}
-                '''.trimLeft();
-
-                        final fullShareText =
-                            '''
-                Family Altar Reading
-                ${reading.date}
-            
-                $shareContent
-                '''.trimLeft();
-
-                        await Share.share(fullShareText);
-                      },
+                  PopupMenuButton<String>(
+                    color: context.backgroundColor,
+                    offset: const Offset(0, 48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-
-                    IconButton(
-                      icon: Icon(
-                        Icons.settings,
-                        color: context.textColor,
-                        size: AppIcons.getIconSize(IconSize.medium),
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.grey[800],
                       ),
-                      onPressed: () {
+                      child: CircleAvatar(
+                        radius: 12,
+                        backgroundColor: context.backgroundColor,
+                        child: Icon(
+                          Icons.more_horiz,
+                          color: context.textColor,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    onSelected: (value) {
+                      if (value == 'share') {
+                        final reading = state.reading;
+                        final fullShareText = formatReadingForSharing(reading);
+                        Share.share(fullShareText.trim());
+                      } else if (value == 'settings') {
                         showModalBottomSheet<void>(
                           context: context,
                           backgroundColor: Colors.transparent,
@@ -144,11 +143,86 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           useSafeArea: true,
                           builder: (_) => const _SettingsBottomSheet(),
                         );
-                      },
-                    ),
-                  ],
-                ),
-                body: SingleChildScrollView(
+                      }
+                    },
+                    itemBuilder:
+                        (BuildContext context) => [
+                          PopupMenuItem<String>(
+                            value: 'share',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.share,
+                                  color: context.textColor,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Share Reading',
+                                  style: AppFonts.normal(context),
+                                ),
+                              ],
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'settings',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.settings,
+                                  color: context.textColor,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Font and Settings',
+                                  style: AppFonts.normal(context),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                  ),
+                ],
+              ),
+              body: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onPanStart: (details) {
+                  _horizontalDragDistance = 0.0;
+                  _verticalDragDistance = 0.0;
+                  _isHorizontalSwipe = false;
+                },
+                onPanUpdate: (details) {
+                  _horizontalDragDistance += details.delta.dx;
+                  _verticalDragDistance += details.delta.dy.abs();
+                  if (_horizontalDragDistance.abs() + _verticalDragDistance >
+                      20) {
+                    _isHorizontalSwipe =
+                        _horizontalDragDistance.abs() >
+                        _verticalDragDistance * 1.5;
+                  }
+                },
+                onPanEnd: (details) {
+                  if (_isHorizontalSwipe) {
+                    final horizontalAbs = _horizontalDragDistance.abs();
+                    final velocity = details.velocity.pixelsPerSecond.dx;
+                    if (horizontalAbs > 80 || velocity.abs() > 400) {
+                      if (_horizontalDragDistance < 0 || velocity < 0) {
+                        context.read<ReadingBloc>().add(
+                          const NextReadingEvent(),
+                        );
+                      } else {
+                        context.read<ReadingBloc>().add(
+                          const PreviousReadingEvent(),
+                        );
+                      }
+                    }
+                  }
+                  _horizontalDragDistance = 0.0;
+                  _verticalDragDistance = 0.0;
+                  _isHorizontalSwipe = false;
+                },
+                child: SingleChildScrollView(
                   controller: _scrollController,
                   child: Scrollbar(
                     child: Center(
@@ -175,8 +249,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               Image.asset(
                                 'assets/icon/divider.png',
                                 color: context.isDarkMode ? Colors.white : null,
-                                width: 200,
                               ),
+
                               const SizedBox(height: 8),
                               DropCapText(
                                 dropCapStyle: TextStyle(
@@ -196,7 +270,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               Image.asset(
                                 'assets/icon/divider.png',
                                 color: context.isDarkMode ? Colors.white : null,
-                                width: 200,
+                              ),
+                              Text(
+                                state.reading.title,
+                                textAlign: TextAlign.left,
+                                style: AppFonts.normal(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
                               ),
                               const SizedBox(height: 8),
                               Text(
@@ -220,40 +300,40 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     ),
                   ),
                 ),
-                bottomNavigationBar: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+              ),
+              bottomNavigationBar: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: context.backgroundColor,
+                  border: const Border(
+                    top: BorderSide(color: Color.fromARGB(58, 137, 136, 136)),
                   ),
-                  decoration: BoxDecoration(
-                    color: context.appBarColor,
-                    border: Border(
-                      top: BorderSide(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      color: context.textColor,
+                      icon: const Icon(Icons.arrow_circle_left_outlined),
+                      iconSize: 50,
+                      onPressed:
+                          () => context.read<ReadingBloc>().add(
+                            const PreviousReadingEvent(),
+                          ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        color: context.textColor,
-                        icon: const Icon(Icons.arrow_circle_left_outlined),
-                        iconSize: 50,
-                        onPressed:
-                            () => context.read<ReadingBloc>().add(
-                              const PreviousReadingEvent(),
-                            ),
-                      ),
-                      IconButton(
-                        color: context.textColor,
-                        icon: const Icon(Icons.arrow_circle_right_outlined),
-                        iconSize: 50,
-                        onPressed:
-                            () => context.read<ReadingBloc>().add(
-                              const NextReadingEvent(),
-                            ),
-                      ),
-                    ],
-                  ),
+                    IconButton(
+                      color: context.textColor,
+                      icon: const Icon(Icons.arrow_circle_right_outlined),
+                      iconSize: 50,
+                      onPressed:
+                          () => context.read<ReadingBloc>().add(
+                            const NextReadingEvent(),
+                          ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -375,7 +455,7 @@ class _SettingsBottomSheet extends StatelessWidget {
     return Container(
       height: MediaQuery.sizeOf(context).height * 0.5,
       decoration: BoxDecoration(
-        color: context.appBarColor,
+        color: context.backgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         border: Border.all(
           color:

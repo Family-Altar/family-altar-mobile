@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:family_altar/models/reading_entry.dart';
@@ -18,6 +17,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     on<MarkAsReadEvent>(_onMarkAsRead);
     on<MarkAsUnreadEvent>(_onMarkAsUnread);
     on<ToggleDayEvent>(_onToggleDay);
+    on<ResetReadingProgressEvent>(_onResetReadingProgress);
   }
 
   final ReadingRepository readingRepository;
@@ -25,6 +25,26 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
   static const String _storageKey = 'reading_entries';
   static const String _lastAccessedKey = 'last_accessed_day';
+  static const String _firstLaunchKey = 'first_launch_date';
+  
+  Future<void> initializeFirstLaunchDate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!prefs.containsKey(_firstLaunchKey)) {
+        // Only set first launch if not already set; also require no existing
+        // reading entries in shared preferences.
+        final entries = await _loadEntries();
+        if (entries.isEmpty) {
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          await prefs.setString(_firstLaunchKey, today.toIso8601String());
+        }
+      }
+    } on Exception{
+            // Error setting first launch date - fail silently
+
+    }
+  }
 
   Future<void> _onLoad(
     LoadReadingEvent event,
@@ -33,25 +53,23 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     emit(ReadingLoading());
 
     try {
-      // Load reading entries for status tracking
       final entries = await _loadEntries();
-
-      // Load the actual reading content
       final normalizedDate = _normalizeDate(event.date);
       _readingCache
         ..clear()
         ..[normalizedDate] = await readingRepository.fetchReading(
           date: normalizedDate,
         );
-
-      // Save last accessed day
       await _saveLastAccessedDay(normalizedDate);
+
+      final firstLaunchDate = await _getFirstLaunchDate();
 
       emit(
         ReadingLoaded(
           reading: _readingCache[normalizedDate]!,
           currentDate: normalizedDate,
           entries: entries,
+          firstLaunchDate: firstLaunchDate,
         ),
       );
 
@@ -75,7 +93,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
     try {
       final reading = await _getOrFetchReading(nextDate);
-      await _saveLastAccessedDay(nextDate); //TODO: remove unused
+      await _saveLastAccessedDay(nextDate);
 
       emit(currentState.copyWith(reading: reading, currentDate: nextDate));
       await _prefetchSurroundingDays(nextDate);
@@ -135,10 +153,6 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
     final updatedEntries = Map<String, ReadingEntry>.from(currentState.entries)
       ..remove(dateKey);
-
-    // Remove the entry so it becomes unread
-    // (upcoming if future, missed if past)
-
     emit(currentState.copyWith(entries: updatedEntries));
     await _saveToStorage(updatedEntries);
   }
@@ -172,7 +186,32 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     await _saveToStorage(updatedEntries);
   }
 
-  // ===== Helper Methods =====
+  Future<void> _onResetReadingProgress(
+    ResetReadingProgressEvent event,
+    Emitter<ReadingState> emit,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Clear all reading entries
+      await prefs.remove(_storageKey);
+      await prefs.remove(_lastAccessedKey);
+      await prefs.remove(_firstLaunchKey);
+      await initializeFirstLaunchDate();
+      if (state is ReadingLoaded) {
+        final currentState = state as ReadingLoaded;
+        final entries = await _loadEntries();
+        final firstLaunchDate = await _getFirstLaunchDate();
+        emit(
+          currentState.copyWith(
+            entries: entries,
+            firstLaunchDate: firstLaunchDate,
+          ),
+        );
+      }
+    } on Exception {
+      // Error resetting reading progress - fail silently
+    }
+  }
 
   Future<Map<String, ReadingEntry>> _loadEntries() async {
     try {
@@ -190,8 +229,6 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
           );
         }
       }
-
-      // Auto-mark missed days
       return await _autoMarkMissedDays(entries);
     } on Exception {
       return {};
@@ -220,11 +257,18 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final startOfYear = DateTime(now.year);
+    final firstLaunchDate = await _getFirstLaunchDate();
 
     final updatedEntries = Map<String, ReadingEntry>.from(currentEntries);
 
     var currentDate = startOfYear;
     while (currentDate.isBefore(today)) {
+      // Skip days before the app was first launched - keep them unread
+      if (currentDate.isBefore(firstLaunchDate)) {
+        currentDate = currentDate.add(const Duration(days: 1));
+        continue;
+      }
+
       final dateKey = _dateToKey(currentDate);
       final existingEntry = updatedEntries[dateKey];
 
@@ -293,5 +337,20 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
   DateTime _normalizeDate(DateTime date) {
     return DateTime(date.year, date.month, date.day);
+  }
+
+  Future<DateTime> _getFirstLaunchDate() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final dateString = prefs.getString(_firstLaunchKey);
+      if (dateString != null) {
+        final date = DateTime.parse(dateString);
+        return DateTime(date.year, date.month, date.day);
+      }
+    } on Exception {
+      // Error getting first launch date - fail silently
+    }
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
   }
 }

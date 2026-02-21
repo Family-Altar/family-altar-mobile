@@ -12,10 +12,9 @@ class ReadingRepository {
     // Get raw text from storage
     final text = await _localReadingStorage.fetchReading(date: date);
 
-    // --- Extract date ---
-    final dateRegex = RegExp(r'([A-Za-z]+\s+\d+)');
-    final dateMatch = dateRegex.allMatches(text).toList();
-    final dateText = dateMatch[1].group(0) ?? '';
+    final dateRegex = RegExp(r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}');
+    final dateMatch = dateRegex.firstMatch(text);
+    final dateText = dateMatch?.group(0) ?? '';
     final dateIndex = text.indexOf(dateText);
 
     // --- Extract scripture reference ---
@@ -32,8 +31,9 @@ class ReadingRepository {
     final scriptureEndIndex = scriptureMatch?.end ?? 0;
 
     // --- Extract sections based on indices ---
-    final scripture =
-        text.substring(dateIndex + dateText.length, scriptureEndIndex).trim();
+    final scripture = dateIndex >= 0 && dateText.isNotEmpty
+        ? text.substring(dateIndex + dateText.length, scriptureEndIndex).trim()
+        : '';
     const dailyReadingSearch = 'Daily Reading:';
     final dailyReadingIndex = text.indexOf(dailyReadingSearch);
     var dailyReading = '';
@@ -44,18 +44,22 @@ class ReadingRepository {
           text.substring(start, end == -1 ? text.length : end).trim();
     }
 
-    final quote = text.substring(scriptureEndIndex, dailyReadingIndex).trim();
+    final quote = dailyReadingIndex != -1
+        ? text.substring(scriptureEndIndex, dailyReadingIndex).trim()
+        : '';
 
     final sermonTitleAndDateRegex = RegExp(r'\[\[\[.*\]\]\]');
 
     final sermonTitleAndDateMatch =
         sermonTitleAndDateRegex.allMatches(text).toList();
     final sermonTitleAndDate =
-        sermonTitleAndDateMatch[0]
-            .group(0)
-            ?.replaceAll('[', '')
-            .replaceAll(']', '') ??
-        '';
+        sermonTitleAndDateMatch.isNotEmpty
+            ? (sermonTitleAndDateMatch[0]
+                    .group(0)
+                    ?.replaceAll('[', '')
+                    .replaceAll(']', '') ??
+                '')
+            : '';
 
     // --- Construct Reading object ---
     final reading = Reading(

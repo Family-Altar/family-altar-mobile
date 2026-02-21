@@ -35,7 +35,7 @@ class BookSelectionScreen extends StatelessWidget {
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         toolbarHeight: 48,
-        backgroundColor: context.appBarColor,
+        backgroundColor: context.backgroundColor,
         title: Text(title, style: AppFonts.bold(context, size: FontSize.large)),
         leading: IconButton(
           onPressed: () => context.pop(),
@@ -100,9 +100,7 @@ class _BookItemState extends State<BookItem>
     if (!widget.data.isAvailable) return;
     if (section == Section.dailyReading) {
       final date = await Utils.getLastAccessedDay();
-      // Convert date to day-of-year for reading navigation
       if (!mounted) return;
-      // valid context, navigate
       await context.push('/reader', extra: date);
     } else {
       if (!mounted) return;
@@ -351,7 +349,10 @@ class _BookInnerPage extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: AppFonts.bold(context, size: FontSize.large),
+                        style: AppFonts.bold(
+                          context,
+                          size: FontSize.large,
+                        ).copyWith(color: Colors.black),
                       ),
                       AnimatedOpacity(
                         opacity: progress > 0.6 ? 1 : 0,
@@ -369,7 +370,10 @@ class _BookInnerPage extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'Choose a section to begin reading:',
-                    style: AppFonts.normal(context, size: FontSize.small),
+                    style: AppFonts.normal(
+                      context,
+                      size: FontSize.small,
+                    ).copyWith(color: Colors.black),
                   ),
                   const SizedBox(height: 16),
                   ...sections.map(

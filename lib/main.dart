@@ -25,7 +25,7 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/',
       builder: (BuildContext context, GoRouterState state) {
-        return const HomeScreen(title: 'The Family Altar - Tim Dodd');
+        return const HomeScreen(title: 'The Family Altar');
       },
       routes: <RouteBase>[
         GoRoute(
@@ -67,9 +67,11 @@ final GoRouter _router = GoRouter(
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize your repositories
   final localReadingStorage = LocalReadingStorage();
   final readingRepository = ReadingRepository(localReadingStorage);
+  final readingBloc = ReadingBloc(readingRepository: readingRepository);
+  await readingBloc.initializeFirstLaunchDate();
+  readingBloc.add(LoadReadingEvent(date: DateTime.now()));
 
   runApp(
     TranslationProvider(
@@ -80,13 +82,7 @@ void main() async {
         ],
         child: MultiBlocProvider(
           providers: [
-            // Global ReadingBloc
-            BlocProvider(
-              create:
-                  (_) =>
-                      ReadingBloc(readingRepository: readingRepository)
-                        ..add(LoadReadingEvent(date: DateTime.now())),
-            ),
+            BlocProvider.value(value: readingBloc),
             BlocProvider(
               create: (_) => ThemeBloc()..add(const ThemeInitializeEvent()),
             ),
