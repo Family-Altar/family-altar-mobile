@@ -56,3 +56,8 @@ class ToggleDayEvent extends ReadingEvent {
   @override
   List<Object> get props => [date];
 }
+
+/// Reset all reading progress
+class ResetReadingProgressEvent extends ReadingEvent {
+  const ResetReadingProgressEvent();
+}

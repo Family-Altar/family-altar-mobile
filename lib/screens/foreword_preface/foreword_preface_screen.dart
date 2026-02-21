@@ -79,31 +79,63 @@ class ForewordPrefaceScreen extends StatelessWidget {
         builder: (context, state) {
           final title =
               state is PageLoaded ? _sectionTitle(state.section) : 'Reading';
-          return SafeArea(
-            child: Scaffold(
+          return Scaffold(
+            backgroundColor: context.backgroundColor,
+            appBar: AppBar(
+              toolbarHeight: 48,
               backgroundColor: context.backgroundColor,
-              appBar: AppBar(
-                toolbarHeight: 48,
-                backgroundColor: context.appBarColor,
-                centerTitle: true,
-                title: Text(title, style: AppFonts.bold(context)),
-                leading: IconButton(
-                  onPressed: () => context.pop(),
+              centerTitle: true,
+              title: Text(title, style: AppFonts.bold(context)),
+              leading: IconButton(
+                onPressed: () => context.pop(),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: context.textColor,
+                  size: AppIcons.getIconSize(IconSize.medium),
+                ),
+              ),
+              actions: [
+                IconButton(
+                  onPressed: () => context.go('/'),
                   icon: Icon(
-                    Icons.arrow_back,
+                    Icons.home,
                     color: context.textColor,
                     size: AppIcons.getIconSize(IconSize.medium),
                   ),
                 ),
-              ),
-              body: _ContentBody(
+              ],
+            ),
+            body: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragEnd: (details) {
+                if (state is! PageLoaded) return;
+                final loadedState = state;
+                if (loadedState.section == Section.dailyReading) return;
+                
+                if (details.primaryVelocity != null) {
+                  if (details.primaryVelocity! < -500) {
+                    if (loadedState.hasNext) {
+                      context.read<ForewordPrefaceBloc>().add(
+                        const NextPageEvent(),
+                      );
+                    }
+                  } else if (details.primaryVelocity! > 500) {
+                    if (loadedState.hasPrevious) {
+                      context.read<ForewordPrefaceBloc>().add(
+                        const PreviousPageEvent(),
+                      );
+                    }
+                  }
+                }
+              },
+              child: _ContentBody(
                 state: state,
                 scrollController: scrollController,
               ),
-              bottomNavigationBar: _NavigationBar(
-                state: state,
-                scrollController: scrollController,
-              ),
+            ),
+            bottomNavigationBar: _NavigationBar(
+              state: state,
+              scrollController: scrollController,
             ),
           );
         },
