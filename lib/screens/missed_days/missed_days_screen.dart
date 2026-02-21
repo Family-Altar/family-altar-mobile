@@ -2,84 +2,73 @@ import 'package:family_altar/models/reading_entry.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
+import 'package:family_altar/utils/utilities.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class MissedDaysScreen extends StatelessWidget {
-  const MissedDaysScreen({
-    required this.volumeId,
-    super.key,
-  });
+  const MissedDaysScreen({required this.volumeId, super.key});
 
   final String volumeId;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.backgroundColor,
-      appBar: AppBar(
+    return SafeArea(
+      child: Scaffold(
         backgroundColor: context.backgroundColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: context.textColor),
-          onPressed: () => context.pop(),
+        appBar: AppBar(
+          backgroundColor: context.backgroundColor,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: context.textColor),
+            onPressed: () => context.pop(),
+          ),
+          title: Text(
+            '${_volumeTitle(volumeId)} · Missed Days',
+            style: AppFonts.bold(context),
+          ),
         ),
-        title: Text(
-          '${_volumeTitle(volumeId)} · Missed Days',
-          style: AppFonts.bold(context),
-        ),
-      ),
-      body: BlocBuilder<ReadingBloc, ReadingState>(
-        builder: (context, state) {
-          final loadedState = state is ReadingLoaded ? state : null;
-          final missedList = loadedState != null
-              ? (List<ReadingEntry>.from(loadedState.getMissedEntries())
-                ..sort((a, b) => a.date.compareTo(b.date)))
-              : <ReadingEntry>[];
+        body: BlocBuilder<ReadingBloc, ReadingState>(
+          builder: (context, state) {
+            final loadedState = state is ReadingLoaded ? state : null;
+            final missedList =
+                loadedState != null
+                    ? (List<ReadingEntry>.from(loadedState.getMissedEntries())
+                      ..sort((a, b) => a.date.compareTo(b.date)))
+                    : <ReadingEntry>[];
 
-          if (missedList.isEmpty) {
-            return _buildEmptyState(context);
-          }
+            if (missedList.isEmpty) {
+              return _buildEmptyState(context);
+            }
 
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${missedList.length} '
-                        '${missedList.length == 1 ? 'day' : 'days'} '
-                        'to catch up',
-                        style: AppFonts.normal(
-                          context,
-                          size: FontSize.small,
-                        ).copyWith(color: context.calendarDayTextSecondary),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Tap to open that day’s reading.',
-                        style: AppFonts.normal(
-                          context,
-                          size: FontSize.small,
-                        ).copyWith(
-                          color: context.calendarDayTextSecondary,
-                          height: 1.3,
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${missedList.length} '
+                          '${missedList.length == 1 ? 'day' : 'days'} '
+                          'to catch up',
+                          style: AppFonts.normal(
+                            context,
+                            size: FontSize.small,
+                          ).copyWith(color: context.calendarDayTextSecondary),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
                       final entry = missedList[index];
                       final normalizedDate = DateTime(
                         entry.date.year,
@@ -100,15 +89,14 @@ class MissedDaysScreen extends StatelessWidget {
                           context.push('/reader', extra: entry.date);
                         },
                       );
-                    },
-                    childCount: missedList.length,
+                    }, childCount: missedList.length),
                   ),
                 ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            ],
-          );
-        },
+                const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -134,9 +122,10 @@ class MissedDaysScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'No missed days. Keep up the great reading.',
-              style: AppFonts.normal(context, size: FontSize.small).copyWith(
-                color: context.calendarDayTextSecondary,
-              ),
+              style: AppFonts.normal(
+                context,
+                size: FontSize.small,
+              ).copyWith(color: context.calendarDayTextSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -192,7 +181,7 @@ class _MissedDayTile extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Day $dayNumber',
+                    formatDateTypeToDDMMYYY(entry.date),
                     style: AppFonts.bold(context, size: FontSize.small),
                   ),
                 ),
