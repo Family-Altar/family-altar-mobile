@@ -82,8 +82,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           builder: (context, themeState) {
             final fontSize = themeState.readingFontSize;
 
-            return Scaffold
-            (
+            return Scaffold(
               backgroundColor: context.backgroundColor,
               appBar: AppBar(
                 toolbarHeight: 48,
@@ -196,9 +195,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 onPanUpdate: (details) {
                   _horizontalDragDistance += details.delta.dx;
                   _verticalDragDistance += details.delta.dy.abs();
-                  if (_horizontalDragDistance.abs() +
-                          _verticalDragDistance > 20) {
-                    _isHorizontalSwipe = _horizontalDragDistance.abs() >
+                  if (_horizontalDragDistance.abs() + _verticalDragDistance >
+                      20) {
+                    _isHorizontalSwipe =
+                        _horizontalDragDistance.abs() >
                         _verticalDragDistance * 1.5;
                   }
                 },
@@ -206,8 +206,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   if (_isHorizontalSwipe) {
                     final horizontalAbs = _horizontalDragDistance.abs();
                     final velocity = details.velocity.pixelsPerSecond.dx;
-                    if (horizontalAbs > 80 ||
-                        velocity.abs() > 400) {
+                    if (horizontalAbs > 80 || velocity.abs() > 400) {
                       if (_horizontalDragDistance < 0 || velocity < 0) {
                         context.read<ReadingBloc>().add(
                           const NextReadingEvent(),
@@ -246,62 +245,63 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 ).copyWith(fontSize: fontSize),
                                 textScaler: TextScaler.noScaling,
                               ),
-                            const SizedBox(height: 8),
-                            Image.asset(
-                              'assets/icon/divider.png',
-                              color: context.isDarkMode ? Colors.white : null,
-                            ),
-                              
-                            const SizedBox(height: 8),
-                            DropCapText(
-                              dropCapStyle: TextStyle(
-                                fontFamily: 'OldEnglish',
-                                fontSize: 50,
+                              const SizedBox(height: 8),
+                              Image.asset(
+                                'assets/icon/divider.png',
                                 color: context.isDarkMode ? Colors.white : null,
                               ),
-                              state.reading.quote.replaceAll('\n', ' '),
-                              textAlign: TextAlign.left,
-                              style: AppFonts.normal(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                              dropCapPadding: const EdgeInsets.only(right: 8)
-                            ),
-                            const SizedBox(height: 8),
-                             Image.asset(
-                              'assets/icon/divider.png',
-                             color: context.isDarkMode ? Colors.white : null,
-                            ),
-                            Text(
-                              state.reading.title,
-                              textAlign: TextAlign.left,
-                              style: AppFonts.normal(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Daily Reading:',
-                              textAlign: TextAlign.center,
-                              style: AppFonts.bold(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                            ),
-                            Text(
-                              state.reading.dailyReading,
-                              textAlign: TextAlign.left,
-                              style: AppFonts.bold(
-                                context,
-                              ).copyWith(fontSize: fontSize),
-                            ),
-                          ],
+
+                              const SizedBox(height: 8),
+                              DropCapText(
+                                dropCapStyle: TextStyle(
+                                  fontFamily: 'OldEnglish',
+                                  fontSize: 50,
+                                  color:
+                                      context.isDarkMode ? Colors.white : null,
+                                ),
+                                state.reading.quote,
+                                textAlign: TextAlign.left,
+                                style: AppFonts.normal(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                                dropCapPadding: const EdgeInsets.only(right: 8),
+                              ),
+                              const SizedBox(height: 8),
+                              Image.asset(
+                                'assets/icon/divider.png',
+                                color: context.isDarkMode ? Colors.white : null,
+                              ),
+                              Text(
+                                state.reading.title,
+                                textAlign: TextAlign.left,
+                                style: AppFonts.normal(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Daily Reading:',
+                                textAlign: TextAlign.center,
+                                style: AppFonts.bold(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                              Text(
+                                state.reading.dailyReading,
+                                textAlign: TextAlign.left,
+                                style: AppFonts.bold(
+                                  context,
+                                ).copyWith(fontSize: fontSize),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            bottomNavigationBar: Container(
+              bottomNavigationBar: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
