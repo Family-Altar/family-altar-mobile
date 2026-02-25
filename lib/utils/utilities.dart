@@ -1,4 +1,5 @@
 import 'package:family_altar/screens/reader/domain/reading.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Utils {
@@ -16,8 +17,8 @@ class Utils {
     }
     return null;
   }
-
 }
+
 extension StripMargin on String {
   String stripMargin([String margin = '|']) {
     return split('\n')
@@ -32,9 +33,10 @@ extension StripMargin on String {
 String formatReadingForSharing(Reading reading) {
   final scripture = reading.scripture.replaceAll('\n', '').trim();
   final quote = reading.quote.replaceAll('\n', '').trim();
-  final dailyReading =reading.dailyReading.replaceAll('\n', '').trim();
+  final dailyReading = reading.dailyReading.replaceAll('\n', '').trim();
 
-  final shareContent = '''
+  final shareContent =
+      '''
     |$scripture
     |
     |$quote\n
@@ -42,7 +44,8 @@ String formatReadingForSharing(Reading reading) {
     |$dailyReading
   '''.stripMargin();
 
-  final fullShareText = '''
+  final fullShareText =
+      '''
     |Family Altar - Volume I
     |${reading.date}
     |
@@ -50,4 +53,8 @@ String formatReadingForSharing(Reading reading) {
   '''.stripMargin();
 
   return fullShareText;
+}
+
+String formatDateTypeToDDMMYYY(DateTime date) {
+  return DateFormat('d MMMM yyyy').format(date);
 }

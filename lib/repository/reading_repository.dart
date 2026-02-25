@@ -66,7 +66,7 @@ class ReadingRepository {
       date: dateText,
       scripture: scripture,
       quote: quote,
-      dailyReading: dailyReading,
+      dailyReading: dailyReading.replaceAll('.', ''),
       title: sermonTitleAndDate,
     );
 
