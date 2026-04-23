@@ -252,9 +252,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 textScaler: TextScaler.noScaling,
                               ),
                               const SizedBox(height: 8),
-                              Image.asset(
-                                'assets/icon/divider.png',
-                                color: context.isDarkMode ? Colors.white : null,
+                              Center(
+                                child: Image.asset(
+                                  'assets/icon/divider.png',
+                                  color:
+                                      context.isDarkMode ? Colors.white : null,
+                                  width: (fontSize * 20).clamp(0, 400),
+                                ),
                               ),
 
                               const SizedBox(height: 8),
@@ -281,9 +285,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 ).copyWith(fontSize: fontSize),
                               ),
                               const SizedBox(height: 8),
-                              Image.asset(
-                                'assets/icon/divider.png',
-                                color: context.isDarkMode ? Colors.white : null,
+                              Center(
+                                child: Image.asset(
+                                  'assets/icon/divider.png',
+                                  color:
+                                      context.isDarkMode ? Colors.white : null,
+                                  width: (fontSize * 20).clamp(0, 400),
+                                ),
                               ),
                               const SizedBox(height: 8),
                               Text(
