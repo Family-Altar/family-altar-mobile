@@ -116,7 +116,10 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                 children: [
                   IconButton(
                     onPressed: () => _changeMonth(-1),
-                    icon: Icon(Icons.chevron_left, color: context.calendarMonthText),
+                    icon: Icon(
+                      Icons.chevron_left,
+                      color: context.calendarMonthText,
+                    ),
                   ),
                   IconButton(
                     onPressed: _goToToday,
@@ -129,7 +132,10 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
               ),
               IconButton(
                 onPressed: () => _changeMonth(1),
-                icon: Icon(Icons.chevron_right, color: context.calendarMonthText),
+                icon: Icon(
+                  Icons.chevron_right,
+                  color: context.calendarMonthText,
+                ),
               ),
             ],
           ),
