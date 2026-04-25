@@ -49,8 +49,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
   // --- Logic Helpers ---
 
   static int _daysInYear(int year) {
-    final isLeapYear =
-        (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    final isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
     return isLeapYear ? 366 : 365;
   }
 
@@ -86,19 +85,22 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
     });
   }
 
+  void _goToToday() {
+    setState(() {
+      _currentDate = DateTime(DateTime.now().year, DateTime.now().month);
+      _calendarController.displayDate = _currentDate;
+    });
+  }
+
   // --- UI Builders ---
 
   Widget _buildHeader(BuildContext context) {
     final headerDate = DateFormat('MMMM yyyy').format(_currentDate);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          IconButton(
-            onPressed: () => _changeMonth(-1),
-            icon: Icon(Icons.chevron_left, color: context.calendarMonthText),
-          ),
           Text(
             headerDate,
             style: AppFonts.bold(
@@ -106,9 +108,36 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
               size: FontSize.small,
             ).copyWith(color: context.calendarMonthText, letterSpacing: 0.5),
           ),
-          IconButton(
-            onPressed: () => _changeMonth(1),
-            icon: Icon(Icons.chevron_right, color: context.calendarMonthText),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () => _changeMonth(-1),
+                    icon: Icon(
+                      Icons.chevron_left,
+                      color: context.calendarMonthText,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _goToToday,
+                    icon: Icon(Icons.today, color: context.calendarMonthText),
+                    iconSize: 18,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              IconButton(
+                onPressed: () => _changeMonth(1),
+                icon: Icon(
+                  Icons.chevron_right,
+                  color: context.calendarMonthText,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -127,17 +156,19 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
       ),
       child: Row(
         children: [
-          Icon(Icons.circle, size: 8, color: Colors.red.shade400),
+          if (missedCount > 0)
+            Icon(Icons.circle, size: 8, color: Colors.red.shade400),
           const SizedBox(width: 2),
           Text(
             '  $missedCount Missed ',
-            style: AppFonts.normal(context, size: FontSize.small).copyWith(
-              color: Colors.grey,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppFonts.normal(
+              context,
+              size: FontSize.small,
+            ).copyWith(color: Colors.grey, fontWeight: FontWeight.bold),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.arrow_forward, size: 16, color: Colors.red.shade400),
+          if (missedCount > 0)
+            Icon(Icons.arrow_forward, size: 16, color: Colors.red.shade400),
         ],
       ),
     );
@@ -152,9 +183,9 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: context.backgroundColor.withValues(alpha:0.5),
+        color: context.backgroundColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha:0.1)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -172,12 +203,13 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
           InkWell(
             onTap: () => context.push('/missed-days/book-1'),
             borderRadius: BorderRadius.circular(20),
-            child: missedCount > 0
-                ? ScaleTransition(
-                    scale: _pulseAnimation,
-                    child: _buildMissedBadge(context, missedCount),
-                  )
-                : _buildMissedBadge(context, missedCount),
+            child:
+                missedCount > 0
+                    ? ScaleTransition(
+                      scale: _pulseAnimation,
+                      child: _buildMissedBadge(context, missedCount),
+                    )
+                    : _buildMissedBadge(context, missedCount),
           ),
         ],
       ),
@@ -190,15 +222,17 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
       builder: (context, state) {
         final loadedState = state is ReadingLoaded ? state : null;
         final missedDaysCount = loadedState?.getTotalMissedDaysCount() ?? 0;
-        final completionPercentage =
-            _calculateCompletionPercentage(loadedState);
+        final completionPercentage = _calculateCompletionPercentage(
+          loadedState,
+        );
 
         // Console log completed reading entries (for debugging)
         if (loadedState != null) {
           final completedEntries = loadedState.getCompletedEntries();
-          final dates = completedEntries
-              .map((e) => DateFormat('yyyy-MM-dd').format(e.date))
-              .toList();
+          final dates =
+              completedEntries
+                  .map((e) => DateFormat('yyyy-MM-dd').format(e.date))
+                  .toList();
           debugPrint(
             'Completed reading entries (${completedEntries.length}): $dates',
           );
@@ -242,17 +276,15 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                         loadedState?.getStatus(cellDate) ??
                         ReadingStatus.upcoming;
                     return GestureDetector(
-                      onLongPress: loadedState != null
-                          ? () => _showLongPressDialog(
+                      onLongPress:
+                          loadedState != null
+                              ? () => _showLongPressDialog(
                                 context,
                                 cellDate,
                                 cellStatus,
                               )
-                          : null,
-                      child: _CalendarCell(
-                        date: cellDate,
-                        status: cellStatus,
-                      ),
+                              : null,
+                      child: _CalendarCell(date: cellDate, status: cellStatus),
                     );
                   },
                 ),
@@ -323,7 +355,6 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 }
 
 class _CalendarCell extends StatelessWidget {
-
   const _CalendarCell({required this.date, required this.status});
   final DateTime date;
   final ReadingStatus status;
@@ -338,39 +369,31 @@ class _CalendarCell extends StatelessWidget {
     Color borderColor;
     Color? fillColor;
 
-    borderColor = Theme.of(context).dividerColor.withValues(alpha:0.2);
+    borderColor = Theme.of(context).dividerColor.withValues(alpha: 0.2);
 
     if (isToday) {
       borderColor = context.calendarTodayBorder;
-      fillColor = context.calendarTodayBorder.withValues(alpha:0.1);
+      fillColor = context.calendarTodayBorder.withValues(alpha: 0.1);
     } else {
       switch (status) {
-  case ReadingStatus.completed:
-    borderColor =
-        context.calendarCompletedBorder.withValues(alpha: 0.5);
-    fillColor =
-        context.calendarCompletedBorder.withValues(alpha: 0.05);
+        case ReadingStatus.completed:
+          borderColor = context.calendarCompletedBorder.withValues(alpha: 0.5);
+          fillColor = context.calendarCompletedBorder.withValues(alpha: 0.05);
 
-  case ReadingStatus.missed:
-    borderColor =
-        context.calendarMissedBorder.withValues(alpha: 0.5);
-    fillColor =
-        context.calendarMissedBorder.withValues(alpha: 0.05);
+        case ReadingStatus.missed:
+          borderColor = context.calendarMissedBorder.withValues(alpha: 0.5);
+          fillColor = context.calendarMissedBorder.withValues(alpha: 0.05);
 
-  case ReadingStatus.upcoming:
-    fillColor = Colors.transparent;
-}
-
+        case ReadingStatus.upcoming:
+          fillColor = Colors.transparent;
+      }
     }
 
     return Container(
       margin: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: fillColor,
-        border: Border.all(
-          color: borderColor,
-          width: isToday ? 2.0 : 1.0,
-        ),
+        border: Border.all(color: borderColor, width: isToday ? 2.0 : 1.0),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Stack(
@@ -404,7 +427,7 @@ class _CalendarCell extends StatelessWidget {
               child: Icon(
                 Icons.circle,
                 size: 6,
-                color: context.calendarMissedIcon.withValues(alpha:0.6),
+                color: context.calendarMissedIcon.withValues(alpha: 0.6),
               ),
             ),
         ],
