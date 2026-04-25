@@ -75,7 +75,7 @@ class NotificationService {
     try {
       await _plugin.zonedSchedule(
         1,
-        "Your daily reading is ready",
+        'Your daily reading is ready',
         "Take a moment with God's Word",
         next,
         const NotificationDetails(
@@ -98,7 +98,7 @@ class NotificationService {
 
       await _plugin.zonedSchedule(
         1,
-        "Your daily reading is ready",
+        'Your daily reading is ready',
         "Take a moment with God's Word",
         next,
         const NotificationDetails(
