@@ -75,8 +75,8 @@ class NotificationService {
     try {
       await _plugin.zonedSchedule(
         1,
-        "Remember to read today's reading",
-        'God bless',
+        "Your daily reading is ready",
+        "Take a moment with God's Word",
         next,
         const NotificationDetails(
           android: AndroidNotificationDetails(
@@ -98,8 +98,8 @@ class NotificationService {
 
       await _plugin.zonedSchedule(
         1,
-        "Remember to read today's reading",
-        'God bless',
+        "Your daily reading is ready",
+        "Take a moment with God's Word",
         next,
         const NotificationDetails(
           android: AndroidNotificationDetails(
