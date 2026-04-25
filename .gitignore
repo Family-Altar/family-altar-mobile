@@ -49,3 +49,18 @@ app.*.map.json
 
 #Family Altar content
 *.txt
+
+# Flutter
+.dart_tool/
+build/
+
+# iOS
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Pods/
+ios/.symlinks/
+ios/DerivedData/
+
+# macOS
+macos/Pods/
+macos/DerivedData/
