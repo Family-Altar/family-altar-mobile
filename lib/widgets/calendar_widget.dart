@@ -204,61 +204,102 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
           );
         }
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxHeight < 360;
+            final bottomPadding = compact ? 8.0 : 24.0;
+            final sidePadding = compact ? 12.0 : 16.0;
+
+            final calendarCard = Container(
+              decoration: BoxDecoration(
+                color: context.backgroundColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.all(6),
+              child: SfCalendar(
+                controller: _calendarController,
+                view: CalendarView.month,
+                initialDisplayDate: _currentDate,
+                headerHeight: 0,
+                backgroundColor: Colors.transparent,
+                monthViewSettings: const MonthViewSettings(
+                  dayFormat: 'EEE',
+                  showTrailingAndLeadingDates: false,
+                  appointmentDisplayMode: MonthAppointmentDisplayMode.none,
+                ),
+                cellBorderColor: Colors.transparent,
+                selectionDecoration: const BoxDecoration(),
+                onViewChanged: _onCalendarViewChanged,
+                onTap: (details) {
+                  if (details.date != null) {
+                    context.push('/reader', extra: details.date);
+                  }
+                },
+                monthCellBuilder: (context, details) {
+                  final cellDate = details.date;
+                  final cellStatus =
+                      loadedState?.getStatus(cellDate) ??
+                      ReadingStatus.upcoming;
+                  return GestureDetector(
+                    onLongPress: loadedState != null
+                        ? () => _showLongPressDialog(
+                              context,
+                              cellDate,
+                              cellStatus,
+                            )
+                        : null,
+                    child: _CalendarCell(
+                      date: cellDate,
+                      status: cellStatus,
+                    ),
+                  );
+                },
+              ),
+            );
+
+            final topSection = <Widget>[
               _buildStatsBar(context, completionPercentage, missedDaysCount),
               _buildHeader(context),
-              Container(
-                decoration: BoxDecoration(
-                  color: context.backgroundColor,
-                  borderRadius: BorderRadius.circular(16),
+            ];
+
+            if (compact) {
+              return Padding(
+                padding: EdgeInsets.fromLTRB(
+                  sidePadding,
+                  8,
+                  sidePadding,
+                  bottomPadding,
                 ),
-                padding: const EdgeInsets.all(6),
-                child: SfCalendar(
-                  controller: _calendarController,
-                  view: CalendarView.month,
-                  initialDisplayDate: _currentDate,
-                  headerHeight: 0,
-                  backgroundColor: Colors.transparent,
-                  monthViewSettings: const MonthViewSettings(
-                    dayFormat: 'EEE',
-                    showTrailingAndLeadingDates: false,
-                    appointmentDisplayMode: MonthAppointmentDisplayMode.none,
-                  ),
-                  cellBorderColor: Colors.transparent,
-                  selectionDecoration: const BoxDecoration(),
-                  onViewChanged: _onCalendarViewChanged,
-                  onTap: (details) {
-                    if (details.date != null) {
-                      context.push('/reader', extra: details.date);
-                    }
-                  },
-                  monthCellBuilder: (context, details) {
-                    final cellDate = details.date;
-                    final cellStatus =
-                        loadedState?.getStatus(cellDate) ??
-                        ReadingStatus.upcoming;
-                    return GestureDetector(
-                      onLongPress: loadedState != null
-                          ? () => _showLongPressDialog(
-                                context,
-                                cellDate,
-                                cellStatus,
-                              )
-                          : null,
-                      child: _CalendarCell(
-                        date: cellDate,
-                        status: cellStatus,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ...topSection,
+                      SizedBox(
+                        height: 260,
+                        child: calendarCard,
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                sidePadding,
+                8,
+                sidePadding,
+                bottomPadding,
               ),
-            ],
-          ),
+              child: Column(
+                children: [
+                  ...topSection,
+                  Expanded(child: calendarCard),
+                ],
+              ),
+            );
+          },
         );
       },
     );

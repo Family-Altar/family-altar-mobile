@@ -6,28 +6,32 @@ class FamilyAltarBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Get the background color based on the current theme mode
     const bgColor = AppColors.darkBackground;
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final gradientStops = isLandscape
+        ? const [0.0, 0.75, 1.0]
+        : const [0.0, 0.5, 1.0];
+    final imageFit = isLandscape ? BoxFit.contain : BoxFit.cover;
 
     return Container(
       width: double.infinity,
-      height: 220,
       color: bgColor,
       child: ShaderMask(
         shaderCallback: (rect) {
-          return const LinearGradient(
+          return LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [bgColor, bgColor, Colors.transparent],
-            stops: [0.0, 0.5, 1.0], // Fades out in the bottom half
+            stops: gradientStops,
           ).createShader(Rect.fromLTRB(0, 0, rect.width, rect.height));
         },
         blendMode: BlendMode.dstIn,
         child: Image.asset(
           'assets/images/family_alter_book_cover.png',
-          height: 220,
           width: double.infinity,
-          fit: BoxFit.cover,
+          fit: imageFit,
+          alignment: Alignment.topCenter,
         ),
       ),
     );
