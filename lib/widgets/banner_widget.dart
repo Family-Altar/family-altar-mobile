@@ -22,7 +22,7 @@ class FamilyAltarBanner extends StatelessWidget {
           return LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [bgColor, bgColor, Colors.transparent],
+            colors: const [bgColor, bgColor, Colors.transparent],
             stops: gradientStops,
           ).createShader(Rect.fromLTRB(0, 0, rect.width, rect.height));
         },

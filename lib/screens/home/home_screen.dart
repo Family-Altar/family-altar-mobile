@@ -123,7 +123,10 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  SizedBox(height: bannerHeight, child: const FamilyAltarBanner()),
+                  SizedBox(
+                    height: bannerHeight,
+                    child: const FamilyAltarBanner(),
+                  ),
                   SizedBox(
                     height: calendarHeight,
                     child: const FamilyAltarCalendar(),
@@ -133,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
 
-          final minBannerHeight = 140.0;
+          const minBannerHeight = 140.0;
           final desiredCalendarHeight = (maxHeight * 0.62).clamp(360.0, 620.0);
           final maxCalendarHeight = (maxHeight - minBannerHeight).clamp(
             0.0,
@@ -146,7 +149,10 @@ class _HomeScreenState extends State<HomeScreen> {
           return Column(
             children: <Widget>[
               const Expanded(child: FamilyAltarBanner()),
-              SizedBox(height: calendarHeight, child: const FamilyAltarCalendar()),
+              SizedBox(
+                height: calendarHeight,
+                child: const FamilyAltarCalendar(),
+              ),
             ],
           );
         },
