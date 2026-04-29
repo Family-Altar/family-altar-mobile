@@ -121,10 +121,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
             final bottomPadding = safeBottomInset + 12;
 
-            final calendarHeight = (maxHeight - bannerHeight - bottomPadding).clamp(
-              220.0,
-              620.0,
-            );
+            final calendarHeight =
+                (maxHeight - bannerHeight - bottomPadding).clamp(
+                  220.0,
+                  620.0,
+                );
 
             return SingleChildScrollView(
               padding: EdgeInsets.only(bottom: bottomPadding),

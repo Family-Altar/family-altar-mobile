@@ -260,8 +260,9 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
             _alertController.repeat(reverse: true);
           }
         } else if (_alertController.isAnimating) {
-          _alertController.stop();
-          _alertController.value = 1;
+          _alertController
+            ..stop()
+            ..value = 1;
         }
 
         return LayoutBuilder(
@@ -286,10 +287,8 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
               child: SfCalendar(
                 controller: _calendarController,
                 view: CalendarView.month,
-                // Prevent Syncfusion swipe navigation from capturing drag gestures,
-                // so the parent scroll view can still scroll on small landscape screens.
-                viewNavigationMode: ViewNavigationMode.none,
-                showNavigationArrow: false,
+                // Let parent scroll view handle drag gestures on
+                // small landscape screens.
                 initialDisplayDate: _currentDate,
                 headerHeight: 0,
                 backgroundColor: Colors.transparent,
