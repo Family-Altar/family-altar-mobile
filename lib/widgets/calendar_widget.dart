@@ -53,6 +53,24 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
     return isLeapYear ? 366 : 365;
   }
 
+  int _weeksInMonth(DateTime date) {
+    final firstDay = DateTime(date.year, date.month);
+    final daysInMonth = DateUtils.getDaysInMonth(date.year, date.month);
+    // SfCalendar month view is configured with Sunday as the first column.
+    final leadingDays = firstDay.weekday % DateTime.daysPerWeek;
+    return ((leadingDays + daysInMonth) / DateTime.daysPerWeek).ceil();
+  }
+
+  // Keep 5 rows visible by default. If month needs a 6th row, add just one
+
+  double _calendarHeightForMonth({required bool isLandscape}) {
+    final weekRows = _weeksInMonth(_currentDate);
+    final extraRowCount = (weekRows - 5).clamp(0, 1);
+    final baseHeight = isLandscape ? 270.0 : 320.0;
+    final extraRowHeight = isLandscape ? 40.0 : 46.0;
+    return baseHeight + (extraRowCount * extraRowHeight);
+  }
+
   String _calculateCompletionPercentage(ReadingLoaded? loadedState) {
     if (loadedState == null) return '0';
 
@@ -96,48 +114,58 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 
   Widget _buildHeader(BuildContext context) {
     final headerDate = DateFormat('MMMM yyyy').format(_currentDate);
+    final navStyle = IconButton.styleFrom(
+      foregroundColor: context.calendarMonthText,
+    );
+    // Same width on both sides so the month label stays visually centered.
+    const sideSlotWidth = 112.0;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Stack(
-        alignment: Alignment.center,
+      child: Row(
         children: [
-          Text(
-            headerDate,
-            style: AppFonts.bold(
-              context,
-              size: FontSize.small,
-            ).copyWith(color: context.calendarMonthText, letterSpacing: 0.5),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
+          SizedBox(
+            width: sideSlotWidth,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
+                    style: navStyle,
                     onPressed: () => _changeMonth(-1),
-                    icon: Icon(
-                      Icons.chevron_left,
-                      color: context.calendarMonthText,
-                    ),
+                    icon: const Icon(Icons.chevron_left),
                   ),
                   IconButton(
+                    style: navStyle,
                     onPressed: _goToToday,
-                    icon: Icon(Icons.today, color: context.calendarMonthText),
-                    iconSize: 18,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    icon: const Icon(Icons.today),
+                    tooltip: 'Today',
                   ),
                 ],
               ),
-              IconButton(
+            ),
+          ),
+          Expanded(
+            child: Text(
+              headerDate,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: AppFonts.bold(
+                context,
+                size: FontSize.small,
+              ).copyWith(color: context.calendarMonthText, letterSpacing: 0.5),
+            ),
+          ),
+          SizedBox(
+            width: sideSlotWidth,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                style: navStyle,
                 onPressed: () => _changeMonth(1),
-                icon: Icon(
-                  Icons.chevron_right,
-                  color: context.calendarMonthText,
-                ),
+                icon: const Icon(Icons.chevron_right),
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -226,71 +254,119 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
           loadedState,
         );
 
-        // Console log completed reading entries (for debugging)
-        if (loadedState != null) {
-          final completedEntries = loadedState.getCompletedEntries();
-          final dates =
-              completedEntries
-                  .map((e) => DateFormat('yyyy-MM-dd').format(e.date))
-                  .toList();
-          debugPrint(
-            'Completed reading entries (${completedEntries.length}): $dates',
-          );
+        // Avoid constantly ticking animation when there are no missed days.
+        if (missedDaysCount > 0) {
+          if (!_alertController.isAnimating) {
+            _alertController.repeat(reverse: true);
+          }
+        } else if (_alertController.isAnimating) {
+          _alertController
+            ..stop()
+            ..value = 1;
         }
 
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final mediaQuery = MediaQuery.of(context);
+            final isLandscape =
+                mediaQuery.orientation == Orientation.landscape;
+            const calendarMaxWidth = 680.0;
+            final compact = constraints.maxHeight < 360;
+            final bottomPadding =
+                (compact ? 8.0 : 24.0) +
+                mediaQuery.padding.bottom +
+                (isLandscape ? 16.0 : 0.0);
+            final sidePadding = compact ? 12.0 : 16.0;
+
+            final calendarCard = Container(
+              decoration: BoxDecoration(
+                color: context.backgroundColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.all(6),
+              child: SfCalendar(
+                controller: _calendarController,
+                view: CalendarView.month,
+                // Let parent scroll view handle drag gestures on
+                // small landscape screens.
+                initialDisplayDate: _currentDate,
+                headerHeight: 0,
+                backgroundColor: Colors.transparent,
+                monthViewSettings: const MonthViewSettings(
+                  dayFormat: 'EEE',
+                  showTrailingAndLeadingDates: false,
+                  appointmentDisplayMode: MonthAppointmentDisplayMode.none,
+                ),
+                cellBorderColor: Colors.transparent,
+                selectionDecoration: const BoxDecoration(),
+                onViewChanged: _onCalendarViewChanged,
+                onTap: (details) {
+                  if (details.date != null) {
+                    context.push('/reader', extra: details.date);
+                  }
+                },
+                monthCellBuilder: (context, details) {
+                  final cellDate = details.date;
+                  final cellStatus =
+                      loadedState?.getStatus(cellDate) ??
+                      ReadingStatus.upcoming;
+                  return GestureDetector(
+                    onLongPress: loadedState != null
+                        ? () => _showLongPressDialog(
+                              context,
+                              cellDate,
+                              cellStatus,
+                            )
+                        : null,
+                    child: _CalendarCell(
+                      date: cellDate,
+                      status: cellStatus,
+                    ),
+                  );
+                },
+              ),
+            );
+
+            final topSection = <Widget>[
               _buildStatsBar(context, completionPercentage, missedDaysCount),
               _buildHeader(context),
-              Container(
-                decoration: BoxDecoration(
-                  color: context.backgroundColor,
-                  borderRadius: BorderRadius.circular(16),
+            ];
+
+            final calendarHeight = _calendarHeightForMonth(
+              isLandscape: isLandscape,
+            );
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                sidePadding,
+                8,
+                sidePadding,
+                bottomPadding,
+              ),
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
                 ),
-                padding: const EdgeInsets.all(6),
-                child: SfCalendar(
-                  controller: _calendarController,
-                  view: CalendarView.month,
-                  initialDisplayDate: _currentDate,
-                  headerHeight: 0,
-                  backgroundColor: Colors.transparent,
-                  monthViewSettings: const MonthViewSettings(
-                    dayFormat: 'EEE',
-                    showTrailingAndLeadingDates: false,
-                    appointmentDisplayMode: MonthAppointmentDisplayMode.none,
-                  ),
-                  cellBorderColor: Colors.transparent,
-                  selectionDecoration: const BoxDecoration(),
-                  onViewChanged: _onCalendarViewChanged,
-                  onTap: (details) {
-                    if (details.date != null) {
-                      context.push('/reader', extra: details.date);
-                    }
-                  },
-                  monthCellBuilder: (context, details) {
-                    final cellDate = details.date;
-                    final cellStatus =
-                        loadedState?.getStatus(cellDate) ??
-                        ReadingStatus.upcoming;
-                    return GestureDetector(
-                      onLongPress:
-                          loadedState != null
-                              ? () => _showLongPressDialog(
-                                context,
-                                cellDate,
-                                cellStatus,
-                              )
-                              : null,
-                      child: _CalendarCell(date: cellDate, status: cellStatus),
-                    );
-                  },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...topSection,
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: calendarMaxWidth,
+                        ),
+                        child: SizedBox(
+                          height: calendarHeight,
+                          child: calendarCard,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: isLandscape ? 40 : 8),
+                  ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -390,11 +466,11 @@ class _CalendarCell extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.all(3),
+      margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: fillColor,
         border: Border.all(color: borderColor, width: isToday ? 2.0 : 1.0),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Stack(
         children: [
@@ -412,21 +488,21 @@ class _CalendarCell extends StatelessWidget {
           ),
           if (status == ReadingStatus.completed)
             Positioned(
-              top: 4,
-              right: 4,
+              top: 3,
+              right: 3,
               child: Icon(
                 Icons.check,
-                size: 10,
+                size: 9,
                 color: context.calendarCompletedIcon,
               ),
             ),
           if (status == ReadingStatus.missed)
             Positioned(
-              top: 4,
-              right: 4,
+              top: 3,
+              right: 3,
               child: Icon(
                 Icons.circle,
-                size: 6,
+                size: 5,
                 color: context.calendarMissedIcon.withValues(alpha: 0.6),
               ),
             ),

@@ -6,30 +6,44 @@ class FamilyAltarBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Get the background color based on the current theme mode
-    const bgColor = AppColors.darkBackground;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const bgColor = AppColors.darkBackground;
+        // Use a single rule for all devices: width > height => landscape.
+        final isLandscape = constraints.maxWidth > constraints.maxHeight;
+        const portraitGradientStops = [0.0, 0.5, 1.0];
+        final image = ClipRect(
+          child: Image.asset(
+            'assets/images/family_alter_book_cover.png',
+            width: double.infinity,
+            fit: BoxFit.cover,
+            alignment: isLandscape ? Alignment.center : Alignment.topCenter,
+            filterQuality: FilterQuality.high,
+          ),
+        );
 
-    return Container(
-      width: double.infinity,
-      height: 220,
-      color: bgColor,
-      child: ShaderMask(
-        shaderCallback: (rect) {
-          return const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [bgColor, bgColor, Colors.transparent],
-            stops: [0.0, 0.5, 1.0], // Fades out in the bottom half
-          ).createShader(Rect.fromLTRB(0, 0, rect.width, rect.height));
-        },
-        blendMode: BlendMode.dstIn,
-        child: Image.asset(
-          'assets/images/family_alter_book_cover.png',
-          height: 220,
+        return Container(
           width: double.infinity,
-          fit: BoxFit.cover,
-        ),
-      ),
+          color: bgColor,
+          child:
+              isLandscape
+                  ? image
+                  : ShaderMask(
+                    shaderCallback: (rect) {
+                      return const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [bgColor, bgColor, Colors.transparent],
+                        stops: portraitGradientStops,
+                      ).createShader(
+                        Rect.fromLTRB(0, 0, rect.width, rect.height),
+                      );
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: image,
+                  ),
+        );
+      },
     );
   }
 }

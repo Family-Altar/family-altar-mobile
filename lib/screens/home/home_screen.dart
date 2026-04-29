@@ -78,8 +78,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
         ),
 
-        title: Center(
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
@@ -93,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                '  Volume I',
+                'Volume I',
                 style: AppFonts.normal(context).copyWith(
                   color: const Color(0xFFE0C097),
                   fontSize: 15,
@@ -107,10 +109,62 @@ class _HomeScreenState extends State<HomeScreen> {
         // actions: const [SizedBox(width: 48)],
       ),
 
-      body: const SingleChildScrollView(
-        child: Column(
-          children: <Widget>[FamilyAltarBanner(), FamilyAltarCalendar()],
-        ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final mediaQuery = MediaQuery.of(context);
+          final isLandscape = mediaQuery.orientation == Orientation.landscape;
+          final maxHeight = constraints.maxHeight;
+          final safeBottomInset = mediaQuery.padding.bottom;
+
+          if (isLandscape) {
+            final bannerHeight = (maxHeight * 0.42).clamp(130.0, 260.0);
+
+            final bottomPadding = safeBottomInset + 12;
+
+            final calendarHeight =
+                (maxHeight - bannerHeight - bottomPadding).clamp(
+                  220.0,
+                  620.0,
+                );
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: bottomPadding),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  SizedBox(
+                    height: bannerHeight,
+                    child: const FamilyAltarBanner(),
+                  ),
+                  SizedBox(
+                    height: calendarHeight,
+                    child: const FamilyAltarCalendar(),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          const minBannerHeight = 140.0;
+          final desiredCalendarHeight = (maxHeight * 0.62).clamp(360.0, 620.0);
+          final maxCalendarHeight = (maxHeight - minBannerHeight).clamp(
+            0.0,
+            maxHeight,
+          );
+          final calendarHeight = desiredCalendarHeight > maxCalendarHeight
+              ? maxCalendarHeight
+              : desiredCalendarHeight;
+
+          return Column(
+            children: <Widget>[
+              const Expanded(child: FamilyAltarBanner()),
+              SizedBox(
+                height: calendarHeight,
+                child: const FamilyAltarCalendar(),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
