@@ -186,7 +186,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: const ColorScheme.dark(
-        primary: p,
+        primary: AppColors.darkAccent,
         onPrimary: Colors.white,
         secondary: AppColors.secondaryVariant,
         surface: AppColors.darkSurface,

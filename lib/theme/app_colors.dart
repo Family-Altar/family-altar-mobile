@@ -71,6 +71,8 @@ class AppColors {
   // Calendar – Headers & cell borders
   static const Color calendarDayHeaderLight = Color(0xFF000000);
   static const Color calendarDayHeaderDark = Color(0xFFFFFFFF);
+  static const Color calendarCurrentWeekdayLight = Color(0xFF8B1A1A);
+  static const Color calendarCurrentWeekdayDark = Color(0xFFE6B453);
 
   static const Color calendarCellBorderLight = Color(0xFF313131);
   static const Color calendarCellBorderDark = Color(0xFFFFFFFF);
@@ -191,6 +193,11 @@ extension ThemeColors on BuildContext {
       isDarkMode
           ? AppColors.calendarDayHeaderDark
           : AppColors.calendarDayHeaderLight;
+
+  Color get calendarCurrentWeekday =>
+      isDarkMode
+          ? AppColors.calendarCurrentWeekdayDark
+          : AppColors.calendarCurrentWeekdayLight;
 
   Color get calendarCellBorder =>
       isDarkMode
