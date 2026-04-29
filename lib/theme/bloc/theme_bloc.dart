@@ -179,7 +179,6 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
   }
 
   static ThemeData _createDarkTheme() {
-    const p = AppColors.primary;
     const on = AppColors.darkOnBackground;
 
     return ThemeData(

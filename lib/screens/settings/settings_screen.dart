@@ -54,7 +54,9 @@ class SettingsScreen extends StatelessWidget {
         backgroundColor: context.appBarColor,
         title: Text(
           'Settings',
-          style: AppFonts.bold(context).copyWith(color: const Color(0xFFE0C097)),
+          style: AppFonts.bold(
+            context,
+          ).copyWith(color: context.appBarTitleColor),
         ),
         leading: IconButton(
           onPressed: context.pop,
