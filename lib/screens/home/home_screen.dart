@@ -114,12 +114,20 @@ class _HomeScreenState extends State<HomeScreen> {
           final mediaQuery = MediaQuery.of(context);
           final isLandscape = mediaQuery.orientation == Orientation.landscape;
           final maxHeight = constraints.maxHeight;
+          final safeBottomInset = mediaQuery.padding.bottom;
 
           if (isLandscape) {
             final bannerHeight = (maxHeight * 0.42).clamp(130.0, 260.0);
-            final calendarHeight = (maxHeight * 0.9).clamp(340.0, 620.0);
+
+            final bottomPadding = safeBottomInset + 12;
+
+            final calendarHeight = (maxHeight - bannerHeight - bottomPadding).clamp(
+              220.0,
+              620.0,
+            );
 
             return SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: bottomPadding),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
