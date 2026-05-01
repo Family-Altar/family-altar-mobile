@@ -48,27 +48,16 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 
   // --- Logic Helpers ---
 
-  static int _daysInYear(int year) {
-    final isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-    return isLeapYear ? 366 : 365;
-  }
-
   int _weeksInMonth(DateTime date) {
     final firstDay = DateTime(date.year, date.month);
     final daysInMonth = DateUtils.getDaysInMonth(date.year, date.month);
-    // SfCalendar month view is configured with Sunday as the first column.
     final leadingDays = firstDay.weekday % DateTime.daysPerWeek;
     return ((leadingDays + daysInMonth) / DateTime.daysPerWeek).ceil();
   }
 
-  // Keep 5 rows visible by default. If month needs a 6th row, add just one
-
-  double _calendarHeightForMonth({required bool isLandscape}) {
-    final weekRows = _weeksInMonth(_currentDate);
-    final extraRowCount = (weekRows - 5).clamp(0, 1);
-    final baseHeight = isLandscape ? 270.0 : 320.0;
-    final extraRowHeight = isLandscape ? 40.0 : 46.0;
-    return baseHeight + (extraRowCount * extraRowHeight);
+  static int _daysInYear(int year) {
+    final isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+    return isLeapYear ? 366 : 365;
   }
 
   String _calculateCompletionPercentage(ReadingLoaded? loadedState) {
@@ -267,16 +256,23 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 
         return LayoutBuilder(
           builder: (context, constraints) {
-            final mediaQuery = MediaQuery.of(context);
-            final isLandscape =
-                mediaQuery.orientation == Orientation.landscape;
             const calendarMaxWidth = 680.0;
+            // 12 = container's EdgeInsets.all(6) × 2 sides
+            const containerPadding = 12.0;
+            const viewHeaderH = 36.0;
             final compact = constraints.maxHeight < 360;
-            final bottomPadding =
-                (compact ? 8.0 : 24.0) +
-                mediaQuery.padding.bottom +
-                (isLandscape ? 16.0 : 0.0);
             final sidePadding = compact ? 12.0 : 16.0;
+
+            // Derive square cell size from available width.
+            final calendarCardWidth =
+                (constraints.maxWidth - 2 * sidePadding).clamp(
+                  0.0,
+                  calendarMaxWidth,
+                );
+            final cellSize = (calendarCardWidth - containerPadding) / 7;
+            final rows = _weeksInMonth(_currentDate);
+            final calendarCardHeight =
+                viewHeaderH + rows * cellSize + containerPadding;
 
             final calendarCard = Container(
               decoration: BoxDecoration(
@@ -288,10 +284,9 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                 controller: _calendarController,
                 view: CalendarView.month,
                 todayHighlightColor: context.calendarCurrentWeekday,
-                // Let parent scroll view handle drag gestures on
-                // small landscape screens.
                 initialDisplayDate: _currentDate,
                 headerHeight: 0,
+                viewHeaderHeight: viewHeaderH,
                 backgroundColor: Colors.transparent,
                 monthViewSettings: const MonthViewSettings(
                   dayFormat: 'EEE',
@@ -312,17 +307,15 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                       loadedState?.getStatus(cellDate) ??
                       ReadingStatus.upcoming;
                   return GestureDetector(
-                    onLongPress: loadedState != null
-                        ? () => _showLongPressDialog(
+                    onLongPress:
+                        loadedState != null
+                            ? () => _showLongPressDialog(
                               context,
                               cellDate,
                               cellStatus,
                             )
-                        : null,
-                    child: _CalendarCell(
-                      date: cellDate,
-                      status: cellStatus,
-                    ),
+                            : null,
+                    child: _CalendarCell(date: cellDate, status: cellStatus),
                   );
                 },
               ),
@@ -333,38 +326,22 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
               _buildHeader(context),
             ];
 
-            final calendarHeight = _calendarHeightForMonth(
-              isLandscape: isLandscape,
-            );
             return Padding(
-              padding: EdgeInsets.fromLTRB(
-                sidePadding,
-                8,
-                sidePadding,
-                bottomPadding,
-              ),
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ...topSection,
-                    Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxWidth: calendarMaxWidth,
-                        ),
-                        child: SizedBox(
-                          height: calendarHeight,
-                          child: calendarCard,
-                        ),
-                      ),
+              padding: EdgeInsets.fromLTRB(sidePadding, 8, sidePadding, 0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...topSection,
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: calendarMaxWidth,
                     ),
-                    SizedBox(height: isLandscape ? 40 : 8),
-                  ],
-                ),
+                    child: SizedBox(
+                      height: calendarCardHeight,
+                      child: calendarCard,
+                    ),
+                  ),
+                ],
               ),
             );
           },
