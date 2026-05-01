@@ -15,7 +15,7 @@ plugins {
 }
 
 android {
-    namespace = "com.dailydevotion.family_altar"
+    namespace = "com.timdoddmissions.family_altar"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -41,7 +41,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.dailydevotion.family_altar"
+        applicationId = "com.timdoddmissions.family_altar"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
