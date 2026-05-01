@@ -1,8 +1,10 @@
+import 'package:family_altar/navigation_service.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/widgets/banner_widget.dart';
 import 'package:family_altar/widgets/calendar_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -14,7 +16,94 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with WidgetsBindingObserver, RouteAware {
+  bool _isSubscribedToRoute = false;
+  bool _isRouteCurrent = false;
+
+  bool get _isPhone {
+    final display = View.of(context).display;
+    final logicalSize = display.size / display.devicePixelRatio;
+    return logicalSize.shortestSide < 600;
+  }
+
+  void _updatePreferredOrientations() {
+    if (!mounted) {
+      return;
+    }
+
+    if (_isRouteCurrent && _isPhone) {
+      SystemChrome.setPreferredOrientations(const [
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+      return;
+    }
+
+    SystemChrome.setPreferredOrientations(const []);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_isSubscribedToRoute) {
+      final route = ModalRoute.of(context);
+      if (route != null) {
+        routeObserver.subscribe(this, route);
+        _isSubscribedToRoute = true;
+        _isRouteCurrent = route.isCurrent;
+      }
+    }
+
+    _updatePreferredOrientations();
+  }
+
+  @override
+  void didChangeMetrics() {
+    _updatePreferredOrientations();
+  }
+
+  @override
+  void didPush() {
+    _isRouteCurrent = true;
+    _updatePreferredOrientations();
+  }
+
+  @override
+  void didPopNext() {
+    _isRouteCurrent = true;
+    _updatePreferredOrientations();
+  }
+
+  @override
+  void didPushNext() {
+    _isRouteCurrent = false;
+    _updatePreferredOrientations();
+  }
+
+  @override
+  void didPop() {
+    _isRouteCurrent = false;
+    _updatePreferredOrientations();
+  }
+
+  @override
+  void dispose() {
+    if (_isSubscribedToRoute) {
+      routeObserver.unsubscribe(this);
+    }
+    WidgetsBinding.instance.removeObserver(this);
+    SystemChrome.setPreferredOrientations(const []);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
