@@ -32,7 +32,8 @@ class FamilyAltarBanner extends StatelessWidget {
 
         // Focal point tuning:
         //   imageFocalY  — where in the image the subject is (0=top, 1=bottom)
-        //   widgetTargetY — where in the visible banner to place it (0=top, 1=bottom)
+        //   widgetTargetY — where in the visible banner to place it
+        //   (0=top, 1=bottom)
         //   imageAspectRatio — imageWidth / imageHeight (check your asset file)
         final portraitAlignment = _focalAlignment(
           imageFocalY: 0.6,
