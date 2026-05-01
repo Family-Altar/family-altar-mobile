@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       appBar: AppBar(
-        toolbarHeight: 80,
+        toolbarHeight: 50,
         backgroundColor: context.appBarColor,
         centerTitle: true,
         leading: Builder(
@@ -109,59 +109,32 @@ class _HomeScreenState extends State<HomeScreen> {
         // actions: const [SizedBox(width: 48)],
       ),
 
+      extendBody: true,
+
       body: LayoutBuilder(
         builder: (context, constraints) {
           final mediaQuery = MediaQuery.of(context);
           final isLandscape = mediaQuery.orientation == Orientation.landscape;
           final maxHeight = constraints.maxHeight;
-          final safeBottomInset = mediaQuery.padding.bottom;
 
           if (isLandscape) {
             final bannerHeight = (maxHeight * 0.42).clamp(130.0, 260.0);
 
-            final bottomPadding = safeBottomInset + 12;
-
-            final calendarHeight =
-                (maxHeight - bannerHeight - bottomPadding).clamp(
-                  220.0,
-                  620.0,
-                );
-
-            return SingleChildScrollView(
-              padding: EdgeInsets.only(bottom: bottomPadding),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  SizedBox(
-                    height: bannerHeight,
-                    child: const FamilyAltarBanner(),
-                  ),
-                  SizedBox(
-                    height: calendarHeight,
-                    child: const FamilyAltarCalendar(),
-                  ),
-                ],
-              ),
+            return Column(
+              children: <Widget>[
+                SizedBox(
+                  height: bannerHeight,
+                  child: const FamilyAltarBanner(),
+                ),
+                const Expanded(child: FamilyAltarCalendar()),
+              ],
             );
           }
 
-          const minBannerHeight = 140.0;
-          final desiredCalendarHeight = (maxHeight * 0.62).clamp(360.0, 620.0);
-          final maxCalendarHeight = (maxHeight - minBannerHeight).clamp(
-            0.0,
-            maxHeight,
-          );
-          final calendarHeight = desiredCalendarHeight > maxCalendarHeight
-              ? maxCalendarHeight
-              : desiredCalendarHeight;
-
-          return Column(
+          return const Column(
             children: <Widget>[
-              const Expanded(child: FamilyAltarBanner()),
-              SizedBox(
-                height: calendarHeight,
-                child: const FamilyAltarCalendar(),
-              ),
+              Expanded(child: FamilyAltarBanner()),
+              Expanded(flex: 2, child: FamilyAltarCalendar()),
             ],
           );
         },
