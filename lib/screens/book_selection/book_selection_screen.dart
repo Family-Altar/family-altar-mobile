@@ -116,9 +116,10 @@ class _BookItemState extends State<BookItem>
 
   static double _bookScale(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    const double refWidth = 390.0;
-    const double largeWidth = 1024.0;
-    final scale = 1.0 + (screenWidth - refWidth) / (largeWidth - refWidth) * 0.5;
+    const refWidth = 390;
+    const largeWidth = 1024;
+    final scale =
+        1.0 + (screenWidth - refWidth) / (largeWidth - refWidth) * 0.5;
     return scale.clamp(1.0, 1.5);
   }
 
