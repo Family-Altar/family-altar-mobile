@@ -114,16 +114,29 @@ class _BookItemState extends State<BookItem>
     }
   }
 
+  static double _bookScale(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    const refWidth = 390;
+    const largeWidth = 1024;
+    final scale =
+        1.0 + (screenWidth - refWidth) / (largeWidth - refWidth) * 0.5;
+    return scale.clamp(1.0, 1.5);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final scale = _bookScale(context);
+    final bookWidth = 240.0 * scale;
+    final bookHeight = 370.0 * scale;
+
     return Center(
       child: AnimatedBuilder(
         animation: _flipAnimation,
         builder: (_, _) {
           final progress = _flipAnimation.value;
           return SizedBox(
-            width: 240,
-            height: 370,
+            width: bookWidth,
+            height: bookHeight,
             child: Stack(
               children: [
                 _BookInnerPage(
@@ -132,12 +145,15 @@ class _BookItemState extends State<BookItem>
                   progress: progress,
                   onClose: _closeBook,
                   onSectionTap: _handleSectionTap,
+                  width: bookWidth,
+                  height: bookHeight,
                 ),
                 _AnimatedBookCover(
                   imagePath: widget.data.imagePath,
                   progress: progress,
                   isComingSoon: !widget.data.isAvailable,
                   onTap: _toggleBook,
+                  scale: scale,
                 ),
               ],
             ),
@@ -186,12 +202,14 @@ class _AnimatedBookCover extends StatelessWidget {
     required this.imagePath,
     required this.progress,
     required this.onTap,
+    required this.scale,
     this.isComingSoon = false,
   });
 
   final String imagePath;
   final double progress;
   final VoidCallback onTap;
+  final double scale;
   final bool isComingSoon;
 
   @override
@@ -221,7 +239,7 @@ class _AnimatedBookCover extends StatelessWidget {
                         ? const _BookCoverInterior()
                         : _BookCoverFront(imagePath: imagePath),
               ),
-              if (isComingSoon) const _ComingSoonBanner(),
+              if (isComingSoon) _ComingSoonBanner(scale: scale),
             ],
           ),
         ),
@@ -278,7 +296,9 @@ class _BookCoverInterior extends StatelessWidget {
 }
 
 class _ComingSoonBanner extends StatelessWidget {
-  const _ComingSoonBanner();
+  const _ComingSoonBanner({required this.scale});
+
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +307,7 @@ class _ComingSoonBanner extends StatelessWidget {
         child: Transform.rotate(
           angle: -math.pi / 4,
           child: Container(
-            width: 260,
+            width: 260 * scale,
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
               color: Colors.red.shade700,
@@ -318,6 +338,8 @@ class _BookInnerPage extends StatelessWidget {
     required this.progress,
     required this.onClose,
     required this.onSectionTap,
+    required this.width,
+    required this.height,
   });
 
   final String title;
@@ -325,6 +347,8 @@ class _BookInnerPage extends StatelessWidget {
   final double progress;
   final VoidCallback onClose;
   final ValueChanged<Section> onSectionTap;
+  final double width;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -334,8 +358,8 @@ class _BookInnerPage extends StatelessWidget {
       opacity: opacity,
       duration: const Duration(milliseconds: 200),
       child: Container(
-        height: 370,
-        width: 240,
+        height: height,
+        width: width,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           color: context.surfaceColor,
