@@ -35,8 +35,14 @@ class BookSelectionScreen extends StatelessWidget {
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         toolbarHeight: 48,
-        backgroundColor: context.backgroundColor,
-        title: Text(title, style: AppFonts.bold(context, size: FontSize.large)),
+        backgroundColor: context.appBarColor,
+        title: Text(
+          title,
+          style: AppFonts.bold(
+            context,
+            size: FontSize.large,
+          ).copyWith(color: context.appBarTitleColor),
+        ),
         leading: IconButton(
           onPressed: () => context.pop(),
           icon: Icon(

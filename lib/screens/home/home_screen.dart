@@ -31,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 widget.title,
                 style: AppFonts.bold(
                   context,
-                ).copyWith(color: const Color(0xFFE0C097), fontSize: 24),
+                ).copyWith(color: context.appBarTitleColor, fontSize: 24),
               ),
             ),
 
@@ -88,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 widget.title,
                 style: GoogleFonts.allura(
-                  color: const Color(0xFFE0C097),
+                  color: context.appBarTitleColor,
                   fontSize: 35,
                   fontWeight: FontWeight.w400,
                 ),
@@ -97,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'Volume I',
                 style: AppFonts.normal(context).copyWith(
-                  color: const Color(0xFFE0C097),
+                  color: context.appBarTitleColor,
                   fontSize: 15,
                   fontWeight: FontWeight.w400,
                 ),

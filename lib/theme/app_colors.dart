@@ -11,6 +11,7 @@ class AppColors {
   static const Color lightBackground = Color(0xFFFFFFFF);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightAppBar = Color(0xFF8B1A1A);
+  static const Color lightAppBarTitle = Color(0xFFE0C097);
   static const Color lightOnBackground = Color(0xFF1A1A1A);
   static const Color lightOnSurface = Color(0xFFD6D6D6);
   static const Color lightError = Color(0xFFBA1A1A);
@@ -19,6 +20,7 @@ class AppColors {
   // Dark theme
   static const Color darkBackground = Color(0xFF1A1A1A);
   static const Color darkSurface = Color(0xFF8B1A1A);
+  static const Color darkAppBarTitle = Color(0xFFE0C097);
   static const Color darkOnBackground = Color(0xFFE6E1E5);
   static const Color darkOnSurface = Color(0xFFE6E1E5);
   static const Color darkError = Color(0xFFFFB4AB);
@@ -71,6 +73,8 @@ class AppColors {
   // Calendar – Headers & cell borders
   static const Color calendarDayHeaderLight = Color(0xFF000000);
   static const Color calendarDayHeaderDark = Color(0xFFFFFFFF);
+  static const Color calendarCurrentWeekdayLight = Color(0xFF8B1A1A);
+  static const Color calendarCurrentWeekdayDark = Color(0xFFE6B453);
 
   static const Color calendarCellBorderLight = Color(0xFF313131);
   static const Color calendarCellBorderDark = Color(0xFFFFFFFF);
@@ -135,6 +139,8 @@ extension ThemeColors on BuildContext {
   Color get errorColor => Theme.of(this).colorScheme.error;
   Color get appBarColor =>
       isDarkMode ? AppColors.darkSurface : AppColors.lightAppBar;
+  Color get appBarTitleColor =>
+      isDarkMode ? AppColors.darkAppBarTitle : AppColors.lightAppBarTitle;
 
   Color get primaryButtonBGColor =>
       isDarkMode
@@ -191,6 +197,11 @@ extension ThemeColors on BuildContext {
       isDarkMode
           ? AppColors.calendarDayHeaderDark
           : AppColors.calendarDayHeaderLight;
+
+  Color get calendarCurrentWeekday =>
+      isDarkMode
+          ? AppColors.calendarCurrentWeekdayDark
+          : AppColors.calendarCurrentWeekdayLight;
 
   Color get calendarCellBorder =>
       isDarkMode

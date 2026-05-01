@@ -287,6 +287,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
               child: SfCalendar(
                 controller: _calendarController,
                 view: CalendarView.month,
+                todayHighlightColor: context.calendarCurrentWeekday,
                 // Let parent scroll view handle drag gestures on
                 // small landscape screens.
                 initialDisplayDate: _currentDate,
