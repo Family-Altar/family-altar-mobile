@@ -134,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return const Column(
             children: <Widget>[
               Expanded(child: FamilyAltarBanner()),
-              Expanded(flex: 2, child: FamilyAltarCalendar()),
+              FamilyAltarCalendar(),
             ],
           );
         },
