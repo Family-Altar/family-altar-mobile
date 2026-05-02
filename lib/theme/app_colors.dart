@@ -142,6 +142,7 @@ extension ThemeColors on BuildContext {
   Color get appBarTitleColor =>
       isDarkMode ? AppColors.darkAppBarTitle : AppColors.lightAppBarTitle;
 
+  Color get appBarLeadingIconColor => AppColors.darkOnBackground;
   Color get primaryButtonBGColor =>
       isDarkMode
           ? AppColors.primaryButtonBGColorDark
