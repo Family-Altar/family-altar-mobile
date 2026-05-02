@@ -17,6 +17,8 @@ class FamilyAltarCalendar extends StatefulWidget {
 
 class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
     with SingleTickerProviderStateMixin {
+  static const int _monthLayoutRowCount = 6;
+
   // Same shortestSide breakpoint as HomeScreen; cap width lower on tablets so
   // month cells are not oversized.
   static bool _isPhoneLayout(BuildContext context) {
@@ -55,13 +57,6 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
   }
 
   // --- Logic Helpers ---
-
-  int _weeksInMonth(DateTime date) {
-    final firstDay = DateTime(date.year, date.month);
-    final daysInMonth = DateUtils.getDaysInMonth(date.year, date.month);
-    final leadingDays = firstDay.weekday % DateTime.daysPerWeek;
-    return ((leadingDays + daysInMonth) / DateTime.daysPerWeek).ceil();
-  }
 
   static int _daysInYear(int year) {
     final isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
@@ -293,25 +288,25 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                   calendarMaxWidth,
                 );
             var cellSize = (calendarCardWidth - containerPadding) / 7;
-            final rows = _weeksInMonth(_currentDate);
             const topSectionReserve = 152.0;
             final heightForCalendarCard =
                 constraints.maxHeight - 8 - topSectionReserve;
             if (!tabletLandscape &&
-                rows > 0 &&
                 heightForCalendarCard > viewHeaderH + containerPadding) {
               final fromHeight =
                   (heightForCalendarCard -
                       viewHeaderH -
                       containerPadding) /
-                  rows;
+                  _monthLayoutRowCount;
               if (fromHeight > 0 && fromHeight < cellSize) {
                 cellSize = fromHeight;
                 calendarCardWidth = cellSize * 7 + containerPadding;
               }
             }
             final calendarCardHeight =
-                viewHeaderH + rows * cellSize + containerPadding;
+                viewHeaderH +
+                    _monthLayoutRowCount * cellSize +
+                    containerPadding;
 
             final calendarCard = Container(
               decoration: BoxDecoration(

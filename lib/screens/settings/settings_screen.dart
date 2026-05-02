@@ -62,7 +62,7 @@ class SettingsScreen extends StatelessWidget {
           onPressed: context.pop,
           icon: Icon(
             Icons.arrow_back,
-            color: context.textColor,
+            color: context.appBarLeadingIconColor,
             size: AppIcons.getIconSize(IconSize.medium),
           ),
         ),

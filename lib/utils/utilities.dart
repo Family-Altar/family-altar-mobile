@@ -34,14 +34,18 @@ String formatReadingForSharing(Reading reading) {
   final scripture = reading.scripture.replaceAll('\n', '').trim();
   final quote = reading.quote.replaceAll('\n', '').trim();
   final dailyReading = reading.dailyReading.replaceAll('\n', '').trim();
+  final sermonTitleAndDate = reading.title.replaceAll('\n', '').trim();
 
   final shareContent =
       '''
     |$scripture
     |
     |$quote\n
+    |$sermonTitleAndDate
+    |
     |Daily Reading:
     |$dailyReading
+
   '''.stripMargin();
 
   final fullShareText =

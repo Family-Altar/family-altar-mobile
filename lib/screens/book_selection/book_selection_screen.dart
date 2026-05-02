@@ -47,7 +47,7 @@ class BookSelectionScreen extends StatelessWidget {
           onPressed: () => context.pop(),
           icon: Icon(
             Icons.arrow_back,
-            color: context.textColor,
+            color: context.appBarLeadingIconColor,
             size: AppIcons.getIconSize(IconSize.medium),
           ),
         ),
@@ -391,7 +391,7 @@ class _BookInnerPage extends StatelessWidget {
                           iconSize: 18,
                           padding: EdgeInsets.zero,
                           onPressed: onClose,
-                          icon: Icon(Icons.close, color: context.textColor),
+                          icon: const Icon(Icons.close, color: Colors.black),
                           splashRadius: 20,
                         ),
                       ),
