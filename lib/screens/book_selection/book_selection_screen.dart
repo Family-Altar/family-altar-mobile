@@ -391,7 +391,7 @@ class _BookInnerPage extends StatelessWidget {
                           iconSize: 18,
                           padding: EdgeInsets.zero,
                           onPressed: onClose,
-                          icon: Icon(Icons.close, color: Colors.black),
+                          icon: const Icon(Icons.close, color: Colors.black),
                           splashRadius: 20,
                         ),
                       ),
