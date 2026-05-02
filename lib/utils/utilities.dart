@@ -41,10 +41,11 @@ String formatReadingForSharing(Reading reading) {
     |$scripture
     |
     |$quote\n
+    |$sermonTitleAndDate
+    |
     |Daily Reading:
     |$dailyReading
-    |
-    |$sermonTitleAndDate
+
   '''.stripMargin();
 
   final fullShareText =
