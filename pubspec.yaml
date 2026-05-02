@@ -90,6 +90,7 @@ flutter:
     - assets/volume_I/daily_readings/
     - assets/volume_I/
     - assets/icon/divider.png
+    - assets/fonts/google_fonts/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
