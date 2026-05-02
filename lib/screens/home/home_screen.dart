@@ -162,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen>
         leading: Builder(
           builder:
               (context) => IconButton(
-                icon: Icon(Icons.menu, color: context.textColor),
+                icon: Icon(Icons.menu, color: context.appBarLeadingIconColor),
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
         ),
