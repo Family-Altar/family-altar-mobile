@@ -17,6 +17,14 @@ class FamilyAltarCalendar extends StatefulWidget {
 
 class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
     with SingleTickerProviderStateMixin {
+  // Same shortestSide breakpoint as HomeScreen; cap width lower on tablets so
+  // month cells are not oversized.
+  static bool _isPhoneLayout(BuildContext context) {
+    final display = View.of(context).display;
+    final logicalSize = display.size / display.devicePixelRatio;
+    return logicalSize.shortestSide < 600;
+  }
+
   late DateTime _currentDate;
   late CalendarController _calendarController;
   late AnimationController _alertController;
@@ -256,21 +264,52 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 
         return LayoutBuilder(
           builder: (context, constraints) {
-            const calendarMaxWidth = 680.0;
-            // 12 = container's EdgeInsets.all(6) × 2 sides
-            const containerPadding = 12.0;
-            const viewHeaderH = 36.0;
+            const calendarMaxWidthPhone = 680.0;
+            const calendarMaxWidthTablet = 480.0;
+            final isLandscape =
+                MediaQuery.orientationOf(context) == Orientation.landscape;
+            final isPhone = _isPhoneLayout(context);
+            final tabletLandscape = !isPhone && isLandscape;
             final compact = constraints.maxHeight < 360;
             final sidePadding = compact ? 12.0 : 16.0;
+            final horizontalAvail =
+                (constraints.maxWidth - 2 * sidePadding).clamp(0.0, 2000.0);
+            // Tablet landscape: 55% × row width, clamp 520–620.
+            final calendarMaxWidth =
+                isPhone
+                    ? calendarMaxWidthPhone
+                    : (isLandscape
+                        ? (horizontalAvail * 0.55).clamp(520.0, 620.0)
+                        : calendarMaxWidthTablet);
+            // 12 = container's EdgeInsets.all(6) × 2 sides
+            const containerPadding = 12.0;
+            final viewHeaderH = tabletLandscape ? 40.0 : 36.0;
 
-            // Derive square cell size from available width.
-            final calendarCardWidth =
-                (constraints.maxWidth - 2 * sidePadding).clamp(
+            // Width drives cell size. On phone / tablet portrait, cap by height
+            // so the column fits; tablet landscape scrolls — keep larger cells.
+            var calendarCardWidth =
+                horizontalAvail.clamp(
                   0.0,
                   calendarMaxWidth,
                 );
-            final cellSize = (calendarCardWidth - containerPadding) / 7;
+            var cellSize = (calendarCardWidth - containerPadding) / 7;
             final rows = _weeksInMonth(_currentDate);
+            const topSectionReserve = 152.0;
+            final heightForCalendarCard =
+                constraints.maxHeight - 8 - topSectionReserve;
+            if (!tabletLandscape &&
+                rows > 0 &&
+                heightForCalendarCard > viewHeaderH + containerPadding) {
+              final fromHeight =
+                  (heightForCalendarCard -
+                      viewHeaderH -
+                      containerPadding) /
+                  rows;
+              if (fromHeight > 0 && fromHeight < cellSize) {
+                cellSize = fromHeight;
+                calendarCardWidth = cellSize * 7 + containerPadding;
+              }
+            }
             final calendarCardHeight =
                 viewHeaderH + rows * cellSize + containerPadding;
 
@@ -315,7 +354,11 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                               cellStatus,
                             )
                             : null,
-                    child: _CalendarCell(date: cellDate, status: cellStatus),
+                    child: _CalendarCell(
+                      date: cellDate,
+                      status: cellStatus,
+                      largeContent: tabletLandscape,
+                    ),
                   );
                 },
               ),
@@ -326,19 +369,50 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
               _buildHeader(context),
             ];
 
+            final calendarSized = Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: calendarMaxWidth,
+                ),
+                child: SizedBox(
+                  height: calendarCardHeight,
+                  width: calendarCardWidth,
+                  child: calendarCard,
+                ),
+              ),
+            );
+
+            // Stats/header stay fixed; only the grid scrolls. An inner Column
+            // under SingleChildScrollView can still get a tight max height;
+            // Expanded + one fixed-height child avoids that overflow.
+            if (!constraints.maxHeight.isFinite) {
+              return Padding(
+                padding: EdgeInsets.fromLTRB(sidePadding, 8, sidePadding, 0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ...topSection,
+                    calendarSized,
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              );
+            }
+
             return Padding(
               padding: EdgeInsets.fromLTRB(sidePadding, 8, sidePadding, 0),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...topSection,
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: calendarMaxWidth,
-                    ),
-                    child: SizedBox(
-                      height: calendarCardHeight,
-                      child: calendarCard,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: calendarSized,
+                      ),
                     ),
                   ),
                 ],
@@ -409,9 +483,14 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 }
 
 class _CalendarCell extends StatelessWidget {
-  const _CalendarCell({required this.date, required this.status});
+  const _CalendarCell({
+    required this.date,
+    required this.status,
+    this.largeContent = false,
+  });
   final DateTime date;
   final ReadingStatus status;
+  final bool largeContent;
 
   @override
   Widget build(BuildContext context) {
@@ -443,19 +522,26 @@ class _CalendarCell extends StatelessWidget {
       }
     }
 
+    final dayFontSize = largeContent ? FontSize.medium : FontSize.small;
+    final cellMargin = largeContent ? 4.5 : 4.0;
+    final badgeInset = largeContent ? 4.0 : 3.0;
+    final checkIconSize = largeContent ? 11.0 : 9.0;
+    final missedDotSize = largeContent ? 6.0 : 5.0;
+    final radius = largeContent ? 9.0 : 8.0;
+
     return Container(
-      margin: const EdgeInsets.all(4),
+      margin: EdgeInsets.all(cellMargin),
       decoration: BoxDecoration(
         color: fillColor,
         border: Border.all(color: borderColor, width: isToday ? 2.0 : 1.0),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(radius),
       ),
       child: Stack(
         children: [
           Center(
             child: Text(
               date.day.toString(),
-              style: AppFonts.normal(context, size: FontSize.small).copyWith(
+              style: AppFonts.normal(context, size: dayFontSize).copyWith(
                 fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
                 color:
                     status == ReadingStatus.upcoming
@@ -466,21 +552,21 @@ class _CalendarCell extends StatelessWidget {
           ),
           if (status == ReadingStatus.completed)
             Positioned(
-              top: 3,
-              right: 3,
+              top: badgeInset,
+              right: badgeInset,
               child: Icon(
                 Icons.check,
-                size: 9,
+                size: checkIconSize,
                 color: context.calendarCompletedIcon,
               ),
             ),
           if (status == ReadingStatus.missed)
             Positioned(
-              top: 3,
-              right: 3,
+              top: badgeInset,
+              right: badgeInset,
               child: Icon(
                 Icons.circle,
-                size: 5,
+                size: missedDotSize,
                 color: context.calendarMissedIcon.withValues(alpha: 0.6),
               ),
             ),
