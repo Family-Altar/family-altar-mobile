@@ -2,8 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationSettings {
+  static const String _enabledKey = 'notifications_enabled';
   static const String _timeKey = 'notification_time_minutes';
   static const TimeOfDay defaultTime = TimeOfDay(hour: 8, minute: 0);
+
+  static Future<bool> isEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_enabledKey) ?? false;
+  }
+
+  static Future<void> setEnabled({required bool enabled}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_enabledKey, enabled);
+  }
 
   static Future<TimeOfDay> getTimeOfDay() async {
     final prefs = await SharedPreferences.getInstance();
