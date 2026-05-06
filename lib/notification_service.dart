@@ -72,7 +72,7 @@ class NotificationService {
 
     final permissionState = await NotificationSettings.getPermissionState();
     if (permissionState != NotificationPermissionState.notAsked) {
-      return await _areNotificationsAllowed();
+      return _areNotificationsAllowed();
     }
 
     return _requestAndPersistPermissionDecision();
@@ -80,13 +80,15 @@ class NotificationService {
 
   /// Shows a themed, centered pre-permission dialog before the OS prompt.
   /// Stores a declaration in persistence regardless of allow/deny selection.
-  Future<bool> ensurePermissionDeclarationWithPrompt(BuildContext context) async {
+  Future<bool> ensurePermissionDeclarationWithPrompt(
+    BuildContext context,
+  ) async {
     await _initialize();
     await _createAndroidNotificationChannel();
 
     final permissionState = await NotificationSettings.getPermissionState();
     if (permissionState != NotificationPermissionState.notAsked) {
-      return await _areNotificationsAllowed();
+      return _areNotificationsAllowed();
     }
 
     if (!context.mounted) {
@@ -153,7 +155,7 @@ class NotificationService {
       },
     );
 
-    if (shouldRequest == true) {
+    if (shouldRequest ?? false) {
       return _requestAndPersistPermissionDecision();
     }
 
@@ -404,7 +406,9 @@ class NotificationService {
     const fallbackMessage = "Take a moment with God's Word";
 
     try {
-      final reading = await _readingRepository.fetchReading(date: DateTime.now());
+      final reading = await _readingRepository.fetchReading(
+        date: DateTime.now(),
+      );
       final sourceText =
           reading.quote.trim().isNotEmpty
               ? reading.quote

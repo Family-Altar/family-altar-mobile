@@ -7,7 +7,8 @@ class NotificationSettings {
   static const String _enabledKey = 'notifications_enabled';
   static const String _timeKey = 'notification_time_minutes';
   static const String _permissionStateKey = 'notifications_permission_state';
-  static const String _permissionRequestedKey = 'notifications_permission_requested';
+  static const String _permissionRequestedKey =
+      'notifications_permission_requested';
   static const TimeOfDay defaultTime = TimeOfDay(hour: 8, minute: 0);
 
   static Future<bool> isEnabled() async {
@@ -65,7 +66,9 @@ class NotificationSettings {
     return migratedState;
   }
 
-  static Future<void> setPermissionState(NotificationPermissionState state) async {
+  static Future<void> setPermissionState(
+    NotificationPermissionState state,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_permissionStateKey, state.index);
     await prefs.setBool(_permissionRequestedKey, true);

@@ -108,7 +108,7 @@ class ForewordPrefaceScreen extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => show_notifications_dialoag(context),
+                    onPressed: () => showNotificationsDialog(context),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     constraints: const BoxConstraints(
                       minWidth: 40,
