@@ -7,7 +7,7 @@ import 'package:family_altar/theme/app_icons.dart';
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
 import 'package:family_altar/utils/utilities.dart';
-import 'package:family_altar/widgets/reading_settings_bottom_sheet.dart';
+import 'package:family_altar/widgets/show_notifications_dialoag.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -108,7 +108,7 @@ class ForewordPrefaceScreen extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: () => showReadingSettingsBottomSheet(context),
+                    onPressed: () => showNotificationsDialog(context),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     constraints: const BoxConstraints(
                       minWidth: 40,
