@@ -34,9 +34,57 @@ class _NotificationBootstrapperState extends State<NotificationBootstrapper> {
 }
 
 class NotificationService {
+  static const int _dailyNotificationId = 1;
+  static const String _dailyChannelId = 'daily_channel';
+  static const String _dailyChannelName = 'Daily reminders';
+  static const String _dailyChannelDescription = 'Daily reminder notifications';
+
   final _plugin = FlutterLocalNotificationsPlugin();
 
   Future<bool> initAndScheduleDaily() async {
+    final enabled = await NotificationSettings.isEnabled();
+    if (!enabled) {
+      return false;
+    }
+
+    await _initialize();
+    await _createAndroidNotificationChannel();
+
+    final notificationsAllowed = await _areNotificationsAllowed();
+    if (!notificationsAllowed) {
+      debugPrint('Notifications are not allowed.');
+      return false;
+    }
+
+    await _scheduleDaily();
+    return true;
+  }
+
+  Future<bool> enableDailyNotifications() async {
+    await _initialize();
+    await _createAndroidNotificationChannel();
+
+    final notificationPermissionGranted =
+        await _requestNotificationsPermission();
+    if (!notificationPermissionGranted) {
+      await NotificationSettings.setEnabled(enabled: false);
+      await _plugin.cancel(_dailyNotificationId);
+      debugPrint('Notification permission was not granted.');
+      return false;
+    }
+
+    await NotificationSettings.setEnabled(enabled: true);
+    await _scheduleDaily();
+    return true;
+  }
+
+  Future<void> disableDailyNotifications() async {
+    await _initialize();
+    await NotificationSettings.setEnabled(enabled: false);
+    await _plugin.cancel(_dailyNotificationId);
+  }
+
+  Future<void> _initialize() async {
     const androidInit = AndroidInitializationSettings('ic_notification');
     const iosInit = DarwinInitializationSettings();
     const initSettings = InitializationSettings(
@@ -50,19 +98,46 @@ class NotificationService {
         navigateToTodayReading();
       },
     );
+  }
 
+  Future<void> _createAndroidNotificationChannel() async {
     final android =
         _plugin
             .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin
             >();
-    final notificationPermissionGranted =
-        await android?.requestNotificationsPermission();
-    if (notificationPermissionGranted == false) {
-      debugPrint('Notification permission was not granted.');
-      return false;
-    }
 
+    await android?.createNotificationChannel(
+      const AndroidNotificationChannel(
+        _dailyChannelId,
+        _dailyChannelName,
+        description: _dailyChannelDescription,
+        importance: Importance.max,
+      ),
+    );
+  }
+
+  Future<bool> _requestNotificationsPermission() async {
+    final android =
+        _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+
+    return await android?.requestNotificationsPermission() ?? true;
+  }
+
+  Future<bool> _areNotificationsAllowed() async {
+    final android =
+        _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
+
+    return await android?.areNotificationsEnabled() ?? true;
+  }
+
+  Future<void> _scheduleDaily() async {
     tz.initializeTimeZones();
     final tzInfo = await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(tzInfo.identifier));
@@ -71,15 +146,15 @@ class NotificationService {
     final next = _nextInstanceOf(time.hour, time.minute);
 
     await _plugin.zonedSchedule(
-      1,
+      _dailyNotificationId,
       'Your daily reading is ready',
       "Take a moment with God's Word",
       next,
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          'daily_channel',
-          'Daily reminders',
-          channelDescription: 'Daily reminder notifications',
+          _dailyChannelId,
+          _dailyChannelName,
+          channelDescription: _dailyChannelDescription,
           importance: Importance.max,
           priority: Priority.high,
         ),
@@ -87,7 +162,6 @@ class NotificationService {
       matchDateTimeComponents: DateTimeComponents.time,
       androidScheduleMode: AndroidScheduleMode.inexact,
     );
-    return true;
   }
 
   tz.TZDateTime _nextInstanceOf(int hour, int minute) {
