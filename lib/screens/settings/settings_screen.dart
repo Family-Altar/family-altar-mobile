@@ -208,7 +208,8 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
     final notificationService = NotificationService();
     var updatedEnabled = false;
     if (enabled) {
-      updatedEnabled = await notificationService.enableDailyNotifications();
+      updatedEnabled = await notificationService
+          .enableDailyNotificationsWithPrompt(context);
     } else {
       await notificationService.disableDailyNotifications();
     }
@@ -347,6 +348,7 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
               ),
               value: _enabled,
               activeThumbColor: context.accent,
+              inactiveTrackColor: context.backgroundColor,
               onChanged:
                   _updating
                       ? null

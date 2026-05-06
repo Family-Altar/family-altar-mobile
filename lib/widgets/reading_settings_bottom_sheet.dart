@@ -6,17 +6,15 @@ import 'package:family_altar/theme/bloc/theme_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Same presentation as the original reader screen settings drawer.
 void showReadingSettingsBottomSheet(BuildContext context) {
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: Colors.transparent,
-    barrierColor: Colors.transparent,
     isScrollControlled: true,
-    useSafeArea: true,
+    backgroundColor: Colors.transparent,
     builder: (_) => const ReadingSettingsBottomSheet(),
   );
 }
+
 
 class ReadingSettingsBottomSheet extends StatelessWidget {
   const ReadingSettingsBottomSheet({super.key});
