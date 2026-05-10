@@ -21,7 +21,16 @@ class _NotificationBootstrapperState extends State<NotificationBootstrapper> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        await NotificationService().initAndScheduleDaily();
+        final hasPrompted =
+            await NotificationSettings.hasPromptedForPermission();
+        if (!hasPrompted) {
+          // First launch: mark as prompted before asking so a crash/kill during
+          // the dialog doesn't result in repeated prompts on next open.
+          await NotificationSettings.setHasPromptedForPermission();
+          await NotificationService().enableDailyNotifications();
+        } else {
+          await NotificationService().initAndScheduleDaily();
+        }
       } catch (e, st) {
         debugPrint('Notification init failed: $e');
         debugPrint('$st');
@@ -86,7 +95,17 @@ class NotificationService {
 
   Future<void> _initialize() async {
     const androidInit = AndroidInitializationSettings('ic_notification');
-    const iosInit = DarwinInitializationSettings();
+    // Disable the auto-request flags so the OS dialog only fires when the user
+    // explicitly enables notifications via the settings toggle, not on every
+    // cold start. The explicit request happens in
+    // _requestNotificationsPermission.
+    // Package defaults keep defaultPresent* true so notifications show in the
+    // foreground on iOS (it suppresses them otherwise).
+    const iosInit = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
     const initSettings = InitializationSettings(
       android: androidInit,
       iOS: iosInit,
@@ -119,12 +138,34 @@ class NotificationService {
 
   Future<bool> _requestNotificationsPermission() async {
     final android =
-        _plugin
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >();
+        _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (android != null) {
+      // requestNotificationsPermission() returns true immediately (no dialog)
+      // if permission is already granted, and shows the OS dialog otherwise.
+      // If it returns false/null (e.g. activity context unavailable on some
+      // versions), fall back to areNotificationsEnabled() as the authoritative
+      // check — that call only needs applicationContext, not an activity.
+      final granted = await android.requestNotificationsPermission();
+      if (granted ?? false) return true;
+      return (await android.areNotificationsEnabled()) ?? false;
+    }
 
-    return await android?.requestNotificationsPermission() ?? true;
+    final ios =
+        _plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    if (ios != null) {
+      return await ios.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          ) ??
+          false;
+    }
+
+    return true;
   }
 
   Future<bool> _areNotificationsAllowed() async {
@@ -160,7 +201,7 @@ class NotificationService {
         ),
       ),
       matchDateTimeComponents: DateTimeComponents.time,
-      androidScheduleMode: AndroidScheduleMode.inexact,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
 
