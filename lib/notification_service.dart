@@ -97,18 +97,14 @@ class NotificationService {
     const androidInit = AndroidInitializationSettings('ic_notification');
     // Disable the auto-request flags so the OS dialog only fires when the user
     // explicitly enables notifications via the settings toggle, not on every
-    // cold start. The explicit request happens in _requestNotificationsPermission.
-    // defaultPresent* flags must be true so notifications show even while the
-    // app is in the foreground (iOS suppresses them otherwise).
+    // cold start. The explicit request happens in
+    // _requestNotificationsPermission.
+    // Package defaults keep defaultPresent* true so notifications show in the
+    // foreground on iOS (it suppresses them otherwise).
     const iosInit = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
-      defaultPresentAlert: true,
-      defaultPresentBadge: true,
-      defaultPresentSound: true,
-      defaultPresentBanner: true,
-      defaultPresentList: true,
     );
     const initSettings = InitializationSettings(
       android: androidInit,
@@ -152,8 +148,8 @@ class NotificationService {
       // versions), fall back to areNotificationsEnabled() as the authoritative
       // check — that call only needs applicationContext, not an activity.
       final granted = await android.requestNotificationsPermission();
-      if (granted == true) return true;
-      return await android.areNotificationsEnabled() == true;
+      if (granted ?? false) return true;
+      return (await android.areNotificationsEnabled()) ?? false;
     }
 
     final ios =
