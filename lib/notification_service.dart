@@ -15,10 +15,12 @@ class NotificationBootstrapper extends StatefulWidget {
       _NotificationBootstrapperState();
 }
 
-class _NotificationBootstrapperState extends State<NotificationBootstrapper> {
+class _NotificationBootstrapperState extends State<NotificationBootstrapper>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
         final hasPrompted =
@@ -36,6 +38,19 @@ class _NotificationBootstrapperState extends State<NotificationBootstrapper> {
         debugPrint('$st');
       }
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      NotificationService().dismissAndReschedule();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -91,6 +106,14 @@ class NotificationService {
     await _initialize();
     await NotificationSettings.setEnabled(enabled: false);
     await _plugin.cancel(_dailyNotificationId);
+  }
+
+  Future<void> dismissAndReschedule() async {
+    final enabled = await NotificationSettings.isEnabled();
+    if (!enabled) return;
+    await _initialize();
+    await _plugin.cancel(_dailyNotificationId);
+    await _scheduleDaily();
   }
 
   Future<void> _initialize() async {
@@ -214,6 +237,7 @@ class NotificationService {
       now.day,
       hour,
       minute,
+      0,
     );
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
