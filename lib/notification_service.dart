@@ -237,7 +237,6 @@ class NotificationService {
       now.day,
       hour,
       minute,
-      0,
     );
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
