@@ -31,10 +31,10 @@ extension StripMargin on String {
 }
 
 String formatReadingForSharing(Reading reading) {
-  final scripture = reading.scripture.replaceAll('\n', '').trim();
-  final quote = reading.quote.replaceAll('\n', '').trim();
-  final dailyReading = reading.dailyReading.replaceAll('\n', '').trim();
-  final sermonTitleAndDate = reading.title.replaceAll('\n', '').trim();
+  final scripture = reading.scripture.trim();
+  final quote = reading.quote.trim();
+  final dailyReading = reading.dailyReading.trim();
+  final sermonTitleAndDate = reading.title.trim();
 
   final shareContent =
       '''
