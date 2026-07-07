@@ -139,7 +139,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           final fullShareText = formatReadingForSharing(
                             reading,
                           );
-                          Share.share(fullShareText.trim());
+                          SharePlus.instance.share(
+                            ShareParams(text: fullShareText.trim()),
+                          );
                         } else if (value == 'settings') {
                           showReadingSettingsBottomSheet(context);
                         }

@@ -3,12 +3,13 @@
 ///
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import
+// dart format off
 
 part of 'strings.g.dart';
 
 // Path: <root>
 typedef TranslationsEn = Translations; // ignore: unused_element
-class Translations implements BaseTranslations<AppLocale, Translations> {
+class Translations with BaseTranslations<AppLocale, Translations> {
 	/// Returns the current translations of the given [context].
 	///
 	/// Usage:
@@ -46,12 +47,12 @@ class Translations implements BaseTranslations<AppLocale, Translations> {
 	/// en: 'Save'
 	String get save => 'Save';
 
-	late final TranslationsLoginEn login = TranslationsLoginEn._(_root);
+	late final Translations$login$en login = Translations$login$en._(_root);
 }
 
 // Path: login
-class TranslationsLoginEn {
-	TranslationsLoginEn._(this._root);
+class Translations$login$en {
+	Translations$login$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -64,17 +65,19 @@ class TranslationsLoginEn {
 	String get fail => 'Logged in failed';
 }
 
-/// Flat map(s) containing all translations.
+/// The flat map containing all translations for locale <en>.
 /// Only for edge cases! For simple maps, use the map function of this library.
+///
+/// The Dart AOT compiler has issues with very large switch statements,
+/// so the map is split into smaller functions (512 entries each).
 extension on Translations {
 	dynamic _flatMapFunction(String path) {
-		switch (path) {
-			case 'hello': return ({required Object name}) => 'Hello ${name}';
-			case 'save': return 'Save';
-			case 'login.success': return 'Logged in successfully';
-			case 'login.fail': return 'Logged in failed';
-			default: return null;
-		}
+		return switch (path) {
+			'hello' => ({required Object name}) => 'Hello ${name}',
+			'save' => 'Save',
+			'login.success' => 'Logged in successfully',
+			'login.fail' => 'Logged in failed',
+			_ => null,
+		};
 	}
 }
-
