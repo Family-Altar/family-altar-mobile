@@ -150,12 +150,14 @@ class ForewordPrefaceScreen extends StatelessWidget {
                         context.read<ForewordPrefaceBloc>().add(
                           const NextPageEvent(),
                         );
+                        scrollController.jumpTo(0);
                       }
                     } else if (details.primaryVelocity! > 500) {
                       if (loadedState.hasPrevious) {
                         context.read<ForewordPrefaceBloc>().add(
                           const PreviousPageEvent(),
                         );
+                        scrollController.jumpTo(0);
                       }
                     }
                   }
