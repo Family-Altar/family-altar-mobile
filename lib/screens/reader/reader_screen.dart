@@ -39,27 +39,59 @@ class ReaderScreen extends StatefulWidget {
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
-class _ReaderScreenState extends State<ReaderScreen> {
+class _ReaderScreenState extends State<ReaderScreen>
+    with WidgetsBindingObserver {
   late final ScrollController _scrollController;
   double _horizontalDragDistance = 0;
   double _verticalDragDistance = 0;
   bool _isHorizontalSwipe = false;
+  bool _contentFitsWithoutScroll = false;
+  late DateTime _currentDate = widget.date;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_onScrollEnd);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   void _onScrollEnd() {
+    // Below the negligible-scroll threshold, only the manual button marks
+    // as read.
+    if (_contentFitsWithoutScroll) return;
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      context.read<ReadingBloc>().add(MarkAsReadEvent(widget.date));
+      context.read<ReadingBloc>().add(MarkAsReadEvent(_currentDate));
+    }
+  }
+
+  // Catches content-size changes (e.g. font-size setting) that
+  // ScrollController listeners miss.
+  void _scheduleScrollCheck() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkScrollNeeded());
+  }
+
+  // Below this, remaining scroll distance is too small to reliably land
+  // on maxScrollExtent.
+  static const double _negligibleScrollExtent = 150;
+
+  void _checkScrollNeeded() {
+    if (!mounted || !_scrollController.hasClients) return;
+    final fitsWithoutScroll =
+        _scrollController.position.maxScrollExtent <= _negligibleScrollExtent;
+    if (fitsWithoutScroll != _contentFitsWithoutScroll) {
+      setState(() => _contentFitsWithoutScroll = fitsWithoutScroll);
     }
   }
 
   @override
+  void didChangeMetrics() {
+    _scheduleScrollCheck();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController
       ..removeListener(_onScrollEnd)
       ..dispose();
@@ -68,7 +100,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ReadingBloc, ReadingState>(
+    return BlocConsumer<ReadingBloc, ReadingState>(
+      listener: (context, state) {
+        if (state is ReadingLoaded) {
+          _currentDate = state.currentDate;
+          _scheduleScrollCheck();
+        }
+      },
       builder: (context, state) {
         if (state is ReadingLoading) {
           return const Center(child: CircularProgressIndicator());
@@ -139,7 +177,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                           final fullShareText = formatReadingForSharing(
                             reading,
                           );
-                          Share.share(fullShareText.trim());
+                          SharePlus.instance.share(
+                            ShareParams(text: fullShareText.trim()),
+                          );
                         } else if (value == 'settings') {
                           showReadingSettingsBottomSheet(context);
                         }
@@ -223,80 +263,95 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     _verticalDragDistance = 0.0;
                     _isHorizontalSwipe = false;
                   },
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    child: Scrollbar(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: TweenAnimationBuilder<double>(
-                          key: ValueKey(state.reading.date),
-                          duration: const Duration(milliseconds: 200),
-                          tween: Tween(begin: 0, end: 1),
-                          builder: (context, value, child) {
-                            return Opacity(opacity: value, child: child);
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                state.reading.scripture.replaceAll('\n', ' '),
-                                textAlign: TextAlign.center,
-                                style: AppFonts.italics(
-                                  context,
-                                ).copyWith(fontSize: fontSize),
-                                textScaler: TextScaler.noScaling,
-                              ),
-                              const SizedBox(height: 8),
-                              Center(
-                                child: Image.asset(
-                                  'assets/icon/divider.png',
-                                  color:
-                                      context.isDarkMode ? Colors.white : null,
-                                  width: (fontSize * 20).clamp(0, 400),
+                  child: NotificationListener<ScrollMetricsNotification>(
+                    onNotification: (notification) {
+                      _scheduleScrollCheck();
+                      return false;
+                    },
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      child: Scrollbar(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: TweenAnimationBuilder<double>(
+                            key: ValueKey(state.reading.date),
+                            duration: const Duration(milliseconds: 200),
+                            tween: Tween(begin: 0, end: 1),
+                            builder: (context, value, child) {
+                              return Opacity(opacity: value, child: child);
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  state.reading.scripture.replaceAll('\n', ' '),
+                                  textAlign: TextAlign.center,
+                                  style: AppFonts.italics(
+                                    context,
+                                  ).copyWith(fontSize: fontSize),
+                                  textScaler: TextScaler.noScaling,
                                 ),
-                              ),
+                                const SizedBox(height: 8),
+                                Center(
+                                  child: Image.asset(
+                                    'assets/icon/divider.png',
+                                    color:
+                                        context.isDarkMode
+                                            ? Colors.white
+                                            : null,
+                                    width: (fontSize * 20).clamp(0, 400),
+                                  ),
+                                ),
 
-                              const SizedBox(height: 8),
-                              DropCapText(
-                                dropCapStyle: TextStyle(
-                                  fontFamily: 'OldEnglish',
-                                  fontSize: 50,
-                                  color:
-                                      context.isDarkMode ? Colors.white : null,
+                                const SizedBox(height: 8),
+                                DropCapText(
+                                  dropCapStyle: TextStyle(
+                                    fontFamily: 'OldEnglish',
+                                    fontSize: 50,
+                                    color:
+                                        context.isDarkMode
+                                            ? Colors.white
+                                            : null,
+                                  ),
+                                  state.reading.quote,
+                                  textAlign: TextAlign.left,
+                                  style: AppFonts.normal(
+                                    context,
+                                  ).copyWith(fontSize: fontSize, height: 1.2),
+                                  dropCapPadding: const EdgeInsets.only(
+                                    right: 8,
+                                  ),
                                 ),
-                                state.reading.quote,
-                                textAlign: TextAlign.left,
-                                style: AppFonts.normal(
-                                  context,
-                                ).copyWith(fontSize: fontSize, height: 1.2),
-                                dropCapPadding: const EdgeInsets.only(right: 8),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                state.reading.title,
-                                textAlign: TextAlign.left,
-                                style: AppFonts.italics(
-                                  context,
-                                ).copyWith(fontSize: fontSize),
-                              ),
-                              const SizedBox(height: 8),
-                              Center(
-                                child: Image.asset(
-                                  'assets/icon/divider.png',
-                                  color:
-                                      context.isDarkMode ? Colors.white : null,
-                                  width: (fontSize * 20).clamp(0, 400),
+                                const SizedBox(height: 8),
+                                Text(
+                                  state.reading.title,
+                                  textAlign: TextAlign.left,
+                                  style: AppFonts.italics(
+                                    context,
+                                  ).copyWith(fontSize: fontSize),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Daily Reading: ${state.reading.dailyReading}',
-                                textAlign: TextAlign.left,
-                                style: AppFonts.normal(
-                                  context,
-                                ).copyWith(fontSize: fontSize),
-                              ),
-                            ],
+                                const SizedBox(height: 8),
+                                Center(
+                                  child: Image.asset(
+                                    'assets/icon/divider.png',
+                                    color:
+                                        context.isDarkMode
+                                            ? Colors.white
+                                            : null,
+                                    width: (fontSize * 20).clamp(0, 400),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Daily Reading: '
+                                  '${state.reading.dailyReading}',
+                                  textAlign: TextAlign.left,
+                                  style: AppFonts.normal(
+                                    context,
+                                  ).copyWith(fontSize: fontSize),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -329,6 +384,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               ),
                             },
                       ),
+                      if (_contentFitsWithoutScroll &&
+                          !state.isCurrentDayRead())
+                        FilledButton.icon(
+                          onPressed:
+                              () => context.read<ReadingBloc>().add(
+                                MarkAsReadEvent(_currentDate),
+                              ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.dialogMarkReadBG,
+                          ),
+                          icon: const Icon(
+                            Icons.check,
+                            color: AppColors.dialogButtonText,
+                            size: 18,
+                          ),
+                          label: const Text(
+                            'Mark as Read',
+                            style: TextStyle(color: AppColors.dialogButtonText),
+                          ),
+                        ),
                       IconButton(
                         color: context.textColor,
                         icon: const Icon(Icons.arrow_circle_right_outlined),
