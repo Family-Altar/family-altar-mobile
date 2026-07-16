@@ -56,7 +56,8 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   void _onScrollEnd() {
-    // Below the negligible-scroll threshold, only the manual button marks as read.
+    // Below the negligible-scroll threshold, only the manual button marks
+    // as read.
     if (_contentFitsWithoutScroll) return;
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
@@ -64,12 +65,14 @@ class _ReaderScreenState extends State<ReaderScreen>
     }
   }
 
-  // Catches content-size changes (e.g. font-size setting) that ScrollController listeners miss.
+  // Catches content-size changes (e.g. font-size setting) that
+  // ScrollController listeners miss.
   void _scheduleScrollCheck() {
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkScrollNeeded());
   }
 
-  // Below this, remaining scroll distance is too small to reliably land on maxScrollExtent.
+  // Below this, remaining scroll distance is too small to reliably land
+  // on maxScrollExtent.
   static const double _negligibleScrollExtent = 150;
 
   void _checkScrollNeeded() {
