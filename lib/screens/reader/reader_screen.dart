@@ -70,7 +70,7 @@ class _ReaderScreenState extends State<ReaderScreen>
   }
 
   // Below this, remaining scroll distance is too small to reliably land on maxScrollExtent.
-  static const double _negligibleScrollExtent = 24;
+  static const double _negligibleScrollExtent = 150;
 
   void _checkScrollNeeded() {
     if (!mounted || !_scrollController.hasClients) return;
