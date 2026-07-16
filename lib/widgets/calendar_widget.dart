@@ -63,16 +63,13 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
     return isLeapYear ? 366 : 365;
   }
 
-  String _calculateCompletionPercentage(ReadingLoaded? loadedState) {
-    if (loadedState == null) return '0';
-
+  String _calculateCompletionProgress(ReadingLoaded? loadedState) {
     // Completed count only (excludes missed).
     // Denominator = days in current year.
-    final completedCount = loadedState.getTotalCompletedDaysCount();
+    final completedCount = loadedState?.getTotalCompletedDaysCount() ?? 0;
     final daysInYear = _daysInYear(DateTime.now().year);
-    final percentage = (completedCount / daysInYear) * 100;
 
-    return percentage.clamp(0.0, 100.0).toStringAsFixed(0);
+    return '$completedCount / $daysInYear';
   }
 
   void _onCalendarViewChanged(ViewChangedDetails details) {
@@ -196,7 +193,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 
   Widget _buildStatsBar(
     BuildContext context,
-    String percentage,
+    String progress,
     int missedCount,
   ) {
     return Container(
@@ -212,7 +209,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
           Icon(Icons.check, size: 18, color: Colors.green.shade400),
           const SizedBox(width: 8),
           Text(
-            '$percentage% Completed',
+            '$progress Read',
             style: AppFonts.normal(context, size: FontSize.small).copyWith(
               fontWeight: FontWeight.w600,
               color: context.calendarDayTextSecondary,
@@ -242,9 +239,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
       builder: (context, state) {
         final loadedState = state is ReadingLoaded ? state : null;
         final missedDaysCount = loadedState?.getTotalMissedDaysCount() ?? 0;
-        final completionPercentage = _calculateCompletionPercentage(
-          loadedState,
-        );
+        final completionProgress = _calculateCompletionProgress(loadedState);
 
         // Avoid constantly ticking animation when there are no missed days.
         if (missedDaysCount > 0) {
@@ -360,7 +355,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
             );
 
             final topSection = <Widget>[
-              _buildStatsBar(context, completionPercentage, missedDaysCount),
+              _buildStatsBar(context, completionProgress, missedDaysCount),
               _buildHeader(context),
             ];
 
