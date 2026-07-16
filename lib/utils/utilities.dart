@@ -1,19 +1,23 @@
+import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/screens/reader/domain/reading.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Utils {
-  static const String _lastAccessedKey = 'last_accessed_day';
+  static String _lastAccessedKeyFor(Volume volume) =>
+      'last_accessed_day${volume.storageSuffix}';
 
-  static Future<DateTime?> getLastAccessedDay() async {
+  static Future<DateTime?> getLastAccessedDay({
+    Volume volume = Volume.one,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final dateString = prefs.getString(_lastAccessedKey);
+      final dateString = prefs.getString(_lastAccessedKeyFor(volume));
       if (dateString != null) {
         return DateTime.parse(dateString);
       }
     } on Exception {
-      // Error getting last accessed day - fail silently
+      // fail silently
     }
     return null;
   }
@@ -30,27 +34,31 @@ extension StripMargin on String {
   }
 }
 
-String formatReadingForSharing(Reading reading) {
+String formatReadingForSharing(
+  Reading reading, {
+  Volume volume = Volume.one,
+}) {
   final scripture = reading.scripture.trim();
   final quote = reading.quote.trim();
   final dailyReading = reading.dailyReading.trim();
   final sermonTitleAndDate = reading.title.trim();
 
-  final shareContent =
-      '''
+  final dailyReadingLabel =
+      volume == Volume.two ? 'Parallel Scripture:' : 'Daily Reading:';
+
+  final shareContent = '''
     |$scripture
     |
     |$quote\n
     |$sermonTitleAndDate
     |
-    |Daily Reading:
+    |$dailyReadingLabel
     |$dailyReading
 
   '''.stripMargin();
 
-  final fullShareText =
-      '''
-    |Family Altar - Volume I
+  final fullShareText = '''
+    |Family Altar - ${volume.displayTitle}
     |${reading.date}
     |
     |$shareContent

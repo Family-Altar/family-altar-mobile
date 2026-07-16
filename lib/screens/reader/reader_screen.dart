@@ -1,4 +1,5 @@
 import 'package:drop_cap_text/drop_cap_text.dart';
+import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
@@ -176,6 +177,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                           final reading = state.reading;
                           final fullShareText = formatReadingForSharing(
                             reading,
+                            volume: state.currentVolume,
                           );
                           SharePlus.instance.share(
                             ShareParams(text: fullShareText.trim()),
@@ -339,15 +341,21 @@ class _ReaderScreenState extends State<ReaderScreen>
                                     width: (fontSize * 20).clamp(0, 400),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Daily Reading: '
-                                  '${state.reading.dailyReading}',
-                                  textAlign: TextAlign.left,
-                                  style: AppFonts.normal(
-                                    context,
-                                  ).copyWith(fontSize: fontSize),
-                                ),
+                                if (state.currentVolume == Volume.one ||
+                                    state.reading.dailyReading.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    state.currentVolume == Volume.two
+                                        ? 'Parallel Scripture: '
+                                            '${state.reading.dailyReading}'
+                                        : 'Daily Reading: '
+                                            '${state.reading.dailyReading}',
+                                    textAlign: TextAlign.left,
+                                    style: AppFonts.normal(
+                                      context,
+                                    ).copyWith(fontSize: fontSize),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

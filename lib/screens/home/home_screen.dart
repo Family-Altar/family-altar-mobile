@@ -1,10 +1,13 @@
+import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/navigation_service.dart';
+import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/widgets/banner_widget.dart';
 import 'package:family_altar/widgets/calendar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -183,12 +186,16 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                'Volume I',
-                style: AppFonts.normal(context).copyWith(
-                  color: context.appBarTitleColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
+              BlocSelector<ReadingBloc, ReadingState, Volume>(
+                selector: (state) =>
+                    state is ReadingLoaded ? state.currentVolume : Volume.one,
+                builder: (context, volume) => Text(
+                  volume.displayTitle,
+                  style: AppFonts.normal(context).copyWith(
+                    color: context.appBarTitleColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ),
             ],

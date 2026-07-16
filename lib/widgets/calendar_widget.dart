@@ -218,7 +218,13 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
           const Spacer(),
           // Missed Stat (always visible and tappable)
           InkWell(
-            onTap: () => context.push('/missed-days/book-1'),
+            onTap: () {
+              final state = context.read<ReadingBloc>().state;
+              final volumeId = state is ReadingLoaded
+                  ? state.currentVolume.volumeId
+                  : '1';
+              context.push('/missed-days/book-$volumeId');
+            },
             borderRadius: BorderRadius.circular(20),
             child:
                 missedCount > 0

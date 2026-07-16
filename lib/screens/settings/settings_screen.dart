@@ -1,3 +1,4 @@
+import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/notification_service.dart';
 import 'package:family_altar/notification_settings.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
@@ -418,14 +419,20 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
 class _ResetReadingProgressCard extends StatelessWidget {
   const _ResetReadingProgressCard();
 
+  Volume _activeVolume(BuildContext context) {
+    final state = context.read<ReadingBloc>().state;
+    return state is ReadingLoaded ? state.currentVolume : Volume.one;
+  }
+
   Future<void> _showResetConfirmation(BuildContext context) async {
     final platform = Theme.of(context).platform;
+    final volumeTitle = _activeVolume(context).displayTitle;
     bool? shouldReset;
 
     if (platform == TargetPlatform.iOS) {
-      shouldReset = await _showCupertinoResetDialog(context);
+      shouldReset = await _showCupertinoResetDialog(context, volumeTitle);
     } else {
-      shouldReset = await _showMaterialResetDialog(context);
+      shouldReset = await _showMaterialResetDialog(context, volumeTitle);
     }
 
     if (shouldReset != true || !context.mounted) {
@@ -447,7 +454,10 @@ class _ResetReadingProgressCard extends StatelessWidget {
     );
   }
 
-  Future<bool?> _showMaterialResetDialog(BuildContext context) {
+  Future<bool?> _showMaterialResetDialog(
+    BuildContext context,
+    String volumeTitle,
+  ) {
     return showDialog<bool>(
       context: context,
       builder:
@@ -458,7 +468,7 @@ class _ResetReadingProgressCard extends StatelessWidget {
               style: AppFonts.bold(context, size: FontSize.large),
             ),
             content: Text(
-              "Are you sure you want to wipe Volume I's reading progress?",
+              "Are you sure you want to wipe $volumeTitle's reading progress?",
               style: AppFonts.normal(context),
             ),
             actions: [
@@ -486,7 +496,10 @@ class _ResetReadingProgressCard extends StatelessWidget {
     );
   }
 
-  Future<bool?> _showCupertinoResetDialog(BuildContext context) {
+  Future<bool?> _showCupertinoResetDialog(
+    BuildContext context,
+    String volumeTitle,
+  ) {
     return showCupertinoDialog<bool>(
       context: context,
       builder:
@@ -496,7 +509,7 @@ class _ResetReadingProgressCard extends StatelessWidget {
               style: AppFonts.bold(context, size: FontSize.large),
             ),
             content: Text(
-              "Are you sure you want to wipe Volume I's reading progress?",
+              "Are you sure you want to wipe $volumeTitle's reading progress?",
               style: AppFonts.normal(context),
             ),
             actions: [
@@ -554,12 +567,23 @@ class _ResetReadingProgressCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    'Clear all reading progress for Volume I',
-                    style: AppFonts.normal(
-                      context,
-                      size: FontSize.small,
-                    ).copyWith(color: context.textColor),
+                  child: BlocBuilder<ReadingBloc, ReadingState>(
+                    buildWhen: (prev, curr) =>
+                        curr is ReadingLoaded &&
+                        (prev is! ReadingLoaded ||
+                            prev.currentVolume != curr.currentVolume),
+                    builder: (context, state) {
+                      final volumeTitle = state is ReadingLoaded
+                          ? state.currentVolume.displayTitle
+                          : 'Volume I';
+                      return Text(
+                        'Clear all reading progress for $volumeTitle',
+                        style: AppFonts.normal(
+                          context,
+                          size: FontSize.small,
+                        ).copyWith(color: context.textColor),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
