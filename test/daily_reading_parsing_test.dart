@@ -1,3 +1,6 @@
+@Tags(['local'])
+library;
+
 import 'dart:io';
 
 import 'package:family_altar/models/volume.dart';
