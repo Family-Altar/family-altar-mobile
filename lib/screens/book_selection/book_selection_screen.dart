@@ -39,7 +39,10 @@ class BookSelectionScreen extends StatelessWidget {
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         toolbarHeight: 48,
-        backgroundColor: context.appBarColor,
+        backgroundColor: context
+            .read<ReadingBloc>()
+            .currentVolume
+            .appBarColor(isDark: context.isDarkMode),
         title: Text(
           title,
           style: AppFonts.bold(

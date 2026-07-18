@@ -118,7 +118,10 @@ class _HomeScreenState extends State<HomeScreen>
           padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
-              decoration: BoxDecoration(color: context.appBarColor),
+              decoration: BoxDecoration(color: context
+                .read<ReadingBloc>()
+                .currentVolume
+                .appBarColor(isDark: context.isDarkMode)),
               child: Text(
                 widget.title,
                 style: AppFonts.bold(
@@ -160,7 +163,10 @@ class _HomeScreenState extends State<HomeScreen>
 
       appBar: AppBar(
         toolbarHeight: 50,
-        backgroundColor: context.appBarColor,
+        backgroundColor: context
+                .read<ReadingBloc>()
+                .currentVolume
+                .appBarColor(isDark: context.isDarkMode),
         centerTitle: true,
         leading: Builder(
           builder:
@@ -207,33 +213,38 @@ class _HomeScreenState extends State<HomeScreen>
 
       extendBody: true,
 
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final mediaQuery = MediaQuery.of(context);
-          final isLandscape = mediaQuery.orientation == Orientation.landscape;
-          final maxHeight = constraints.maxHeight;
+      body: BlocSelector<ReadingBloc, ReadingState, Volume>(
+        selector: (state) =>
+            state is ReadingLoaded ? state.currentVolume : Volume.one,
+        builder: (context, volume) => LayoutBuilder(
+          builder: (context, constraints) {
+            final mediaQuery = MediaQuery.of(context);
+            final isLandscape =
+                mediaQuery.orientation == Orientation.landscape;
+            final maxHeight = constraints.maxHeight;
 
-          if (isLandscape) {
-            final bannerHeight = (maxHeight * 0.42).clamp(130.0, 260.0);
+            if (isLandscape) {
+              final bannerHeight = (maxHeight * 0.42).clamp(130.0, 260.0);
+
+              return Column(
+                children: <Widget>[
+                  SizedBox(
+                    height: bannerHeight,
+                    child: FamilyAltarBanner(volume: volume),
+                  ),
+                  const Expanded(child: FamilyAltarCalendar()),
+                ],
+              );
+            }
 
             return Column(
               children: <Widget>[
-                SizedBox(
-                  height: bannerHeight,
-                  child: const FamilyAltarBanner(),
-                ),
-                const Expanded(child: FamilyAltarCalendar()),
+                Expanded(child: FamilyAltarBanner(volume: volume)),
+                const FamilyAltarCalendar(),
               ],
             );
-          }
-
-          return const Column(
-            children: <Widget>[
-              Expanded(child: FamilyAltarBanner()),
-              FamilyAltarCalendar(),
-            ],
-          );
-        },
+          },
+        ),
       ),
     );
   }
