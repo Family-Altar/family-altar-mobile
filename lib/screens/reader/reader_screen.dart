@@ -252,10 +252,12 @@ class _ReaderScreenState extends State<ReaderScreen>
                           context.read<ReadingBloc>().add(
                             const NextReadingEvent(),
                           );
+                          _scrollController.jumpTo(0);
                         } else {
                           context.read<ReadingBloc>().add(
                             const PreviousReadingEvent(),
                           );
+                          _scrollController.jumpTo(0);
                         }
                       }
                     }
