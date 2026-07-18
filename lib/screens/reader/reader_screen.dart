@@ -128,17 +128,31 @@ class _ReaderScreenState extends State<ReaderScreen>
                   toolbarHeight: 48,
                   backgroundColor: context.backgroundColor,
                   centerTitle: true,
+                  leadingWidth: 130,
+                  leading: Row(
+                    children: [
+                      IconButton(
+                        onPressed: context.pop,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        constraints: const BoxConstraints(),
+                        icon: Icon(
+                          Icons.arrow_back,
+                          color: context.textColor,
+                          size: AppIcons.getIconSize(IconSize.medium),
+                        ),
+                      ),
+                      Text(
+                        state.currentVolume.displayTitle,
+                        style: AppFonts.normal(
+                          context,
+                          size: FontSize.small,
+                        ),
+                      ),
+                    ],
+                  ),
                   title: Text(
                     state.reading.date,
                     style: AppFonts.bold(context),
-                  ),
-                  leading: IconButton(
-                    onPressed: context.pop,
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: context.textColor,
-                      size: AppIcons.getIconSize(IconSize.medium),
-                    ),
                   ),
                   actions: [
                     IconButton(

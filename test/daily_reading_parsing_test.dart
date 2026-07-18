@@ -32,7 +32,7 @@ void main() {
   for (final volume in Volume.values) {
     group(volume.displayTitle, () {
       final days = volumeDays[volume]!;
-      final start = DateTime(volumeYear[volume]!, 1, 1);
+      final start = DateTime(volumeYear[volume]!);
 
       for (var i = 0; i < days; i++) {
         final date = start.add(Duration(days: i));
