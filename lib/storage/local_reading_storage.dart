@@ -9,12 +9,12 @@ class LocalReadingStorage {
     required DateTime date,
     Volume volume = Volume.one,
   }) async {
+    return rootBundle.loadString(readingFilePath(date: date, volume: volume));
+  }
+
+  String readingFilePath({required DateTime date, required Volume volume}) {
     final fileName = _getFileName(date);
-    final filePath = p.join(
-      '${volume.assetBasePath}/daily_readings',
-      fileName,
-    );
-    return rootBundle.loadString(filePath);
+    return p.join('${volume.assetBasePath}/daily_readings', fileName);
   }
 
   String _getFileName(DateTime date) {

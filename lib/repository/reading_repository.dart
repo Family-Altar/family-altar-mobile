@@ -18,6 +18,11 @@ class ReadingRepository {
       volume: volume,
     );
 
+    final fileName = _localReadingStorage.readingFilePath(
+      date: date,
+      volume: volume,
+    );
+
     final dateRegex = RegExp(
       r'(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}',
     );
@@ -25,23 +30,37 @@ class ReadingRepository {
     final dateText = dateMatch?.group(0) ?? '';
     final dateIndex = text.indexOf(dateText);
 
+    // Handles single-chapter ranges (e.g. John 3:16-18) and cross-chapter
+    // ranges (e.g. Luke 21:37-22:6). The (?::\d{1,3})? after the end verse
+    // allows an optional chapter prefix on the end of a range.
     final scriptureRegex = RegExp(
       r'\(('
       r'[1-3]?\s?[A-Z][a-z]+\.?'
       r'(?:\s+[A-Za-z][a-z]+\.?)*'
       r'\s+\d{1,3}:'
-      r'\d{1,3}(?:[-–]\d{1,3})?'
-      r'(?:\s*,\s*\d{1,3}(?:[-–]\d{1,3})?)*'
-      r')\)',
+      r'\d{1,3}(?:[-–]\d{1,3}(?::\d{1,3})?)?'
+      r'(?:\s*,\s*\d{1,3}(?:[-–]\d{1,3}(?::\d{1,3})?)?)*'
+      r'\s*)\)',
     );
     final scriptureMatch = scriptureRegex.firstMatch(text);
     final scriptureEndIndex = scriptureMatch?.end ?? 0;
 
+    final contentStart = dateIndex >= 0 ? dateIndex + dateText.length : 0;
+
+    if (dateText.isNotEmpty && scriptureEndIndex < contentStart) {
+      throw StateError(
+        'Failed to parse scripture reference in $fileName '
+        '(volume: ${volume.displayTitle}, date: $date).\n'
+        'Date "$dateText" found at index $dateIndex '
+        '(content starts at $contentStart).\n'
+        'Scripture regex returned end=$scriptureEndIndex — '
+        'no match found. Check the verse reference format in this file.',
+      );
+    }
+
     final scripture =
-        dateIndex >= 0 && dateText.isNotEmpty
-            ? text
-                .substring(dateIndex + dateText.length, scriptureEndIndex)
-                .trim()
+        dateText.isNotEmpty && scriptureEndIndex > contentStart
+            ? text.substring(contentStart, scriptureEndIndex).trim()
             : '';
 
     int sectionIndex;
