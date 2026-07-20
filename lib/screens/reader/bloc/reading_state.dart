@@ -20,12 +20,14 @@ class ReadingLoaded extends ReadingState {
     required this.currentDate,
     required this.entries,
     required this.firstLaunchDate,
+    required this.currentVolume,
   });
 
   final Reading reading;
   final DateTime currentDate;
   final Map<String, ReadingEntry> entries; // Status tracking for all days
   final DateTime firstLaunchDate;
+  final Volume currentVolume;
 
   /// Get reading entry for a specific date
   ReadingEntry? getEntry(DateTime date) {
@@ -121,12 +123,14 @@ class ReadingLoaded extends ReadingState {
     DateTime? currentDate,
     Map<String, ReadingEntry>? entries,
     DateTime? firstLaunchDate,
+    Volume? currentVolume,
   }) {
     return ReadingLoaded(
       reading: reading ?? this.reading,
       currentDate: currentDate ?? this.currentDate,
       entries: entries ?? this.entries,
       firstLaunchDate: firstLaunchDate ?? this.firstLaunchDate,
+      currentVolume: currentVolume ?? this.currentVolume,
     );
   }
 
@@ -138,7 +142,13 @@ class ReadingLoaded extends ReadingState {
   }
 
   @override
-  List<Object> get props => [reading, currentDate, entries, firstLaunchDate];
+  List<Object> get props => [
+    reading,
+    currentDate,
+    entries,
+    firstLaunchDate,
+    currentVolume,
+  ];
 }
 
 /// Shown when an error occurs (file not found, etc.)

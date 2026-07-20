@@ -1,8 +1,11 @@
-import 'package:family_altar/theme/app_colors.dart'; // Assuming this imports Color constants
+import 'package:family_altar/models/volume.dart';
+import 'package:family_altar/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class FamilyAltarBanner extends StatelessWidget {
-  const FamilyAltarBanner({super.key});
+  const FamilyAltarBanner({required this.volume, super.key});
+
+  final Volume volume;
 
   // Places [imageFocalY] (0=top, 1=bottom of image) at [widgetTargetY]
   // (0=top, 1=bottom of widget) when using BoxFit.cover.
@@ -30,22 +33,17 @@ class FamilyAltarBanner extends StatelessWidget {
             MediaQuery.of(context).orientation == Orientation.landscape;
         const portraitGradientStops = [0.0, 0.5, 1.0];
 
-        // Focal point tuning:
-        //   imageFocalY  — where in the image the subject is (0=top, 1=bottom)
-        //   widgetTargetY — where in the visible banner to place it
-        //   (0=top, 1=bottom)
-        //   imageAspectRatio — imageWidth / imageHeight (check your asset file)
         final portraitAlignment = _focalAlignment(
-          imageFocalY: 0.6,
-          widgetTargetY: 0.85,
-          imageAspectRatio: 3 / 4,
+          imageFocalY: volume.bannerFocalY,
+          widgetTargetY: volume.bannerTargetY,
+          imageAspectRatio: volume.bannerAspectRatio,
           widgetWidth: constraints.maxWidth,
           widgetHeight: constraints.maxHeight,
         );
 
         final image = ClipRect(
           child: Image.asset(
-            'assets/images/family_alter_book_cover.png',
+            volume.bannerImagePath,
             width: double.infinity,
             fit: BoxFit.cover,
             alignment: isLandscape ? Alignment.center : portraitAlignment,

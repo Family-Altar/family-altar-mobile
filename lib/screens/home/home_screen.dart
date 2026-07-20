@@ -1,10 +1,13 @@
+import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/navigation_service.dart';
+import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/widgets/banner_widget.dart';
 import 'package:family_altar/widgets/calendar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -115,7 +118,10 @@ class _HomeScreenState extends State<HomeScreen>
           padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
-              decoration: BoxDecoration(color: context.appBarColor),
+              decoration: BoxDecoration(color: context
+                .read<ReadingBloc>()
+                .currentVolume
+                .appBarColor(isDark: context.isDarkMode)),
               child: Text(
                 widget.title,
                 style: AppFonts.bold(
@@ -157,7 +163,10 @@ class _HomeScreenState extends State<HomeScreen>
 
       appBar: AppBar(
         toolbarHeight: 50,
-        backgroundColor: context.appBarColor,
+        backgroundColor: context
+                .read<ReadingBloc>()
+                .currentVolume
+                .appBarColor(isDark: context.isDarkMode),
         centerTitle: true,
         leading: Builder(
           builder:
@@ -183,12 +192,16 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                'Volume I',
-                style: AppFonts.normal(context).copyWith(
-                  color: context.appBarTitleColor,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w400,
+              BlocSelector<ReadingBloc, ReadingState, Volume>(
+                selector: (state) =>
+                    state is ReadingLoaded ? state.currentVolume : Volume.one,
+                builder: (context, volume) => Text(
+                  volume.displayTitle,
+                  style: AppFonts.normal(context).copyWith(
+                    color: context.appBarTitleColor,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ),
             ],
@@ -200,33 +213,38 @@ class _HomeScreenState extends State<HomeScreen>
 
       extendBody: true,
 
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final mediaQuery = MediaQuery.of(context);
-          final isLandscape = mediaQuery.orientation == Orientation.landscape;
-          final maxHeight = constraints.maxHeight;
+      body: BlocSelector<ReadingBloc, ReadingState, Volume>(
+        selector: (state) =>
+            state is ReadingLoaded ? state.currentVolume : Volume.one,
+        builder: (context, volume) => LayoutBuilder(
+          builder: (context, constraints) {
+            final mediaQuery = MediaQuery.of(context);
+            final isLandscape =
+                mediaQuery.orientation == Orientation.landscape;
+            final maxHeight = constraints.maxHeight;
 
-          if (isLandscape) {
-            final bannerHeight = (maxHeight * 0.42).clamp(130.0, 260.0);
+            if (isLandscape) {
+              final bannerHeight = (maxHeight * 0.42).clamp(130.0, 260.0);
+
+              return Column(
+                children: <Widget>[
+                  SizedBox(
+                    height: bannerHeight,
+                    child: FamilyAltarBanner(volume: volume),
+                  ),
+                  const Expanded(child: FamilyAltarCalendar()),
+                ],
+              );
+            }
 
             return Column(
               children: <Widget>[
-                SizedBox(
-                  height: bannerHeight,
-                  child: const FamilyAltarBanner(),
-                ),
-                const Expanded(child: FamilyAltarCalendar()),
+                Expanded(child: FamilyAltarBanner(volume: volume)),
+                const FamilyAltarCalendar(),
               ],
             );
-          }
-
-          return const Column(
-            children: <Widget>[
-              Expanded(child: FamilyAltarBanner()),
-              FamilyAltarCalendar(),
-            ],
-          );
-        },
+          },
+        ),
       ),
     );
   }

@@ -1,10 +1,13 @@
 import 'dart:math' as math;
 
+import 'package:family_altar/models/volume.dart';
+import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
 import 'package:family_altar/utils/utilities.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class BookSelectionScreen extends StatelessWidget {
@@ -18,7 +21,8 @@ class BookSelectionScreen extends StatelessWidget {
     BookItemData(
       imagePath: 'assets/images/FamilyAltarVolumeIICover.jpg',
       title: 'Volume II',
-      isAvailable: false,
+      volume: Volume.two,
+      sections: [Section.preface, Section.dailyReading],
     ),
     BookItemData(
       imagePath: 'assets/images/FamilyAltarVolumeIIICover.jpg',
@@ -35,7 +39,10 @@ class BookSelectionScreen extends StatelessWidget {
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         toolbarHeight: 48,
-        backgroundColor: context.appBarColor,
+        backgroundColor: context
+            .read<ReadingBloc>()
+            .currentVolume
+            .appBarColor(isDark: context.isDarkMode),
         title: Text(
           title,
           style: AppFonts.bold(
@@ -104,13 +111,19 @@ class _BookItemState extends State<BookItem>
 
   Future<void> _handleSectionTap(Section section) async {
     if (!widget.data.isAvailable) return;
+    final tappedVolume = widget.data.volume;
+    if (!mounted) return;
+    context.read<ReadingBloc>().add(SwitchVolumeEvent(tappedVolume));
     if (section == Section.dailyReading) {
-      final date = await Utils.getLastAccessedDay();
+      final date = await Utils.getLastAccessedDay(volume: tappedVolume);
       if (!mounted) return;
-      await context.push('/reader', extra: date);
+      await context.push('/reader', extra: date ?? DateTime.now());
     } else {
       if (!mounted) return;
-      await context.push('/foreword-preface', extra: section);
+      await context.push(
+        '/foreword-preface',
+        extra: (section, tappedVolume),
+      );
     }
   }
 
@@ -183,6 +196,7 @@ class BookItemData {
   const BookItemData({
     required this.imagePath,
     required this.title,
+    this.volume = Volume.one,
     this.sections = const [
       Section.foreword,
       Section.preface,
@@ -193,6 +207,7 @@ class BookItemData {
 
   final String imagePath;
   final String title;
+  final Volume volume;
   final List<Section> sections;
   final bool isAvailable;
 }

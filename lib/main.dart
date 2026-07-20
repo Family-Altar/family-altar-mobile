@@ -1,4 +1,5 @@
 import 'package:family_altar/i18n/strings.g.dart';
+import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/navigation_service.dart';
 import 'package:family_altar/notification_service.dart';
 import 'package:family_altar/repository/reading_repository.dart';
@@ -18,6 +19,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final GoRouter _router = GoRouter(
   navigatorKey: rootNavigatorKey,
@@ -50,8 +52,13 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: 'foreword-preface',
           builder: (BuildContext context, GoRouterState state) {
-            final section = state.extra as Section? ?? Section.foreword;
-            return ForewordPrefaceScreenProvider(section: section);
+            final extra = state.extra as (Section, Volume)?;
+            final section = extra?.$1 ?? Section.foreword;
+            final volume = extra?.$2 ?? Volume.one;
+            return ForewordPrefaceScreenProvider(
+              section: section,
+              volume: volume,
+            );
           },
         ),
       ],
@@ -72,7 +79,14 @@ void main() async {
 
   final localReadingStorage = LocalReadingStorage();
   final readingRepository = ReadingRepository(localReadingStorage);
-  final readingBloc = ReadingBloc(readingRepository: readingRepository);
+  final prefs = await SharedPreferences.getInstance();
+  final volumeIndex = prefs.getInt('active_volume') ?? 0;
+  final activeVolume =
+      Volume.values[volumeIndex.clamp(0, Volume.values.length - 1)];
+  final readingBloc = ReadingBloc(
+    readingRepository: readingRepository,
+    initialVolume: activeVolume,
+  );
   await readingBloc.initializeFirstLaunchDate();
   readingBloc.add(LoadReadingEvent(date: DateTime.now()));
 

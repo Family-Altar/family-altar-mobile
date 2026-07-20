@@ -1,4 +1,7 @@
+import 'package:family_altar/repository/reading_repository.dart';
+import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/screens/settings/settings_screen.dart';
+import 'package:family_altar/storage/local_reading_storage.dart';
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,8 +12,15 @@ void main() {
       (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: BlocProvider(
-          create: (context) => ThemeBloc(),
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (context) => ThemeBloc()),
+            BlocProvider(
+              create: (context) => ReadingBloc(
+                readingRepository: ReadingRepository(LocalReadingStorage()),
+              ),
+            ),
+          ],
           child: const SettingsScreen(),
         ),
       ),

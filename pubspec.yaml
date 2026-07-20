@@ -88,7 +88,9 @@ flutter:
   assets:
     - assets/images/
     - assets/volume_I/daily_readings/
+    - assets/volume_II/daily_readings/
     - assets/volume_I/
+    - assets/volume_II/
     - assets/icon/divider.png
     - assets/fonts/google_fonts/
   #   - images/a_dot_ham.jpeg

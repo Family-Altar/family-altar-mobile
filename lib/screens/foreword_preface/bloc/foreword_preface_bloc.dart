@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/screens/reader/domain/page.dart';
@@ -8,21 +9,25 @@ part 'foreword_preface_event.dart';
 part 'foreword_preface_state.dart';
 
 class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
-  ForewordPrefaceBloc({required this.readingRepository})
-    : super(PageInitial()) {
+  ForewordPrefaceBloc({
+    required this.readingRepository,
+    required this.volume,
+  }) : super(PageInitial()) {
+    _sectionOrder = _orderedSectionsFor(volume);
     on<LoadPageEvent>(_onLoad);
     on<NextPageEvent>(_onNext);
     on<PreviousPageEvent>(_onPrevious);
   }
 
   final ReadingRepository readingRepository;
+  final Volume volume;
   final Map<Section, Page> _pageCache = {};
+  late final List<Section> _sectionOrder;
 
-  static const List<Section> _sectionOrder = [
-    Section.foreword,
-    Section.preface,
-    Section.dailyReading,
-  ];
+  static List<Section> _orderedSectionsFor(Volume v) => switch (v) {
+    Volume.one => [Section.foreword, Section.preface, Section.dailyReading],
+    Volume.two => [Section.preface, Section.dailyReading],
+  };
 
   Future<void> _onLoad(
     LoadPageEvent event,
@@ -79,9 +84,7 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
 
   Section? _nextSection(Section section) {
     final index = _sectionOrder.indexOf(section);
-    if (index == -1 || index >= _sectionOrder.length - 1) {
-      return null;
-    }
+    if (index == -1 || index >= _sectionOrder.length - 1) return null;
     return _sectionOrder[index + 1];
   }
 
@@ -99,7 +102,10 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
     final cached = _pageCache[section];
     if (cached != null) return cached;
 
-    final page = await readingRepository.fetchPage(sect: section);
+    final page = await readingRepository.fetchPage(
+      sect: section,
+      volume: volume,
+    );
     _pageCache[section] = page;
     return page;
   }
@@ -109,12 +115,8 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
     final next = _nextSection(section);
     final previous = _previousSection(section);
 
-    if (next != null) {
-      futures.add(_maybePrefetch(next));
-    }
-    if (previous != null) {
-      futures.add(_maybePrefetch(previous));
-    }
+    if (next != null) futures.add(_maybePrefetch(next));
+    if (previous != null) futures.add(_maybePrefetch(previous));
 
     await Future.wait(futures);
   }
@@ -122,9 +124,12 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
   Future<void> _maybePrefetch(Section section) async {
     if (_pageCache.containsKey(section)) return;
     try {
-      _pageCache[section] = await readingRepository.fetchPage(sect: section);
+      _pageCache[section] = await readingRepository.fetchPage(
+        sect: section,
+        volume: volume,
+      );
     } on Exception {
-      // Ignore prefetch errors; section will be fetched on demand later.
+      // ignore prefetch errors
     }
   }
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:family_altar/models/reading_entry.dart';
+import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/reader/domain/reading.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,8 +10,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 part 'reading_event.dart';
 part 'reading_state.dart';
 
+const String _activeVolumeKey = 'active_volume';
+
 class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
-  ReadingBloc({required this.readingRepository}) : super(ReadingInitial()) {
+  ReadingBloc({
+    required this.readingRepository,
+    Volume initialVolume = Volume.one,
+  }) : super(ReadingInitial()) {
+    _currentVolume = initialVolume;
     on<LoadReadingEvent>(_onLoad);
     on<NextReadingEvent>(_onNext);
     on<PreviousReadingEvent>(_onPrevious);
@@ -18,21 +25,28 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     on<MarkAsUnreadEvent>(_onMarkAsUnread);
     on<ToggleDayEvent>(_onToggleDay);
     on<ResetReadingProgressEvent>(_onResetReadingProgress);
+    on<SwitchVolumeEvent>(_onSwitchVolume);
   }
 
   final ReadingRepository readingRepository;
   final Map<DateTime, Reading> _readingCache = {};
+  late Volume _currentVolume;
 
-  static const String _storageKey = 'reading_entries';
-  static const String _lastAccessedKey = 'last_accessed_day';
-  static const String _firstLaunchKey = 'first_launch_date';
-  
+  Volume get currentVolume => _currentVolume;
+
+  // Volume-namespaced SharedPreferences keys.
+  // Volume.one uses empty suffix to preserve existing users' data.
+  String get _storageKey =>
+      'reading_entries${_currentVolume.storageSuffix}';
+  String get _lastAccessedKey =>
+      'last_accessed_day${_currentVolume.storageSuffix}';
+  String get _firstLaunchKey =>
+      'first_launch_date${_currentVolume.storageSuffix}';
+
   Future<void> initializeFirstLaunchDate() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!prefs.containsKey(_firstLaunchKey)) {
-        // Only set first launch if not already set; also require no existing
-        // reading entries in shared preferences.
         final entries = await _loadEntries();
         if (entries.isEmpty) {
           final now = DateTime.now();
@@ -40,9 +54,8 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
           await prefs.setString(_firstLaunchKey, today.toIso8601String());
         }
       }
-    } on Exception{
-            // Error setting first launch date - fail silently
-
+    } on Exception {
+      // fail silently
     }
   }
 
@@ -59,6 +72,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
         ..clear()
         ..[normalizedDate] = await readingRepository.fetchReading(
           date: normalizedDate,
+          volume: _currentVolume,
         );
       await _saveLastAccessedDay(normalizedDate);
 
@@ -70,6 +84,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
           currentDate: normalizedDate,
           entries: entries,
           firstLaunchDate: firstLaunchDate,
+          currentVolume: _currentVolume,
         ),
       );
 
@@ -151,8 +166,8 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     final currentState = state as ReadingLoaded;
     final dateKey = _dateToKey(event.date);
 
-    final updatedEntries = Map<String, ReadingEntry>.from(currentState.entries)
-      ..remove(dateKey);
+    final updatedEntries =
+        Map<String, ReadingEntry>.from(currentState.entries)..remove(dateKey);
     emit(currentState.copyWith(entries: updatedEntries));
     await _saveToStorage(updatedEntries);
   }
@@ -192,7 +207,6 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
   ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Clear all reading entries
       await prefs.remove(_storageKey);
       await prefs.remove(_lastAccessedKey);
       await prefs.remove(_firstLaunchKey);
@@ -209,8 +223,25 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
         );
       }
     } on Exception {
-      // Error resetting reading progress - fail silently
+      // fail silently
     }
+  }
+
+  Future<void> _onSwitchVolume(
+    SwitchVolumeEvent event,
+    Emitter<ReadingState> emit,
+  ) async {
+    if (event.volume == _currentVolume) return;
+    _currentVolume = event.volume;
+    _readingCache.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_activeVolumeKey, event.volume.index);
+    await initializeFirstLaunchDate();
+    // Reload the last-accessed day for the new volume (or today)
+    final dateString = prefs.getString(_lastAccessedKey);
+    final date =
+        dateString != null ? DateTime.parse(dateString) : DateTime.now();
+    add(LoadReadingEvent(date: date));
   }
 
   Future<Map<String, ReadingEntry>> _loadEntries() async {
@@ -247,7 +278,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       final jsonString = json.encode(jsonData);
       await prefs.setString(_storageKey, jsonString);
     } on Exception {
-      // Error saving reading data - fail silently
+      // fail silently
     }
   }
 
@@ -263,7 +294,6 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
     var currentDate = startOfYear;
     while (currentDate.isBefore(today)) {
-      // Skip days before the app was first launched - keep them unread
       if (currentDate.isBefore(firstLaunchDate)) {
         currentDate = currentDate.add(const Duration(days: 1));
         continue;
@@ -294,7 +324,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_lastAccessedKey, date.toIso8601String());
     } on Exception {
-      // Error saving last accessed day - fail silently
+      // fail silently
     }
   }
 
@@ -303,7 +333,10 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     final cached = _readingCache[normalized];
     if (cached != null) return cached;
 
-    final reading = await readingRepository.fetchReading(date: normalized);
+    final reading = await readingRepository.fetchReading(
+      date: normalized,
+      volume: _currentVolume,
+    );
     _readingCache[normalized] = reading;
     return reading;
   }
@@ -322,9 +355,10 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     try {
       _readingCache[normalized] = await readingRepository.fetchReading(
         date: normalized,
+        volume: _currentVolume,
       );
     } on Exception {
-      // Ignore prefetch failures - we'll fetch on demand later
+      // ignore prefetch failures
     }
   }
 
@@ -348,7 +382,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
         return DateTime(date.year, date.month, date.day);
       }
     } on Exception {
-      // Error getting first launch date - fail silently
+      // fail silently
     }
     final now = DateTime.now();
     return DateTime(now.year, now.month, now.day);

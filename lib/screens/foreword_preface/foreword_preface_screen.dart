@@ -1,3 +1,4 @@
+import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/screens/foreword_preface/bloc/foreword_preface_bloc.dart';
@@ -13,9 +14,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class ForewordPrefaceScreenProvider extends StatefulWidget {
-  const ForewordPrefaceScreenProvider({required this.section, super.key});
+  const ForewordPrefaceScreenProvider({
+    required this.section,
+    required this.volume,
+    super.key,
+  });
 
   final Section section;
+  final Volume volume;
 
   @override
   State<ForewordPrefaceScreenProvider> createState() =>
@@ -44,6 +50,7 @@ class _ForewordPrefaceScreenProviderState
       create:
           (context) => ForewordPrefaceBloc(
             readingRepository: context.read<ReadingRepository>(),
+            volume: widget.volume,
           )..add(LoadPageEvent(sect: widget.section)),
       child: ForewordPrefaceScreen(scrollController: _scrollController),
     );
@@ -67,10 +74,9 @@ class ForewordPrefaceScreen extends StatelessWidget {
       listener: (context, state) {
         if (state is! PageLoaded) return;
 
-        Utils.getLastAccessedDay().then((date) {
+        final bloc = context.read<ForewordPrefaceBloc>();
+        Utils.getLastAccessedDay(volume: bloc.volume).then((date) {
           if (!context.mounted) return;
-
-          final bloc = context.read<ForewordPrefaceBloc>();
 
           context.push('/reader', extra: date).then((_) {
             if (!context.mounted) return;

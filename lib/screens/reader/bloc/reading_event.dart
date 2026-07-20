@@ -7,6 +7,16 @@ sealed class ReadingEvent extends Equatable {
   List<Object> get props => [];
 }
 
+/// Switch between volumes
+class SwitchVolumeEvent extends ReadingEvent {
+  const SwitchVolumeEvent(this.volume);
+
+  final Volume volume;
+
+  @override
+  List<Object> get props => [volume];
+}
+
 /// Load reading for a specific day (1-366)
 class LoadReadingEvent extends ReadingEvent {
   const LoadReadingEvent({required this.date});
