@@ -12,6 +12,7 @@ class AppColors {
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightAppBar = Color(0xFF8B1A1A);
   static const Color lightAppBarVolumeII = Color(0xFF061A31);
+  static const Color lightAppBarVolumeIII = Color(0xFF1B3A2D);
   static const Color lightAppBarTitle = Color(0xFFE0C097);
   static const Color lightOnBackground = Color(0xFF1A1A1A);
   static const Color lightOnSurface = Color(0xFFD6D6D6);
@@ -22,6 +23,7 @@ class AppColors {
   static const Color darkBackground = Color(0xFF1A1A1A);
   static const Color darkSurface = Color(0xFF8B1A1A);
   static const Color darkSurfaceVolumeII = Color(0xFF061A31);
+  static const Color darkSurfaceVolumeIII = Color(0xFF1B3A2D);
   static const Color darkAppBarTitle = Color(0xFFE0C097);
   static const Color darkOnBackground = Color(0xFFE6E1E5);
   static const Color darkOnSurface = Color(0xFFE6E1E5);

@@ -9,7 +9,22 @@ class LocalReadingStorage {
     required DateTime date,
     Volume volume = Volume.one,
   }) async {
-    return rootBundle.loadString(readingFilePath(date: date, volume: volume));
+    final path = readingFilePath(date: date, volume: volume);
+    if (volume == Volume.three) {
+      final data = await rootBundle.load(path);
+      return _decodeUtf16Le(data.buffer.asUint8List());
+    }
+    return rootBundle.loadString(path);
+  }
+
+  String _decodeUtf16Le(Uint8List bytes) {
+    final start =
+        (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) ? 2 : 0;
+    final codeUnits = <int>[];
+    for (var i = start; i + 1 < bytes.length; i += 2) {
+      codeUnits.add(bytes[i] | (bytes[i + 1] << 8));
+    }
+    return String.fromCharCodes(codeUnits);
   }
 
   String readingFilePath({required DateTime date, required Volume volume}) {
@@ -30,7 +45,9 @@ class LocalReadingStorage {
       case Section.foreword:
         return _loadStaticPage('Foreword.txt', volume);
       case Section.preface:
-        return _loadStaticPage('Preface.txt', volume);
+        final fileName =
+            volume == Volume.three ? 'preface.txt' : 'Preface.txt';
+        return _loadStaticPage(fileName, volume);
       case Section.dailyReading:
         final fileName = _getFileName(DateTime.now());
         final filePath = p.join(
