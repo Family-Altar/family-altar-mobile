@@ -1,6 +1,7 @@
 @Tags(['local'])
 library;
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:family_altar/models/volume.dart';
@@ -17,7 +18,19 @@ class _DiskReadingStorage extends LocalReadingStorage {
     Volume volume = Volume.one,
   }) async {
     final path = readingFilePath(date: date, volume: volume);
-    return File(path).readAsString();
+    final bytes = await File(path).readAsBytes();
+    if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE) {
+      return _decodeUtf16LeBytes(bytes);
+    }
+    return utf8.decode(bytes);
+  }
+
+  String _decodeUtf16LeBytes(List<int> bytes) {
+    final codeUnits = <int>[];
+    for (var i = 2; i + 1 < bytes.length; i += 2) {
+      codeUnits.add(bytes[i] | (bytes[i + 1] << 8));
+    }
+    return String.fromCharCodes(codeUnits);
   }
 }
 
@@ -25,9 +38,9 @@ void main() {
   final repository = ReadingRepository(_DiskReadingStorage());
 
   // Volume I has 366 files (includes Feb 29); use a leap year to hit it.
-  // Volume II has 365 files (no Feb 29); use a non-leap year.
-  const volumeDays = {Volume.one: 366, Volume.two: 365};
-  const volumeYear = {Volume.one: 2024, Volume.two: 2023};
+  // Volume II and III have 365 files (no Feb 29); use a non-leap year.
+  const volumeDays = {Volume.one: 366, Volume.two: 365, Volume.three: 365};
+  const volumeYear = {Volume.one: 2024, Volume.two: 2023, Volume.three: 2023};
 
   for (final volume in Volume.values) {
     group(volume.displayTitle, () {

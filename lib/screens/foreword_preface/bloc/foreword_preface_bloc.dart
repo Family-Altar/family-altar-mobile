@@ -27,6 +27,7 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
   static List<Section> _orderedSectionsFor(Volume v) => switch (v) {
     Volume.one => [Section.foreword, Section.preface, Section.dailyReading],
     Volume.two => [Section.preface, Section.dailyReading],
+    Volume.three => [Section.preface, Section.dailyReading],
   };
 
   Future<void> _onLoad(

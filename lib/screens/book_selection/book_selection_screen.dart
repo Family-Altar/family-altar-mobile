@@ -27,7 +27,8 @@ class BookSelectionScreen extends StatelessWidget {
     BookItemData(
       imagePath: 'assets/images/FamilyAltarVolumeIIICover.jpg',
       title: 'Volume III',
-      isAvailable: false,
+      volume: Volume.three,
+      sections: [Section.preface, Section.dailyReading],
     ),
   ];
 
