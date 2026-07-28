@@ -128,7 +128,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                   toolbarHeight: 48,
                   backgroundColor: context.backgroundColor,
                   centerTitle: true,
-                  leadingWidth: 130,
+                  leadingWidth: 160,
                   leading: Row(
                     children: [
                       IconButton(
@@ -141,12 +141,32 @@ class _ReaderScreenState extends State<ReaderScreen>
                           size: AppIcons.getIconSize(IconSize.medium),
                         ),
                       ),
-                      Text(
-                        state.currentVolume.displayTitle,
-                        style: AppFonts.normal(
-                          context,
-                          size: FontSize.small,
+                      DropdownButton<Volume>(
+                        value: state.currentVolume,
+                        dropdownColor: context.backgroundColor,
+                        underline: const SizedBox.shrink(),
+                        icon: Icon(
+                          Icons.arrow_drop_down,
+                          color: context.textColor,
+                          size: 16,
                         ),
+                        style: AppFonts.normal(context, size: FontSize.small),
+                        items: Volume.values
+                            .map(
+                              (v) => DropdownMenuItem(
+                                value: v,
+                                child: Text(v.displayTitle),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (volume) {
+                          if (volume != null) {
+                            context.read<ReadingBloc>().add(
+                              SwitchVolumeEvent(volume),
+                            );
+                            _scrollController.jumpTo(0);
+                          }
+                        },
                       ),
                     ],
                   ),
