@@ -185,6 +185,8 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
   TimeOfDay _time = NotificationSettings.defaultTime;
   bool _enabled = false;
   bool _updating = false;
+  bool _batteryOptimizationIgnored = true;
+  bool _requestingBatteryOptimization = false;
 
   @override
   void initState() {
@@ -195,11 +197,41 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
   Future<void> _loadSettings() async {
     final time = await NotificationSettings.getTimeOfDay();
     final enabled = await NotificationSettings.isEnabled();
+    final batteryOptimizationIgnored =
+        await NotificationService().isIgnoringBatteryOptimizations();
     if (!mounted) return;
     setState(() {
       _time = time;
       _enabled = enabled;
+      _batteryOptimizationIgnored = batteryOptimizationIgnored;
     });
+  }
+
+  Future<void> _retryBatteryOptimizationRequest() async {
+    if (_requestingBatteryOptimization) return;
+    setState(() {
+      _requestingBatteryOptimization = true;
+    });
+
+    final granted =
+        await NotificationService().requestIgnoreBatteryOptimizations();
+
+    if (!mounted) return;
+    setState(() {
+      _batteryOptimizationIgnored = granted;
+      _requestingBatteryOptimization = false;
+    });
+
+    if (!granted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Battery optimization is still restricting this app. Reminders '
+            'may be delayed or skipped.',
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _setNotificationsEnabled({required bool enabled}) async {
@@ -217,9 +249,13 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
       await notificationService.disableDailyNotifications();
     }
 
+    final batteryOptimizationIgnored =
+        await notificationService.isIgnoringBatteryOptimizations();
+
     if (!mounted) return;
     setState(() {
       _enabled = updatedEnabled;
+      _batteryOptimizationIgnored = batteryOptimizationIgnored;
       _updating = false;
     });
 
@@ -412,6 +448,50 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
               tileColor: Colors.transparent,
               dense: true,
             ),
+            if (_enabled &&
+                !_batteryOptimizationIgnored &&
+                Theme.of(context).platform == TargetPlatform.android) ...[
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                leading: Icon(
+                  Icons.battery_alert_outlined,
+                  color: context.accent,
+                  size: AppIcons.getIconSize(IconSize.medium),
+                ),
+                title: Text(
+                  'Allow background notifications',
+                  style: AppFonts.normal(context).copyWith(
+                    color: context.textColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  'Battery optimization may prevent daily reminders from '
+                  'arriving on time.',
+                  style: AppFonts.normal(
+                    context,
+                    size: FontSize.small,
+                  ).copyWith(color: context.textColor),
+                ),
+                trailing:
+                    _requestingBatteryOptimization
+                        ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                        : TextButton(
+                          onPressed: _retryBatteryOptimizationRequest,
+                          child: const Text('Allow'),
+                        ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                tileColor: Colors.transparent,
+                dense: true,
+              ),
+            ],
           ],
         ),
       ),

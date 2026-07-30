@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:family_altar/navigation_service.dart';
 import 'package:family_altar/notification_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -81,6 +84,7 @@ class NotificationService {
     }
 
     await _scheduleDaily();
+    await _requestIgnoreBatteryOptimizationsIfNeeded();
     return true;
   }
 
@@ -99,6 +103,7 @@ class NotificationService {
 
     await NotificationSettings.setEnabled(enabled: true);
     await _scheduleDaily();
+    await _requestIgnoreBatteryOptimizationsIfNeeded();
     return true;
   }
 
@@ -189,6 +194,29 @@ class NotificationService {
     }
 
     return true;
+  }
+
+  // Daily reminders scheduled via AlarmManager can be silently deferred or
+  Future<void> _requestIgnoreBatteryOptimizationsIfNeeded() async {
+    if (!Platform.isAndroid) return;
+    if (await NotificationSettings.hasPromptedForBatteryOptimization()) {
+      return;
+    }
+    await NotificationSettings.setHasPromptedForBatteryOptimization();
+    await requestIgnoreBatteryOptimizations();
+  }
+
+  Future<bool> isIgnoringBatteryOptimizations() async {
+    if (!Platform.isAndroid) return true;
+    return (await Permission.ignoreBatteryOptimizations.status).isGranted;
+  }
+
+  /// Shows the OS "ignore battery optimizations" dialog again, regardless of
+  Future<bool> requestIgnoreBatteryOptimizations() async {
+    if (!Platform.isAndroid) return true;
+    if (await isIgnoringBatteryOptimizations()) return true;
+    final result = await Permission.ignoreBatteryOptimizations.request();
+    return result.isGranted;
   }
 
   Future<bool> _areNotificationsAllowed() async {
