@@ -5,6 +5,8 @@ class NotificationSettings {
   static const String _enabledKey = 'notifications_enabled';
   static const String _timeKey = 'notification_time_minutes';
   static const String _hasPromptedKey = 'notifications_has_prompted';
+  static const String _hasPromptedBatteryOptimizationKey =
+      'notifications_has_prompted_battery_optimization';
   static const TimeOfDay defaultTime = TimeOfDay(hour: 8, minute: 0);
 
   static Future<bool> isEnabled() async {
@@ -25,6 +27,16 @@ class NotificationSettings {
   static Future<void> setHasPromptedForPermission() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_hasPromptedKey, true);
+  }
+
+  static Future<bool> hasPromptedForBatteryOptimization() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_hasPromptedBatteryOptimizationKey) ?? false;
+  }
+
+  static Future<void> setHasPromptedForBatteryOptimization() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_hasPromptedBatteryOptimizationKey, true);
   }
 
   static Future<TimeOfDay> getTimeOfDay() async {
