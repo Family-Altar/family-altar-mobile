@@ -188,7 +188,7 @@ class ThemeBloc extends Bloc<ThemeEvent, ThemeState> {
         primary: AppColors.darkAccent,
         onPrimary: Colors.white,
         secondary: AppColors.secondaryVariant,
-        surface: AppColors.darkSurface,
+        surface: AppColors.darkBackground,
         onSurface: AppColors.darkOnSurface,
         error: AppColors.darkError,
       ),
