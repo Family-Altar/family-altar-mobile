@@ -54,6 +54,10 @@ class LocalReadingStorage {
           '${volume.assetBasePath}/daily_readings',
           fileName,
         );
+        if (volume == Volume.three) {
+          final data = await rootBundle.load(filePath);
+          return _decodeUtf16Le(data.buffer.asUint8List());
+        }
         return rootBundle.loadString(filePath);
     }
   }
