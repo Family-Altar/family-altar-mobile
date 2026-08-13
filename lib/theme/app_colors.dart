@@ -124,6 +124,31 @@ class AppColors {
   static const Color dialogMarkUnreadBG = Color(0xFFE53935);
   static const Color dialogMarkReadBG = Color(0xFF43A047);
   static const Color dialogButtonText = Color(0xFFFFFFFF);
+
+  // Highlight palette — muted, low-saturation pastels rather than bright
+  // neons, so a page with several highlights stays easy to scan. Each
+  // color is nudged further toward neutral gray than a "clean" pastel
+  // would be, since even soft pastels read as too bright once several
+  // are visible together on a page of reading text.
+  // yellow: default / important idea
+  static const Color highlightYellowLight = Color(0xFFD4CCAD);
+  static const Color highlightYellowDark = Color(0xFF655F42);
+
+  // green: interesting insight
+  static const Color highlightGreenLight = Color(0xFFBAC0B1);
+  static const Color highlightGreenDark = Color(0xFF4A5043);
+
+  // blue: definition / concept
+  static const Color highlightBlueLight = Color(0xFFB5C1CA);
+  static const Color highlightBlueDark = Color(0xFF3A4750);
+
+  // purple: quote / memorable passage
+  static const Color highlightPurpleLight = Color(0xFFC2BCCA);
+  static const Color highlightPurpleDark = Color(0xFF534E5B);
+
+  // pink: question / disagreement
+  static const Color highlightPinkLight = Color(0xFFCAB8B6);
+  static const Color highlightPinkDark = Color(0xFF634B4A);
 }
 
 extension ThemeColors on BuildContext {
@@ -264,4 +289,44 @@ extension ThemeColors on BuildContext {
       isDarkMode ? AppColors.dialogContentDark : AppColors.dialogContentLight;
   Color get dialogCancel =>
       isDarkMode ? AppColors.dialogCancelDark : AppColors.dialogCancelLight;
+
+  // Highlight palette
+  static const List<String> _highlightColorIds = [
+    'yellow',
+    'green',
+    'blue',
+    'purple',
+    'pink',
+  ];
+
+  List<String> get highlightColorIds => _highlightColorIds;
+
+  Color highlightColor(String colorId) {
+    switch (colorId) {
+      case 'yellow':
+        return isDarkMode
+            ? AppColors.highlightYellowDark
+            : AppColors.highlightYellowLight;
+      case 'green':
+        return isDarkMode
+            ? AppColors.highlightGreenDark
+            : AppColors.highlightGreenLight;
+      case 'blue':
+        return isDarkMode
+            ? AppColors.highlightBlueDark
+            : AppColors.highlightBlueLight;
+      case 'purple':
+        return isDarkMode
+            ? AppColors.highlightPurpleDark
+            : AppColors.highlightPurpleLight;
+      case 'pink':
+        return isDarkMode
+            ? AppColors.highlightPinkDark
+            : AppColors.highlightPinkLight;
+      default:
+        return isDarkMode
+            ? AppColors.highlightYellowDark
+            : AppColors.highlightYellowLight;
+    }
+  }
 }

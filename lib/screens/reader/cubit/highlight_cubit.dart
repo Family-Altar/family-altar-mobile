@@ -1,0 +1,253 @@
+import 'dart:convert';
+
+import 'package:bloc/bloc.dart';
+import 'package:equatable/equatable.dart';
+import 'package:family_altar/models/volume.dart';
+import 'package:family_altar/screens/reader/domain/text_highlight.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+String _highlightsStorageKey(Volume volume) =>
+    'highlights${volume.storageSuffix}';
+
+String _highlightDateKey(DateTime date) =>
+    DateFormat('yyyy-MM-dd').format(date);
+
+Future<Map<String, dynamic>> _loadHighlightsBlob(Volume volume) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_highlightsStorageKey(volume));
+    if (jsonString == null || jsonString.isEmpty) return {};
+    return json.decode(jsonString) as Map<String, dynamic>;
+  } on Exception {
+    return {};
+  }
+}
+
+class HighlightState extends Equatable {
+  const HighlightState({
+    required this.currentDate,
+    required this.currentVolume,
+    required this.highlightsByField,
+  });
+
+  factory HighlightState.empty() => HighlightState(
+    currentDate: DateTime(2000),
+    currentVolume: Volume.one,
+    highlightsByField: const {},
+  );
+
+  final DateTime currentDate;
+  final Volume currentVolume;
+  final Map<HighlightField, List<TextHighlight>> highlightsByField;
+
+  List<TextHighlight> forField(HighlightField field) =>
+      highlightsByField[field] ?? const [];
+
+  HighlightState copyWith({
+    DateTime? currentDate,
+    Volume? currentVolume,
+    Map<HighlightField, List<TextHighlight>>? highlightsByField,
+  }) => HighlightState(
+    currentDate: currentDate ?? this.currentDate,
+    currentVolume: currentVolume ?? this.currentVolume,
+    highlightsByField: highlightsByField ?? this.highlightsByField,
+  );
+
+  @override
+  List<Object?> get props => [currentDate, currentVolume, highlightsByField];
+}
+
+class HighlightCubit extends Cubit<HighlightState> {
+  HighlightCubit() : super(HighlightState.empty());
+
+  Future<void> loadForDate({
+    required DateTime date,
+    required Volume volume,
+  }) async {
+    final blob = await _loadHighlightsBlob(volume);
+    final dayEntry =
+        blob[_highlightDateKey(date)] as Map<String, dynamic>? ?? {};
+
+    final highlightsByField = <HighlightField, List<TextHighlight>>{};
+    for (final entry in dayEntry.entries) {
+      final field = HighlightField.fromStorageKey(entry.key);
+      if (field == null) continue;
+      final list =
+          (entry.value as List<dynamic>)
+              .map((e) => TextHighlight.fromJson(e as Map<String, dynamic>))
+              .toList();
+      if (list.isNotEmpty) highlightsByField[field] = list;
+    }
+
+    emit(
+      HighlightState(
+        currentDate: date,
+        currentVolume: volume,
+        highlightsByField: highlightsByField,
+      ),
+    );
+  }
+
+  Future<void> addHighlight({
+    required HighlightField field,
+    required int start,
+    required int end,
+    required String colorId,
+    required String snippet,
+  }) async {
+    final existing = state.forField(field);
+    final withoutOverlaps =
+        existing.where((h) => !h.overlaps(start, end)).toList();
+    final updated = [
+      ...withoutOverlaps,
+      TextHighlight(start: start, end: end, colorId: colorId, snippet: snippet),
+    ]..sort((a, b) => a.start.compareTo(b.start));
+
+    await _updateField(field, updated);
+  }
+
+  Future<void> removeHighlight({
+    required HighlightField field,
+    required TextHighlight highlight,
+  }) async {
+    final updated =
+        state
+            .forField(field)
+            .where((h) => h.start != highlight.start || h.end != highlight.end)
+            .toList();
+    await _updateField(field, updated);
+  }
+
+  Future<void> changeHighlightColor({
+    required HighlightField field,
+    required TextHighlight highlight,
+    required String newColorId,
+  }) async {
+    final updated =
+        state.forField(field).map((h) {
+          if (h.start == highlight.start && h.end == highlight.end) {
+            return TextHighlight(
+              start: h.start,
+              end: h.end,
+              colorId: newColorId,
+              snippet: h.snippet,
+              note: h.note,
+            );
+          }
+          return h;
+        }).toList();
+    await _updateField(field, updated);
+  }
+
+  Future<void> setNote({
+    required HighlightField field,
+    required TextHighlight highlight,
+    required String? note,
+  }) async {
+    final updated =
+        state.forField(field).map((h) {
+          if (h.start == highlight.start && h.end == highlight.end) {
+            return TextHighlight(
+              start: h.start,
+              end: h.end,
+              colorId: h.colorId,
+              snippet: h.snippet,
+              note: note,
+            );
+          }
+          return h;
+        }).toList();
+    await _updateField(field, updated);
+  }
+
+  Future<void> _updateField(
+    HighlightField field,
+    List<TextHighlight> highlights,
+  ) async {
+    final highlightsByField = Map<HighlightField, List<TextHighlight>>.from(
+      state.highlightsByField,
+    );
+    if (highlights.isEmpty) {
+      highlightsByField.remove(field);
+    } else {
+      highlightsByField[field] = highlights;
+    }
+
+    emit(state.copyWith(highlightsByField: highlightsByField));
+    await _persist(highlightsByField);
+  }
+
+  Future<void> _persist(
+    Map<HighlightField, List<TextHighlight>> highlightsByField,
+  ) async {
+    try {
+      final blob = await _loadHighlightsBlob(state.currentVolume);
+      final dateKey = _highlightDateKey(state.currentDate);
+
+      if (highlightsByField.isEmpty) {
+        blob.remove(dateKey);
+      } else {
+        blob[dateKey] = {
+          for (final entry in highlightsByField.entries)
+            entry.key.storageKey: entry.value.map((h) => h.toJson()).toList(),
+        };
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _highlightsStorageKey(state.currentVolume),
+        json.encode(blob),
+      );
+    } on Exception {
+      // fail silently
+    }
+  }
+}
+
+class HighlightListEntry {
+  const HighlightListEntry({
+    required this.date,
+    required this.field,
+    required this.highlight,
+  });
+
+  final DateTime date;
+  final HighlightField field;
+  final TextHighlight highlight;
+}
+
+/// One-shot query across every date for [volume] — not reactive cubit
+/// state, since it's only needed to populate the highlights list screen.
+Future<List<HighlightListEntry>> loadAllHighlights(Volume volume) async {
+  final blob = await _loadHighlightsBlob(volume);
+  final entries = <HighlightListEntry>[];
+
+  try {
+    for (final dayEntry in blob.entries) {
+      final date = DateTime.tryParse(dayEntry.key);
+      if (date == null) continue;
+      final fields = dayEntry.value as Map<String, dynamic>;
+
+      for (final fieldEntry in fields.entries) {
+        final field = HighlightField.fromStorageKey(fieldEntry.key);
+        if (field == null) continue;
+
+        for (final raw in fieldEntry.value as List<dynamic>) {
+          entries.add(
+            HighlightListEntry(
+              date: date,
+              field: field,
+              highlight: TextHighlight.fromJson(raw as Map<String, dynamic>),
+            ),
+          );
+        }
+      }
+    }
+  } on Exception {
+    return [];
+  }
+
+  entries.sort((a, b) => b.date.compareTo(a.date));
+  return entries;
+}

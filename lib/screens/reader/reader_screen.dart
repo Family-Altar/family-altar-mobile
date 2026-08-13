@@ -1,6 +1,10 @@
-import 'package:drop_cap_text/drop_cap_text.dart';
 import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
+import 'package:family_altar/screens/reader/cubit/highlight_cubit.dart';
+import 'package:family_altar/screens/reader/domain/reader_route_args.dart';
+import 'package:family_altar/screens/reader/domain/text_highlight.dart';
+import 'package:family_altar/screens/reader/widgets/drop_cap_highlightable_text.dart';
+import 'package:family_altar/screens/reader/widgets/highlightable_text.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
@@ -14,8 +18,13 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 class ReaderScreenProvider extends StatefulWidget {
-  const ReaderScreenProvider({required this.date, super.key});
+  const ReaderScreenProvider({
+    required this.date,
+    this.scrollTarget,
+    super.key,
+  });
   final DateTime date;
+  final HighlightScrollTarget? scrollTarget;
 
   @override
   State<ReaderScreenProvider> createState() => _ReaderScreenProviderState();
@@ -29,12 +38,16 @@ class _ReaderScreenProviderState extends State<ReaderScreenProvider> {
   }
 
   @override
-  Widget build(BuildContext context) => ReaderScreen(date: widget.date);
+  Widget build(BuildContext context) => BlocProvider(
+    create: (_) => HighlightCubit(),
+    child: ReaderScreen(date: widget.date, scrollTarget: widget.scrollTarget),
+  );
 }
 
 class ReaderScreen extends StatefulWidget {
-  const ReaderScreen({required this.date, super.key});
+  const ReaderScreen({required this.date, this.scrollTarget, super.key});
   final DateTime date;
+  final HighlightScrollTarget? scrollTarget;
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -48,6 +61,46 @@ class _ReaderScreenState extends State<ReaderScreen>
   bool _isHorizontalSwipe = false;
   bool _contentFitsWithoutScroll = false;
   late DateTime _currentDate = widget.date;
+  final ValueNotifier<bool> _isTextSelectionActive = ValueNotifier(false);
+  bool _hasScrolledToTarget = false;
+  final GlobalKey _scriptureKey = GlobalKey();
+  final GlobalKey _quoteKey = GlobalKey();
+  final GlobalKey _titleKey = GlobalKey();
+  final GlobalKey _dailyReadingKey = GlobalKey();
+
+  // Only returns a key while that field is still an unconsumed scroll
+  // target. Kept unattached the rest of the time so it never lingers on a
+  // widget inside the per-day subtree that gets torn down and rebuilt on
+  // every navigation — a GlobalKey there, combined with this widget's
+  // InheritedWidget (HighlightCubit) dependency, otherwise trips a
+  // '_dependents.isEmpty' framework assertion on the next day swipe.
+  GlobalKey? _keyForField(HighlightField field) {
+    if (_hasScrolledToTarget || widget.scrollTarget?.field != field) {
+      return null;
+    }
+    return switch (field) {
+      HighlightField.scripture => _scriptureKey,
+      HighlightField.quote => _quoteKey,
+      HighlightField.title => _titleKey,
+      HighlightField.dailyReading => _dailyReadingKey,
+    };
+  }
+
+  void _scheduleScrollToTargetCheck() {
+    final target = widget.scrollTarget;
+    if (target == null || _hasScrolledToTarget) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final targetContext = _keyForField(target.field)?.currentContext;
+      if (targetContext == null) return;
+      setState(() => _hasScrolledToTarget = true);
+      Scrollable.ensureVisible(
+        targetContext,
+        duration: const Duration(milliseconds: 400),
+        alignment: 0.2,
+      );
+    });
+  }
 
   @override
   void initState() {
@@ -96,6 +149,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     _scrollController
       ..removeListener(_onScrollEnd)
       ..dispose();
+    _isTextSelectionActive.dispose();
     super.dispose();
   }
 
@@ -106,6 +160,17 @@ class _ReaderScreenState extends State<ReaderScreen>
         if (state is ReadingLoaded) {
           _currentDate = state.currentDate;
           _scheduleScrollCheck();
+
+          final highlightCubit = context.read<HighlightCubit>();
+          if (highlightCubit.state.currentDate != state.currentDate ||
+              highlightCubit.state.currentVolume != state.currentVolume) {
+            highlightCubit.loadForDate(
+              date: state.currentDate,
+              volume: state.currentVolume,
+            );
+          }
+
+          _scheduleScrollToTargetCheck();
         }
       },
       builder: (context, state) {
@@ -218,6 +283,8 @@ class _ReaderScreenState extends State<ReaderScreen>
                           );
                         } else if (value == 'settings') {
                           showReadingSettingsBottomSheet(context);
+                        } else if (value == 'highlights') {
+                          context.push('/highlights');
                         }
                       },
                       itemBuilder:
@@ -234,6 +301,23 @@ class _ReaderScreenState extends State<ReaderScreen>
                                   const SizedBox(width: 12),
                                   Text(
                                     'Share Reading',
+                                    style: AppFonts.normal(context),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'highlights',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.bookmark_border,
+                                    color: context.textColor,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'My Highlights',
                                     style: AppFonts.normal(context),
                                   ),
                                 ],
@@ -263,11 +347,13 @@ class _ReaderScreenState extends State<ReaderScreen>
                 body: GestureDetector(
                   behavior: HitTestBehavior.translucent,
                   onPanStart: (details) {
+                    if (_isTextSelectionActive.value) return;
                     _horizontalDragDistance = 0.0;
                     _verticalDragDistance = 0.0;
                     _isHorizontalSwipe = false;
                   },
                   onPanUpdate: (details) {
+                    if (_isTextSelectionActive.value) return;
                     _horizontalDragDistance += details.delta.dx;
                     _verticalDragDistance += details.delta.dy.abs();
                     if (_horizontalDragDistance.abs() + _verticalDragDistance >
@@ -278,6 +364,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                     }
                   },
                   onPanEnd: (details) {
+                    if (_isTextSelectionActive.value) return;
                     if (_isHorizontalSwipe) {
                       final horizontalAbs = _horizontalDragDistance.abs();
                       final velocity = details.velocity.pixelsPerSecond.dx;
@@ -319,13 +406,22 @@ class _ReaderScreenState extends State<ReaderScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  state.reading.scripture.replaceAll('\n', ' '),
-                                  textAlign: TextAlign.center,
-                                  style: AppFonts.italics(
-                                    context,
-                                  ).copyWith(fontSize: fontSize),
-                                  textScaler: TextScaler.noScaling,
+                                KeyedSubtree(
+                                  key: _keyForField(HighlightField.scripture),
+                                  child: HighlightableText(
+                                    text: state.reading.scripture.replaceAll(
+                                      '\n',
+                                      ' ',
+                                    ),
+                                    field: HighlightField.scripture,
+                                    textAlign: TextAlign.center,
+                                    baseStyle: AppFonts.italics(
+                                      context,
+                                    ).copyWith(fontSize: fontSize),
+                                    textScaler: TextScaler.noScaling,
+                                    selectionActiveNotifier:
+                                        _isTextSelectionActive,
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                                 Center(
@@ -340,31 +436,39 @@ class _ReaderScreenState extends State<ReaderScreen>
                                 ),
 
                                 const SizedBox(height: 8),
-                                DropCapText(
-                                  dropCapStyle: TextStyle(
-                                    fontFamily: 'OldEnglish',
-                                    fontSize: 50,
-                                    color:
-                                        context.isDarkMode
-                                            ? Colors.white
-                                            : null,
-                                  ),
-                                  state.reading.quote,
-                                  textAlign: TextAlign.left,
-                                  style: AppFonts.normal(
-                                    context,
-                                  ).copyWith(fontSize: fontSize, height: 1.2),
-                                  dropCapPadding: const EdgeInsets.only(
-                                    right: 8,
+                                KeyedSubtree(
+                                  key: _keyForField(HighlightField.quote),
+                                  child: DropCapHighlightableText(
+                                    quote: state.reading.quote,
+                                    dropCapStyle: TextStyle(
+                                      fontFamily: 'OldEnglish',
+                                      fontSize: 50,
+                                      color:
+                                          context.isDarkMode
+                                              ? Colors.white
+                                              : null,
+                                    ),
+                                    baseStyle: AppFonts.normal(context)
+                                        .copyWith(
+                                          fontSize: fontSize,
+                                          height: 1.2,
+                                        ),
+                                    selectionActiveNotifier:
+                                        _isTextSelectionActive,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                Text(
-                                  state.reading.title,
-                                  textAlign: TextAlign.left,
-                                  style: AppFonts.italics(
-                                    context,
-                                  ).copyWith(fontSize: fontSize),
+                                KeyedSubtree(
+                                  key: _keyForField(HighlightField.title),
+                                  child: HighlightableText(
+                                    text: state.reading.title,
+                                    field: HighlightField.title,
+                                    baseStyle: AppFonts.italics(
+                                      context,
+                                    ).copyWith(fontSize: fontSize),
+                                    selectionActiveNotifier:
+                                        _isTextSelectionActive,
+                                  ),
                                 ),
                                 const SizedBox(height: 8),
                                 Center(
@@ -380,16 +484,23 @@ class _ReaderScreenState extends State<ReaderScreen>
                                 if (state.currentVolume == Volume.one ||
                                     state.reading.dailyReading.isNotEmpty) ...[
                                   const SizedBox(height: 8),
-                                  Text(
-                                    state.currentVolume == Volume.two
-                                        ? 'Parallel Scripture: '
-                                            '${state.reading.dailyReading}'
-                                        : 'Daily Reading: '
-                                            '${state.reading.dailyReading}',
-                                    textAlign: TextAlign.left,
-                                    style: AppFonts.normal(
-                                      context,
-                                    ).copyWith(fontSize: fontSize),
+                                  KeyedSubtree(
+                                    key: _keyForField(
+                                      HighlightField.dailyReading,
+                                    ),
+                                    child: HighlightableText(
+                                      text: state.reading.dailyReading,
+                                      field: HighlightField.dailyReading,
+                                      prefixText:
+                                          state.currentVolume == Volume.two
+                                              ? 'Parallel Scripture: '
+                                              : 'Daily Reading: ',
+                                      baseStyle: AppFonts.normal(
+                                        context,
+                                      ).copyWith(fontSize: fontSize),
+                                      selectionActiveNotifier:
+                                          _isTextSelectionActive,
+                                    ),
                                   ),
                                 ],
                               ],

@@ -5,9 +5,11 @@ import 'package:family_altar/notification_service.dart';
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/screens/foreword_preface/foreword_preface_screen.dart';
+import 'package:family_altar/screens/highlights/highlights_list_screen.dart';
 import 'package:family_altar/screens/home/home_screen.dart';
 import 'package:family_altar/screens/missed_days/missed_days_screen.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
+import 'package:family_altar/screens/reader/domain/reader_route_args.dart';
 import 'package:family_altar/screens/reader/reader_screen.dart';
 import 'package:family_altar/screens/settings/settings_screen.dart';
 import 'package:family_altar/storage/local_reading_storage.dart';
@@ -45,9 +47,19 @@ final GoRouter _router = GoRouter(
         GoRoute(
           path: 'reader',
           builder: (context, state) {
-            final date = state.extra as DateTime?;
-            return ReaderScreenProvider(date: date!);
+            final extra = state.extra;
+            if (extra is ReaderRouteArgs) {
+              return ReaderScreenProvider(
+                date: extra.date,
+                scrollTarget: extra.scrollTarget,
+              );
+            }
+            return ReaderScreenProvider(date: extra! as DateTime);
           },
+        ),
+        GoRoute(
+          path: 'highlights',
+          builder: (context, state) => const HighlightsListScreen(),
         ),
         GoRoute(
           path: 'foreword-preface',
