@@ -98,21 +98,11 @@ List<InlineSpan> buildHighlightSpans({
           ..onTapDown = (details) => onHighlightTapDown(highlight, details);
     recognizerSink.add(recognizer);
 
-    final hasNote = (highlight.note ?? '').isNotEmpty;
-
     spans.addAll(
       spansForRun(
         start,
         end,
-        baseStyle.copyWith(
-          backgroundColor: resolveColor(highlight),
-          // A dotted underline marks highlights that also carry a note,
-          // mirroring how Bible-reading apps flag annotated verses inline.
-          decoration: hasNote ? TextDecoration.underline : null,
-          decorationStyle: hasNote ? TextDecorationStyle.dotted : null,
-          decorationColor: hasNote ? baseStyle.color : null,
-          decorationThickness: hasNote ? 1.5 : null,
-        ),
+        baseStyle.copyWith(backgroundColor: resolveColor(highlight)),
         recognizer: recognizer,
       ),
     );
