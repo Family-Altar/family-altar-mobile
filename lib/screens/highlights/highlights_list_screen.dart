@@ -1,6 +1,10 @@
+import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/screens/reader/cubit/highlight_cubit.dart';
 import 'package:family_altar/screens/reader/domain/reader_route_args.dart';
+import 'package:family_altar/screens/reader/domain/text_highlight.dart';
+import 'package:family_altar/screens/reader/widgets/highlight_color_toolbar.dart';
+import 'package:family_altar/screens/reader/widgets/highlightable_text.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/utils/utilities.dart';
@@ -16,7 +20,8 @@ class HighlightsListScreen extends StatefulWidget {
 }
 
 class _HighlightsListScreenState extends State<HighlightsListScreen> {
-  late final Future<List<HighlightListEntry>> _entriesFuture;
+  late final Volume _volume;
+  List<HighlightListEntry>? _allEntries;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   DateTimeRange? _dateRange;
@@ -25,13 +30,152 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
   @override
   void initState() {
     super.initState();
-    final volume = context.read<ReadingBloc>().currentVolume;
-    _entriesFuture = loadAllHighlights(volume);
+    _volume = context.read<ReadingBloc>().currentVolume;
+    _loadEntries();
     _searchController.addListener(() {
       setState(
         () => _searchQuery = _searchController.text.trim().toLowerCase(),
       );
     });
+  }
+
+  Future<void> _loadEntries() async {
+    final entries = await loadAllHighlights(_volume);
+    if (!mounted) return;
+    setState(() => _allEntries = entries);
+  }
+
+  Future<void> _deleteEntry(HighlightListEntry entry) async {
+    await removeHighlightEntry(_volume, entry);
+    if (!mounted) return;
+    setState(() {
+      _allEntries =
+          _allEntries
+              ?.where((e) => !_sameHighlight(e, entry))
+              .toList();
+    });
+  }
+
+  Future<void> _changeColor(HighlightListEntry entry, String colorId) async {
+    await changeHighlightEntryColor(_volume, entry, colorId);
+    if (!mounted) return;
+    setState(() {
+      _allEntries = _replaceHighlight(
+        entry,
+        TextHighlight(
+          start: entry.highlight.start,
+          end: entry.highlight.end,
+          colorId: colorId,
+          snippet: entry.highlight.snippet,
+          note: entry.highlight.note,
+        ),
+      );
+    });
+  }
+
+  Future<void> _editNote(HighlightListEntry entry) async {
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => NoteSheet(initialNote: entry.highlight.note),
+    );
+    if (result == null || !mounted) return;
+
+    final trimmed = result.trim();
+    final note = trimmed.isEmpty ? null : trimmed;
+    await setHighlightEntryNote(_volume, entry, note);
+    if (!mounted) return;
+    setState(() {
+      _allEntries = _replaceHighlight(
+        entry,
+        TextHighlight(
+          start: entry.highlight.start,
+          end: entry.highlight.end,
+          colorId: entry.highlight.colorId,
+          snippet: entry.highlight.snippet,
+          note: note,
+        ),
+      );
+    });
+  }
+
+  bool _sameHighlight(HighlightListEntry a, HighlightListEntry b) =>
+      a.date == b.date && a.field == b.field && a.highlight == b.highlight;
+
+  List<HighlightListEntry>? _replaceHighlight(
+    HighlightListEntry entry,
+    TextHighlight updated,
+  ) {
+    return _allEntries
+        ?.map(
+          (e) =>
+              _sameHighlight(e, entry)
+                  ? HighlightListEntry(
+                    date: e.date,
+                    field: e.field,
+                    highlight: updated,
+                  )
+                  : e,
+        )
+        .toList();
+  }
+
+  Future<void> _confirmClearAll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: context.backgroundColor,
+            title: Text(
+              'Clear All Highlights',
+              style: AppFonts.bold(context, size: FontSize.large),
+            ),
+            content: Text(
+              'Are you sure you want to delete all your highlights and '
+              "notes? This can't be undone.",
+              style: AppFonts.normal(context),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(
+                  'Cancel',
+                  style: AppFonts.normal(
+                    context,
+                  ).copyWith(color: context.textColor),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: Text(
+                  'Delete all',
+                  style: AppFonts.normal(
+                    context,
+                  ).copyWith(color: Colors.red, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    await clearAllHighlights(_volume);
+    if (!mounted) return;
+    setState(() => _allEntries = []);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'All highlights cleared',
+          style: AppFonts.normal(context),
+        ),
+        backgroundColor: context.backgroundColor.withValues(alpha: 0.8),
+      ),
+    );
   }
 
   @override
@@ -122,6 +266,15 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
           ),
           title: Text('My Highlights', style: AppFonts.bold(context)),
           actions: [
+            if (_allEntries != null && _allEntries!.isNotEmpty)
+              IconButton(
+                icon: Icon(
+                  Icons.delete_sweep_outlined,
+                  color: context.textColor,
+                ),
+                tooltip: 'Clear all highlights',
+                onPressed: _confirmClearAll,
+              ),
             if (_hasActiveFilters)
               IconButton(
                 icon: Icon(Icons.filter_alt_off, color: context.textColor),
@@ -130,59 +283,58 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
               ),
           ],
         ),
-        body: FutureBuilder<List<HighlightListEntry>>(
-          future: _entriesFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            final allEntries = snapshot.data ?? const [];
-            if (allEntries.isEmpty) {
-              return _buildEmptyState(context);
-            }
-
-            final filtered = _applyFilters(allEntries);
-
-            return Column(
-              children: [
-                _FilterBar(
-                  searchController: _searchController,
-                  dateRange: _dateRange,
-                  onPickDateRange: _pickDateRange,
-                  onClearDateRange: () => setState(() => _dateRange = null),
-                  selectedColorIds: _selectedColorIds,
-                  onToggleColor: _toggleColor,
-                ),
-                Expanded(
-                  child:
-                      filtered.isEmpty
-                          ? _buildNoMatchesState(context)
-                          : CustomScrollView(
-                            slivers: [
-                              SliverPadding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  8,
-                                  16,
-                                  24,
-                                ),
-                                sliver: SliverList(
-                                  delegate: SliverChildBuilderDelegate(
-                                    (context, index) =>
-                                        _HighlightTile(entry: filtered[index]),
-                                    childCount: filtered.length,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                ),
-              ],
-            );
-          },
-        ),
+        body: _buildBody(context),
       ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    final allEntries = _allEntries;
+    if (allEntries == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (allEntries.isEmpty) {
+      return _buildEmptyState(context);
+    }
+
+    final filtered = _applyFilters(allEntries);
+
+    return Column(
+      children: [
+        _FilterBar(
+          searchController: _searchController,
+          dateRange: _dateRange,
+          onPickDateRange: _pickDateRange,
+          onClearDateRange: () => setState(() => _dateRange = null),
+          selectedColorIds: _selectedColorIds,
+          onToggleColor: _toggleColor,
+        ),
+        Expanded(
+          child:
+              filtered.isEmpty
+                  ? _buildNoMatchesState(context)
+                  : CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => _HighlightTile(
+                              entry: filtered[index],
+                              onColorSelected:
+                                  (colorId) =>
+                                      _changeColor(filtered[index], colorId),
+                              onRemove: () => _deleteEntry(filtered[index]),
+                              onEditNote: () => _editNote(filtered[index]),
+                            ),
+                            childCount: filtered.length,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+        ),
+      ],
     );
   }
 
@@ -448,9 +600,17 @@ class _ColorFilterDot extends StatelessWidget {
 }
 
 class _HighlightTile extends StatelessWidget {
-  const _HighlightTile({required this.entry});
+  const _HighlightTile({
+    required this.entry,
+    required this.onColorSelected,
+    required this.onRemove,
+    required this.onEditNote,
+  });
 
   final HighlightListEntry entry;
+  final ValueChanged<String> onColorSelected;
+  final VoidCallback onRemove;
+  final VoidCallback onEditNote;
 
   @override
   Widget build(BuildContext context) {
@@ -552,6 +712,42 @@ class _HighlightTile extends StatelessWidget {
                         ],
                       ],
                     ),
+                  ),
+                ),
+                Center(
+                  child: PopupMenuButton<void>(
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: context.calendarDayTextSecondary,
+                    ),
+                    tooltip: 'Edit highlight',
+                    color: context.dialogBG,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    itemBuilder:
+                        (menuContext) => [
+                          PopupMenuItem<void>(
+                            enabled: false,
+                            padding: EdgeInsets.zero,
+                            child: HighlightColorToolbar(
+                              colorIds: menuContext.highlightColorIds,
+                              selectedColorId: entry.highlight.colorId,
+                              onColorSelected: (colorId) {
+                                Navigator.of(menuContext).pop();
+                                onColorSelected(colorId);
+                              },
+                              onRemove: () {
+                                Navigator.of(menuContext).pop();
+                                onRemove();
+                              },
+                              onEditNote: () {
+                                Navigator.of(menuContext).pop();
+                                onEditNote();
+                              },
+                            ),
+                          ),
+                        ],
                   ),
                 ),
                 Padding(

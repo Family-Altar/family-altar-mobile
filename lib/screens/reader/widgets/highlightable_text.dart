@@ -21,9 +21,51 @@ List<InlineSpan> buildHighlightSpans({
   required Color Function(TextHighlight) resolveColor,
   required void Function(TextHighlight, TapDownDetails) onHighlightTapDown,
   required List<TapGestureRecognizer> recognizerSink,
+  int styleBoundary = 0,
+  TextStyle Function(TextStyle)? styleBeforeBoundary,
+  TextHighlight? scrollAnchorHighlight,
+  Key? scrollAnchorKey,
 }) {
+  List<InlineSpan> spansForRun(
+    int start,
+    int end,
+    TextStyle style, {
+    TapGestureRecognizer? recognizer,
+  }) {
+    if (styleBeforeBoundary == null || styleBoundary <= start || end <= start) {
+      return [
+        TextSpan(
+          text: text.substring(start, end),
+          style: style,
+          recognizer: recognizer,
+        ),
+      ];
+    }
+    if (styleBoundary >= end) {
+      return [
+        TextSpan(
+          text: text.substring(start, end),
+          style: styleBeforeBoundary(style),
+          recognizer: recognizer,
+        ),
+      ];
+    }
+    return [
+      TextSpan(
+        text: text.substring(start, styleBoundary),
+        style: styleBeforeBoundary(style),
+        recognizer: recognizer,
+      ),
+      TextSpan(
+        text: text.substring(styleBoundary, end),
+        style: style,
+        recognizer: recognizer,
+      ),
+    ];
+  }
+
   if (highlights.isEmpty) {
-    return [TextSpan(text: text, style: baseStyle)];
+    return spansForRun(0, text.length, baseStyle);
   }
 
   final sorted = [...highlights]..sort((a, b) => a.start.compareTo(b.start));
@@ -36,8 +78,18 @@ List<InlineSpan> buildHighlightSpans({
     if (end <= start || start < cursor) continue;
 
     if (start > cursor) {
+      spans.addAll(spansForRun(cursor, start, baseStyle));
+    }
+
+    // Anchors a zero-size placeholder at the exact start of the target
+    // highlight so the reader can scroll to precisely where it sits,
+    // instead of to the top of the whole (possibly much taller) field.
+    if (scrollAnchorKey != null && highlight == scrollAnchorHighlight) {
       spans.add(
-        TextSpan(text: text.substring(cursor, start), style: baseStyle),
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: SizedBox.shrink(key: scrollAnchorKey),
+        ),
       );
     }
 
@@ -48,10 +100,11 @@ List<InlineSpan> buildHighlightSpans({
 
     final hasNote = (highlight.note ?? '').isNotEmpty;
 
-    spans.add(
-      TextSpan(
-        text: text.substring(start, end),
-        style: baseStyle.copyWith(
+    spans.addAll(
+      spansForRun(
+        start,
+        end,
+        baseStyle.copyWith(
           backgroundColor: resolveColor(highlight),
           // A dotted underline marks highlights that also carry a note,
           // mirroring how Bible-reading apps flag annotated verses inline.
@@ -68,7 +121,7 @@ List<InlineSpan> buildHighlightSpans({
   }
 
   if (cursor < text.length) {
-    spans.add(TextSpan(text: text.substring(cursor), style: baseStyle));
+    spans.addAll(spansForRun(cursor, text.length, baseStyle));
   }
 
   return spans;
@@ -87,6 +140,9 @@ class HighlightableText extends StatefulWidget {
     this.prefixText,
     this.selectionActiveNotifier,
     this.textScaler,
+    this.firstCharacterStyle,
+    this.scrollAnchorHighlight,
+    this.scrollAnchorKey,
     super.key,
   });
 
@@ -98,6 +154,11 @@ class HighlightableText extends StatefulWidget {
 
   /// Rendered ahead of [text] but excluded from highlighting/offsets.
   final String? prefixText;
+
+  final TextStyle? firstCharacterStyle;
+
+  final TextHighlight? scrollAnchorHighlight;
+  final Key? scrollAnchorKey;
 
   /// Set to true while a selection is active, so callers can suppress
   /// competing gestures (e.g. swipe navigation) during text selection.
@@ -145,13 +206,23 @@ class _HighlightableTextState extends State<HighlightableText> {
           // marker reads as understated even with several highlights
           // visible on the same page.
           resolveColor:
-              (h) => context.highlightColor(h.colorId).withValues(
-                alpha: context.isDarkMode ? 0.42 : 0.62,
-              ),
+              (h) => context
+                  .highlightColor(h.colorId)
+                  .withValues(alpha: context.isDarkMode ? 0.42 : 0.62),
           onHighlightTapDown:
               (h, details) =>
                   _showHighlightMenu(context, details.globalPosition, h),
           recognizerSink: _recognizers,
+          styleBoundary:
+              widget.firstCharacterStyle != null && widget.text.isNotEmpty
+                  ? widget.text.characters.first.length
+                  : 0,
+          styleBeforeBoundary:
+              widget.firstCharacterStyle == null
+                  ? null
+                  : (style) => style.merge(widget.firstCharacterStyle),
+          scrollAnchorHighlight: widget.scrollAnchorHighlight,
+          scrollAnchorKey: widget.scrollAnchorKey,
         ),
       ],
     );
@@ -184,10 +255,7 @@ class _HighlightableTextState extends State<HighlightableText> {
       0,
       widget.text.length,
     );
-    final contentEnd = (selection.end - prefixLen).clamp(
-      0,
-      widget.text.length,
-    );
+    final contentEnd = (selection.end - prefixLen).clamp(0, widget.text.length);
     if (contentEnd <= contentStart) return const SizedBox.shrink();
 
     final anchors = editableTextState.contextMenuAnchors;
@@ -293,7 +361,7 @@ class _HighlightableTextState extends State<HighlightableText> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (_) => _NoteSheet(initialNote: highlight.note),
+      builder: (_) => NoteSheet(initialNote: highlight.note),
     );
 
     if (result == null || !context.mounted) return;
@@ -308,16 +376,18 @@ class _HighlightableTextState extends State<HighlightableText> {
   }
 }
 
-class _NoteSheet extends StatefulWidget {
-  const _NoteSheet({required this.initialNote});
+/// Bottom sheet for adding/editing a highlight's note. Shared by the
+/// reader's inline highlight menu and the highlights list screen.
+class NoteSheet extends StatefulWidget {
+  const NoteSheet({required this.initialNote, super.key});
 
   final String? initialNote;
 
   @override
-  State<_NoteSheet> createState() => _NoteSheetState();
+  State<NoteSheet> createState() => _NoteSheetState();
 }
 
-class _NoteSheetState extends State<_NoteSheet> {
+class _NoteSheetState extends State<NoteSheet> {
   late final TextEditingController _controller = TextEditingController(
     text: widget.initialNote ?? '',
   );

@@ -63,27 +63,27 @@ class _ReaderScreenState extends State<ReaderScreen>
   late DateTime _currentDate = widget.date;
   final ValueNotifier<bool> _isTextSelectionActive = ValueNotifier(false);
   bool _hasScrolledToTarget = false;
-  final GlobalKey _scriptureKey = GlobalKey();
-  final GlobalKey _quoteKey = GlobalKey();
-  final GlobalKey _titleKey = GlobalKey();
-  final GlobalKey _dailyReadingKey = GlobalKey();
+  final GlobalKey _scrollAnchorKey = GlobalKey();
 
-  // Only returns a key while that field is still an unconsumed scroll
-  // target. Kept unattached the rest of the time so it never lingers on a
-  // widget inside the per-day subtree that gets torn down and rebuilt on
-  // every navigation — a GlobalKey there, combined with this widget's
-  // InheritedWidget (HighlightCubit) dependency, otherwise trips a
-  // '_dependents.isEmpty' framework assertion on the next day swipe.
-  GlobalKey? _keyForField(HighlightField field) {
+  // Only returns a key/highlight pair while that field is still an
+  // unconsumed scroll target. Kept unattached the rest of the time so it
+  // never lingers on a widget inside the per-day subtree that gets torn
+  // down and rebuilt on every navigation — a GlobalKey there, combined
+  // with this widget's InheritedWidget (HighlightCubit) dependency,
+  // otherwise trips a '_dependents.isEmpty' framework assertion on the
+  // next day swipe.
+  Key? _scrollAnchorKeyFor(HighlightField field) {
     if (_hasScrolledToTarget || widget.scrollTarget?.field != field) {
       return null;
     }
-    return switch (field) {
-      HighlightField.scripture => _scriptureKey,
-      HighlightField.quote => _quoteKey,
-      HighlightField.title => _titleKey,
-      HighlightField.dailyReading => _dailyReadingKey,
-    };
+    return _scrollAnchorKey;
+  }
+
+  TextHighlight? _scrollAnchorHighlightFor(HighlightField field) {
+    if (_hasScrolledToTarget || widget.scrollTarget?.field != field) {
+      return null;
+    }
+    return widget.scrollTarget!.highlight;
   }
 
   void _scheduleScrollToTargetCheck() {
@@ -91,7 +91,7 @@ class _ReaderScreenState extends State<ReaderScreen>
     if (target == null || _hasScrolledToTarget) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final targetContext = _keyForField(target.field)?.currentContext;
+      final targetContext = _scrollAnchorKey.currentContext;
       if (targetContext == null) return;
       setState(() => _hasScrolledToTarget = true);
       Scrollable.ensureVisible(
@@ -155,260 +155,262 @@ class _ReaderScreenState extends State<ReaderScreen>
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<ReadingBloc, ReadingState>(
-      listener: (context, state) {
-        if (state is ReadingLoaded) {
-          _currentDate = state.currentDate;
-          _scheduleScrollCheck();
+    return BlocListener<HighlightCubit, HighlightState>(
+      listener: (context, state) => _scheduleScrollToTargetCheck(),
+      child: BlocConsumer<ReadingBloc, ReadingState>(
+        listener: (context, state) {
+          if (state is ReadingLoaded) {
+            _currentDate = state.currentDate;
+            _scheduleScrollCheck();
 
-          final highlightCubit = context.read<HighlightCubit>();
-          if (highlightCubit.state.currentDate != state.currentDate ||
-              highlightCubit.state.currentVolume != state.currentVolume) {
-            highlightCubit.loadForDate(
-              date: state.currentDate,
-              volume: state.currentVolume,
-            );
+            final highlightCubit = context.read<HighlightCubit>();
+            if (highlightCubit.state.currentDate != state.currentDate ||
+                highlightCubit.state.currentVolume != state.currentVolume) {
+              highlightCubit.loadForDate(
+                date: state.currentDate,
+                volume: state.currentVolume,
+              );
+            }
+
+            _scheduleScrollToTargetCheck();
+          }
+        },
+        builder: (context, state) {
+          if (state is ReadingLoading) {
+            return const Center(child: CircularProgressIndicator());
           }
 
-          _scheduleScrollToTargetCheck();
-        }
-      },
-      builder: (context, state) {
-        if (state is ReadingLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+          if (state is! ReadingLoaded) {
+            return const SizedBox.shrink();
+          }
 
-        if (state is! ReadingLoaded) {
-          return const SizedBox.shrink();
-        }
+          return BlocBuilder<ThemeBloc, ThemeState>(
+            builder: (context, themeState) {
+              final fontSize = themeState.readingFontSize;
 
-        return BlocBuilder<ThemeBloc, ThemeState>(
-          builder: (context, themeState) {
-            final fontSize = themeState.readingFontSize;
-
-            return SafeArea(
-              child: Scaffold(
-                backgroundColor: context.backgroundColor,
-                appBar: AppBar(
-                  toolbarHeight: 48,
+              return SafeArea(
+                child: Scaffold(
                   backgroundColor: context.backgroundColor,
-                  centerTitle: true,
-                  leadingWidth: 160,
-                  leading: Row(
-                    children: [
+                  appBar: AppBar(
+                    toolbarHeight: 48,
+                    backgroundColor: context.backgroundColor,
+                    centerTitle: true,
+                    leadingWidth: 160,
+                    leading: Row(
+                      children: [
+                        IconButton(
+                          onPressed: context.pop,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          constraints: const BoxConstraints(),
+                          icon: Icon(
+                            Icons.arrow_back,
+                            color: context.textColor,
+                            size: AppIcons.getIconSize(IconSize.medium),
+                          ),
+                        ),
+                        DropdownButton<Volume>(
+                          value: state.currentVolume,
+                          dropdownColor: context.backgroundColor,
+                          underline: const SizedBox.shrink(),
+                          icon: Icon(
+                            Icons.arrow_drop_down,
+                            color: context.textColor,
+                            size: 16,
+                          ),
+                          style: AppFonts.normal(context, size: FontSize.small),
+                          items:
+                              Volume.values
+                                  .map(
+                                    (v) => DropdownMenuItem(
+                                      value: v,
+                                      child: Text(v.displayTitle),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: (volume) {
+                            if (volume != null) {
+                              context.read<ReadingBloc>().add(
+                                SwitchVolumeEvent(volume),
+                              );
+                              _scrollController.jumpTo(0);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    title: Text(
+                      state.reading.date,
+                      style: AppFonts.bold(context),
+                    ),
+                    actions: [
                       IconButton(
-                        onPressed: context.pop,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        constraints: const BoxConstraints(),
+                        onPressed: () => context.go('/'),
                         icon: Icon(
-                          Icons.arrow_back,
+                          Icons.home,
                           color: context.textColor,
                           size: AppIcons.getIconSize(IconSize.medium),
                         ),
                       ),
-                      DropdownButton<Volume>(
-                        value: state.currentVolume,
-                        dropdownColor: context.backgroundColor,
-                        underline: const SizedBox.shrink(),
-                        icon: Icon(
-                          Icons.arrow_drop_down,
-                          color: context.textColor,
-                          size: 16,
+                      PopupMenuButton<String>(
+                        color: context.backgroundColor,
+                        offset: const Offset(0, 48),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        style: AppFonts.normal(context, size: FontSize.small),
-                        items: Volume.values
-                            .map(
-                              (v) => DropdownMenuItem(
-                                value: v,
-                                child: Text(v.displayTitle),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (volume) {
-                          if (volume != null) {
-                            context.read<ReadingBloc>().add(
-                              SwitchVolumeEvent(volume),
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey[800],
+                          ),
+                          child: CircleAvatar(
+                            radius: 12,
+                            backgroundColor: context.backgroundColor,
+                            child: Icon(
+                              Icons.more_horiz,
+                              color: context.textColor,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                        onSelected: (value) {
+                          if (value == 'share') {
+                            final reading = state.reading;
+                            final fullShareText = formatReadingForSharing(
+                              reading,
+                              volume: state.currentVolume,
                             );
-                            _scrollController.jumpTo(0);
+                            SharePlus.instance.share(
+                              ShareParams(text: fullShareText.trim()),
+                            );
+                          } else if (value == 'settings') {
+                            showReadingSettingsBottomSheet(context);
+                          } else if (value == 'highlights') {
+                            context.push('/highlights');
                           }
                         },
+                        itemBuilder:
+                            (BuildContext context) => [
+                              PopupMenuItem<String>(
+                                value: 'share',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.share,
+                                      color: context.textColor,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Share Reading',
+                                      style: AppFonts.normal(context),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'highlights',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.bookmark_border,
+                                      color: context.textColor,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'My Highlights',
+                                      style: AppFonts.normal(context),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'settings',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.settings,
+                                      color: context.textColor,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Font and Settings',
+                                      style: AppFonts.normal(context),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                       ),
                     ],
                   ),
-                  title: Text(
-                    state.reading.date,
-                    style: AppFonts.bold(context),
-                  ),
-                  actions: [
-                    IconButton(
-                      onPressed: () => context.go('/'),
-                      icon: Icon(
-                        Icons.home,
-                        color: context.textColor,
-                        size: AppIcons.getIconSize(IconSize.medium),
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      color: context.backgroundColor,
-                      offset: const Offset(0, 48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.grey[800],
-                        ),
-                        child: CircleAvatar(
-                          radius: 12,
-                          backgroundColor: context.backgroundColor,
-                          child: Icon(
-                            Icons.more_horiz,
-                            color: context.textColor,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      onSelected: (value) {
-                        if (value == 'share') {
-                          final reading = state.reading;
-                          final fullShareText = formatReadingForSharing(
-                            reading,
-                            volume: state.currentVolume,
-                          );
-                          SharePlus.instance.share(
-                            ShareParams(text: fullShareText.trim()),
-                          );
-                        } else if (value == 'settings') {
-                          showReadingSettingsBottomSheet(context);
-                        } else if (value == 'highlights') {
-                          context.push('/highlights');
-                        }
-                      },
-                      itemBuilder:
-                          (BuildContext context) => [
-                            PopupMenuItem<String>(
-                              value: 'share',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.share,
-                                    color: context.textColor,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Share Reading',
-                                    style: AppFonts.normal(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'highlights',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.bookmark_border,
-                                    color: context.textColor,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'My Highlights',
-                                    style: AppFonts.normal(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'settings',
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.settings,
-                                    color: context.textColor,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Font and Settings',
-                                    style: AppFonts.normal(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                    ),
-                  ],
-                ),
-                body: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onPanStart: (details) {
-                    if (_isTextSelectionActive.value) return;
-                    _horizontalDragDistance = 0.0;
-                    _verticalDragDistance = 0.0;
-                    _isHorizontalSwipe = false;
-                  },
-                  onPanUpdate: (details) {
-                    if (_isTextSelectionActive.value) return;
-                    _horizontalDragDistance += details.delta.dx;
-                    _verticalDragDistance += details.delta.dy.abs();
-                    if (_horizontalDragDistance.abs() + _verticalDragDistance >
-                        20) {
-                      _isHorizontalSwipe =
-                          _horizontalDragDistance.abs() >
-                          _verticalDragDistance * 1.5;
-                    }
-                  },
-                  onPanEnd: (details) {
-                    if (_isTextSelectionActive.value) return;
-                    if (_isHorizontalSwipe) {
-                      final horizontalAbs = _horizontalDragDistance.abs();
-                      final velocity = details.velocity.pixelsPerSecond.dx;
-                      if (horizontalAbs > 80 || velocity.abs() > 400) {
-                        if (_horizontalDragDistance < 0 || velocity < 0) {
-                          context.read<ReadingBloc>().add(
-                            const NextReadingEvent(),
-                          );
-                          _scrollController.jumpTo(0);
-                        } else {
-                          context.read<ReadingBloc>().add(
-                            const PreviousReadingEvent(),
-                          );
-                          _scrollController.jumpTo(0);
+                  body: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onPanStart: (details) {
+                      if (_isTextSelectionActive.value) return;
+                      _horizontalDragDistance = 0.0;
+                      _verticalDragDistance = 0.0;
+                      _isHorizontalSwipe = false;
+                    },
+                    onPanUpdate: (details) {
+                      if (_isTextSelectionActive.value) return;
+                      _horizontalDragDistance += details.delta.dx;
+                      _verticalDragDistance += details.delta.dy.abs();
+                      if (_horizontalDragDistance.abs() +
+                              _verticalDragDistance >
+                          20) {
+                        _isHorizontalSwipe =
+                            _horizontalDragDistance.abs() >
+                            _verticalDragDistance * 1.5;
+                      }
+                    },
+                    onPanEnd: (details) {
+                      if (_isTextSelectionActive.value) return;
+                      if (_isHorizontalSwipe) {
+                        final horizontalAbs = _horizontalDragDistance.abs();
+                        final velocity = details.velocity.pixelsPerSecond.dx;
+                        if (horizontalAbs > 80 || velocity.abs() > 400) {
+                          if (_horizontalDragDistance < 0 || velocity < 0) {
+                            context.read<ReadingBloc>().add(
+                              const NextReadingEvent(),
+                            );
+                            _scrollController.jumpTo(0);
+                          } else {
+                            context.read<ReadingBloc>().add(
+                              const PreviousReadingEvent(),
+                            );
+                            _scrollController.jumpTo(0);
+                          }
                         }
                       }
-                    }
-                    _horizontalDragDistance = 0.0;
-                    _verticalDragDistance = 0.0;
-                    _isHorizontalSwipe = false;
-                  },
-                  child: NotificationListener<ScrollMetricsNotification>(
-                    onNotification: (notification) {
-                      _scheduleScrollCheck();
-                      return false;
+                      _horizontalDragDistance = 0.0;
+                      _verticalDragDistance = 0.0;
+                      _isHorizontalSwipe = false;
                     },
-                    child: SingleChildScrollView(
-                      controller: _scrollController,
-                      child: Scrollbar(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: TweenAnimationBuilder<double>(
-                            key: ValueKey(state.reading.date),
-                            duration: const Duration(milliseconds: 200),
-                            tween: Tween(begin: 0, end: 1),
-                            builder: (context, value, child) {
-                              return Opacity(opacity: value, child: child);
-                            },
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                KeyedSubtree(
-                                  key: _keyForField(HighlightField.scripture),
-                                  child: HighlightableText(
+                    child: NotificationListener<ScrollMetricsNotification>(
+                      onNotification: (notification) {
+                        _scheduleScrollCheck();
+                        return false;
+                      },
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        child: Scrollbar(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: TweenAnimationBuilder<double>(
+                              key: ValueKey(state.reading.date),
+                              duration: const Duration(milliseconds: 200),
+                              tween: Tween(begin: 0, end: 1),
+                              builder: (context, value, child) {
+                                return Opacity(opacity: value, child: child);
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  HighlightableText(
                                     text: state.reading.scripture.replaceAll(
                                       '\n',
                                       ' ',
@@ -421,24 +423,28 @@ class _ReaderScreenState extends State<ReaderScreen>
                                     textScaler: TextScaler.noScaling,
                                     selectionActiveNotifier:
                                         _isTextSelectionActive,
+                                    scrollAnchorKey: _scrollAnchorKeyFor(
+                                      HighlightField.scripture,
+                                    ),
+                                    scrollAnchorHighlight:
+                                        _scrollAnchorHighlightFor(
+                                          HighlightField.scripture,
+                                        ),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                Center(
-                                  child: Image.asset(
-                                    'assets/icon/divider.png',
-                                    color:
-                                        context.isDarkMode
-                                            ? Colors.white
-                                            : null,
-                                    width: (fontSize * 20).clamp(0, 400),
+                                  const SizedBox(height: 8),
+                                  Center(
+                                    child: Image.asset(
+                                      'assets/icon/divider.png',
+                                      color:
+                                          context.isDarkMode
+                                              ? Colors.white
+                                              : null,
+                                      width: (fontSize * 20).clamp(0, 400),
+                                    ),
                                   ),
-                                ),
 
-                                const SizedBox(height: 8),
-                                KeyedSubtree(
-                                  key: _keyForField(HighlightField.quote),
-                                  child: DropCapHighlightableText(
+                                  const SizedBox(height: 8),
+                                  DropCapHighlightableText(
                                     quote: state.reading.quote,
                                     dropCapStyle: TextStyle(
                                       fontFamily: 'OldEnglish',
@@ -448,19 +454,21 @@ class _ReaderScreenState extends State<ReaderScreen>
                                               ? Colors.white
                                               : null,
                                     ),
-                                    baseStyle: AppFonts.normal(context)
-                                        .copyWith(
-                                          fontSize: fontSize,
-                                          height: 1.2,
-                                        ),
+                                    baseStyle: AppFonts.normal(
+                                      context,
+                                    ).copyWith(fontSize: fontSize, height: 1.2),
                                     selectionActiveNotifier:
                                         _isTextSelectionActive,
+                                    scrollAnchorKey: _scrollAnchorKeyFor(
+                                      HighlightField.quote,
+                                    ),
+                                    scrollAnchorHighlight:
+                                        _scrollAnchorHighlightFor(
+                                          HighlightField.quote,
+                                        ),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                KeyedSubtree(
-                                  key: _keyForField(HighlightField.title),
-                                  child: HighlightableText(
+                                  const SizedBox(height: 8),
+                                  HighlightableText(
                                     text: state.reading.title,
                                     field: HighlightField.title,
                                     baseStyle: AppFonts.italics(
@@ -468,27 +476,32 @@ class _ReaderScreenState extends State<ReaderScreen>
                                     ).copyWith(fontSize: fontSize),
                                     selectionActiveNotifier:
                                         _isTextSelectionActive,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Center(
-                                  child: Image.asset(
-                                    'assets/icon/divider.png',
-                                    color:
-                                        context.isDarkMode
-                                            ? Colors.white
-                                            : null,
-                                    width: (fontSize * 20).clamp(0, 400),
-                                  ),
-                                ),
-                                if (state.currentVolume == Volume.one ||
-                                    state.reading.dailyReading.isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  KeyedSubtree(
-                                    key: _keyForField(
-                                      HighlightField.dailyReading,
+                                    scrollAnchorKey: _scrollAnchorKeyFor(
+                                      HighlightField.title,
                                     ),
-                                    child: HighlightableText(
+                                    scrollAnchorHighlight:
+                                        _scrollAnchorHighlightFor(
+                                          HighlightField.title,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Center(
+                                    child: Image.asset(
+                                      'assets/icon/divider.png',
+                                      color:
+                                          context.isDarkMode
+                                              ? Colors.white
+                                              : null,
+                                      width: (fontSize * 20).clamp(0, 400),
+                                    ),
+                                  ),
+                                  if (state.currentVolume == Volume.one ||
+                                      state
+                                          .reading
+                                          .dailyReading
+                                          .isNotEmpty) ...[
+                                    const SizedBox(height: 8),
+                                    HighlightableText(
                                       text: state.reading.dailyReading,
                                       field: HighlightField.dailyReading,
                                       prefixText:
@@ -500,83 +513,94 @@ class _ReaderScreenState extends State<ReaderScreen>
                                       ).copyWith(fontSize: fontSize),
                                       selectionActiveNotifier:
                                           _isTextSelectionActive,
+                                      scrollAnchorKey: _scrollAnchorKeyFor(
+                                        HighlightField.dailyReading,
+                                      ),
+                                      scrollAnchorHighlight:
+                                          _scrollAnchorHighlightFor(
+                                            HighlightField.dailyReading,
+                                          ),
                                     ),
-                                  ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                bottomNavigationBar: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.backgroundColor,
-                    border: const Border(
-                      top: BorderSide(color: Color.fromARGB(58, 137, 136, 136)),
+                  bottomNavigationBar: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.backgroundColor,
+                      border: const Border(
+                        top: BorderSide(
+                          color: Color.fromARGB(58, 137, 136, 136),
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          color: context.textColor,
+                          icon: const Icon(Icons.arrow_circle_left_outlined),
+                          iconSize: 40,
+                          onPressed:
+                              () => {
+                                _scrollController.jumpTo(0),
+                                context.read<ReadingBloc>().add(
+                                  const PreviousReadingEvent(),
+                                ),
+                              },
+                        ),
+                        if (_contentFitsWithoutScroll &&
+                            !state.isCurrentDayRead())
+                          FilledButton.icon(
+                            onPressed:
+                                () => context.read<ReadingBloc>().add(
+                                  MarkAsReadEvent(_currentDate),
+                                ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.dialogMarkReadBG,
+                            ),
+                            icon: const Icon(
+                              Icons.check,
+                              color: AppColors.dialogButtonText,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'Mark as Read',
+                              style: TextStyle(
+                                color: AppColors.dialogButtonText,
+                              ),
+                            ),
+                          ),
+                        IconButton(
+                          color: context.textColor,
+                          icon: const Icon(Icons.arrow_circle_right_outlined),
+                          iconSize: 40,
+                          onPressed:
+                              () => {
+                                context.read<ReadingBloc>().add(
+                                  const NextReadingEvent(),
+                                ),
+                                _scrollController.jumpTo(0),
+                              },
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        color: context.textColor,
-                        icon: const Icon(Icons.arrow_circle_left_outlined),
-                        iconSize: 40,
-                        onPressed:
-                            () => {
-                              _scrollController.jumpTo(0),
-                              context.read<ReadingBloc>().add(
-                                const PreviousReadingEvent(),
-                              ),
-                            },
-                      ),
-                      if (_contentFitsWithoutScroll &&
-                          !state.isCurrentDayRead())
-                        FilledButton.icon(
-                          onPressed:
-                              () => context.read<ReadingBloc>().add(
-                                MarkAsReadEvent(_currentDate),
-                              ),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.dialogMarkReadBG,
-                          ),
-                          icon: const Icon(
-                            Icons.check,
-                            color: AppColors.dialogButtonText,
-                            size: 18,
-                          ),
-                          label: const Text(
-                            'Mark as Read',
-                            style: TextStyle(color: AppColors.dialogButtonText),
-                          ),
-                        ),
-                      IconButton(
-                        color: context.textColor,
-                        icon: const Icon(Icons.arrow_circle_right_outlined),
-                        iconSize: 40,
-                        onPressed:
-                            () => {
-                              context.read<ReadingBloc>().add(
-                                const NextReadingEvent(),
-                              ),
-                              _scrollController.jumpTo(0),
-                            },
-                      ),
-                    ],
-                  ),
                 ),
-              ),
-            );
-          },
-        );
-      },
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

@@ -251,3 +251,91 @@ Future<List<HighlightListEntry>> loadAllHighlights(Volume volume) async {
   entries.sort((a, b) => b.date.compareTo(a.date));
   return entries;
 }
+
+Future<void> clearAllHighlights(Volume volume) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_highlightsStorageKey(volume));
+  } on Exception {
+    // fail silently
+  }
+}
+
+Future<void> _mutateHighlightEntry(
+  Volume volume,
+  HighlightListEntry entry,
+  TextHighlight? Function(TextHighlight current) transform,
+) async {
+  try {
+    final blob = await _loadHighlightsBlob(volume);
+    final dateKey = _highlightDateKey(entry.date);
+    final dayEntry = blob[dateKey] as Map<String, dynamic>?;
+    if (dayEntry == null) return;
+
+    final fieldKey = entry.field.storageKey;
+    final list = (dayEntry[fieldKey] as List<dynamic>?) ?? const [];
+    final updatedList =
+        list
+            .map((raw) => TextHighlight.fromJson(raw as Map<String, dynamic>))
+            .map((h) => h == entry.highlight ? transform(h) : h)
+            .whereType<TextHighlight>()
+            .map((h) => h.toJson())
+            .toList();
+
+    if (updatedList.isEmpty) {
+      dayEntry.remove(fieldKey);
+    } else {
+      dayEntry[fieldKey] = updatedList;
+    }
+
+    if (dayEntry.isEmpty) {
+      blob.remove(dateKey);
+    } else {
+      blob[dateKey] = dayEntry;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_highlightsStorageKey(volume), json.encode(blob));
+  } on Exception {
+    // fail silently
+  }
+}
+
+/// Deletes a single [HighlightListEntry] directly from storage.
+Future<void> removeHighlightEntry(Volume volume, HighlightListEntry entry) =>
+    _mutateHighlightEntry(volume, entry, (_) => null);
+
+/// Changes the color of a single [HighlightListEntry] directly in storage.
+Future<void> changeHighlightEntryColor(
+  Volume volume,
+  HighlightListEntry entry,
+  String newColorId,
+) => _mutateHighlightEntry(
+  volume,
+  entry,
+  (h) => TextHighlight(
+    start: h.start,
+    end: h.end,
+    colorId: newColorId,
+    snippet: h.snippet,
+    note: h.note,
+  ),
+);
+
+/// Sets (or clears, when [note] is null) the note on a single
+/// [HighlightListEntry] directly in storage.
+Future<void> setHighlightEntryNote(
+  Volume volume,
+  HighlightListEntry entry,
+  String? note,
+) => _mutateHighlightEntry(
+  volume,
+  entry,
+  (h) => TextHighlight(
+    start: h.start,
+    end: h.end,
+    colorId: h.colorId,
+    snippet: h.snippet,
+    note: note,
+  ),
+);
