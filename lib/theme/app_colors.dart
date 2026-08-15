@@ -131,24 +131,24 @@ class AppColors {
   // would be, since even soft pastels read as too bright once several
   // are visible together on a page of reading text.
   // yellow: default / important idea
-  static const Color highlightYellowLight = Color(0xFFD4CCAD);
-  static const Color highlightYellowDark = Color(0xFF655F42);
+  static const Color highlightYellowLight = Color(0xFFD4C68E);
+  static const Color highlightYellowDark = Color(0xFFA69958);
 
   // green: interesting insight
-  static const Color highlightGreenLight = Color(0xFFBAC0B1);
-  static const Color highlightGreenDark = Color(0xFF4A5043);
+  static const Color highlightGreenLight = Color(0xFFACB69C);
+  static const Color highlightGreenDark = Color(0xFF768466);
 
   // blue: definition / concept
-  static const Color highlightBlueLight = Color(0xFFB5C1CA);
-  static const Color highlightBlueDark = Color(0xFF3A4750);
+  static const Color highlightBlueLight = Color(0xFF9DB3C3);
+  static const Color highlightBlueDark = Color(0xFF57758A);
 
   // purple: quote / memorable passage
-  static const Color highlightPurpleLight = Color(0xFFC2BCCA);
-  static const Color highlightPurpleDark = Color(0xFF534E5B);
+  static const Color highlightPurpleLight = Color(0xFFB2A7C0);
+  static const Color highlightPurpleDark = Color(0xFF7C708F);
 
   // pink: question / disagreement
-  static const Color highlightPinkLight = Color(0xFFCAB8B6);
-  static const Color highlightPinkDark = Color(0xFF634B4A);
+  static const Color highlightPinkLight = Color(0xFFC3A29F);
+  static const Color highlightPinkDark = Color(0xFF9C6867);
 }
 
 extension ThemeColors on BuildContext {
