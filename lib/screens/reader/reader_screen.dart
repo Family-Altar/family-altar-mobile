@@ -287,7 +287,15 @@ class _ReaderScreenState extends State<ReaderScreen>
                           } else if (value == 'settings') {
                             showReadingSettingsBottomSheet(context);
                           } else if (value == 'highlights') {
-                            context.push('/highlights');
+                            final highlightCubit = context
+                                .read<HighlightCubit>();
+                            context.push('/highlights').then((_) {
+                              if (!context.mounted) return;
+                              highlightCubit.loadForDate(
+                                date: highlightCubit.state.currentDate,
+                                volume: highlightCubit.state.currentVolume,
+                              );
+                            });
                           }
                         },
                         itemBuilder:
