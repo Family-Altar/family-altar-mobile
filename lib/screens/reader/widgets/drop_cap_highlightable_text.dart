@@ -176,6 +176,7 @@ class _DropCapHighlightableTextState extends State<DropCapHighlightableText> {
                   child: HighlightableText(
                     text: sideText,
                     leadingText: dropCap,
+                    forceIncludeLeadingTextAtStart: true,
                     field: HighlightField.quote,
                     baseStyle: widget.baseStyle,
                     selectionActiveNotifier: widget.selectionActiveNotifier,

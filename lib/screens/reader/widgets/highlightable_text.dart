@@ -131,6 +131,7 @@ class HighlightableText extends StatefulWidget {
     this.textAlign = TextAlign.left,
     this.prefixText,
     this.leadingText = '',
+    this.forceIncludeLeadingTextAtStart = false,
     this.selectionActiveNotifier,
     this.leadingTextPreviewNotifier,
     this.textScaler,
@@ -153,6 +154,17 @@ class HighlightableText extends StatefulWidget {
   /// letter). Included when computing/snapping highlight offsets — so a
   /// highlight or selection can start inside it — but never rendered here.
   final String leadingText;
+
+  /// Whether a selection dragged to this widget's own left edge should
+  /// force-include the *entire* [leadingText], not just snap to a word
+  /// boundary within it. Only correct when [leadingText] genuinely is the
+  /// thing immediately before [text] with nothing else in between (e.g.
+  /// a drop cap letter) — a later chunk whose [leadingText] is "drop cap
+  /// + an earlier chunk's whole text" must leave this false, or an
+  /// ordinary selection starting at its own first character would
+  /// force-swallow everything back to the drop cap, including any
+  /// unrelated highlight sitting in between.
+  final bool forceIncludeLeadingTextAtStart;
 
   final TextHighlight? scrollAnchorHighlight;
   final Key? scrollAnchorKey;
@@ -281,7 +293,9 @@ class _HighlightableTextState extends State<HighlightableText> {
     // drop cap is a one-letter word of its own (e.g. "I will..."), since
     // the space between "I" and "will" blocks the word-char adjacency
     // check from ever crossing it.
-    if (contentStart == 0 && leadingLen > 0) {
+    if (widget.forceIncludeLeadingTextAtStart &&
+        contentStart == 0 &&
+        leadingLen > 0) {
       fieldStart = 0;
     }
 
