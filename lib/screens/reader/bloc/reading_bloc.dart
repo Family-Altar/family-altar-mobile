@@ -36,8 +36,7 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
 
   // Volume-namespaced SharedPreferences keys.
   // Volume.one uses empty suffix to preserve existing users' data.
-  String get _storageKey =>
-      'reading_entries${_currentVolume.storageSuffix}';
+  String get _storageKey => 'reading_entries${_currentVolume.storageSuffix}';
   String get _lastAccessedKey =>
       'last_accessed_day${_currentVolume.storageSuffix}';
   String get _firstLaunchKey =>
@@ -166,8 +165,8 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     final currentState = state as ReadingLoaded;
     final dateKey = _dateToKey(event.date);
 
-    final updatedEntries =
-        Map<String, ReadingEntry>.from(currentState.entries)..remove(dateKey);
+    final updatedEntries = Map<String, ReadingEntry>.from(currentState.entries)
+      ..remove(dateKey);
     emit(currentState.copyWith(entries: updatedEntries));
     await _saveToStorage(updatedEntries);
   }
@@ -232,16 +231,17 @@ class ReadingBloc extends Bloc<ReadingEvent, ReadingState> {
     Emitter<ReadingState> emit,
   ) async {
     if (event.volume == _currentVolume) return;
+    // Stay on the day the reader was already showing, so switching volumes
+    // mid-read doesn't jump to that other volume's own last-accessed day
+    // (or today, if it's never been opened).
+    final currentDate =
+        state is ReadingLoaded ? (state as ReadingLoaded).currentDate : null;
     _currentVolume = event.volume;
     _readingCache.clear();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_activeVolumeKey, event.volume.index);
     await initializeFirstLaunchDate();
-    // Reload the last-accessed day for the new volume (or today)
-    final dateString = prefs.getString(_lastAccessedKey);
-    final date =
-        dateString != null ? DateTime.parse(dateString) : DateTime.now();
-    add(LoadReadingEvent(date: date));
+    add(LoadReadingEvent(date: currentDate ?? DateTime.now()));
   }
 
   Future<Map<String, ReadingEntry>> _loadEntries() async {
