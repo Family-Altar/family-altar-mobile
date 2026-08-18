@@ -12,6 +12,7 @@ void main() {
     String text,
     List<TextHighlight> highlights, {
     List<TapGestureRecognizer>? sink,
+    int offset = 0,
   }) {
     return buildHighlightSpans(
       text: text,
@@ -20,6 +21,7 @@ void main() {
       resolveColor: (_) => highlightColor,
       onHighlightTapDown: (_, _) {},
       recognizerSink: sink ?? [],
+      offset: offset,
     );
   }
 
@@ -119,6 +121,52 @@ void main() {
       ], sink: sink);
 
       expect(sink, hasLength(2));
+    });
+
+    test('offset shifts highlight bounds before slicing the visible text', () {
+      // 'I' is the leading (separately-rendered) drop cap letter; 'n the...'
+      // is what's actually passed as `text` here, so a highlight stored as
+      // [0, 5) in the full-quote space ('In th') should render as [0, 4)
+      // against this shorter, offset text ('n th').
+      final spans = build(
+        'n the beginning',
+        const [TextHighlight(start: 0, end: 5, colorId: 'yellow')],
+        offset: 1,
+      );
+
+      expect(span(spans[0]).text, 'n th');
+      expect(span(spans[0]).style?.backgroundColor, highlightColor);
+      expect(span(spans[1]).text, 'e beginning');
+    });
+  });
+
+  group('snapToWordBoundaries', () {
+    test('selection starting mid-word snaps back to the word start', () {
+      final (start, end) = snapToWordBoundaries('In the beginning', 1, 7);
+
+      expect(start, 0);
+      expect(end, 7);
+    });
+
+    test('selection ending mid-word snaps forward to the word end', () {
+      final (start, end) = snapToWordBoundaries('In the beginning', 0, 5);
+
+      expect(start, 0);
+      expect(end, 6);
+    });
+
+    test('selection already on word boundaries is left untouched', () {
+      final (start, end) = snapToWordBoundaries('In the beginning', 0, 7);
+
+      expect(start, 0);
+      expect(end, 7);
+    });
+
+    test('selection touching the string edges is left untouched', () {
+      final (start, end) = snapToWordBoundaries('beginning', 0, 9);
+
+      expect(start, 0);
+      expect(end, 9);
     });
   });
 }

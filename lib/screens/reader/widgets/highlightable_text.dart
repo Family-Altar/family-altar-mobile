@@ -9,11 +9,49 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+/// Whether [char] (a single UTF-16 code unit) should be treated as part of
+/// a word for [snapToWordBoundaries] purposes.
+bool _isWordChar(String char) =>
+    RegExp(r"[\p{L}\p{N}']", unicode: true).hasMatch(char);
+
+/// Expands the `[start, end)` range in [text] outward to the nearest word
+/// boundaries, so a selection that begins or ends mid-word grabs the whole
+/// word instead of a partial one. A boundary already sitting at the edge of
+/// a word (or at the string's edge) is left untouched.
+(int, int) snapToWordBoundaries(String text, int start, int end) {
+  var snappedStart = start;
+  if (snappedStart > 0 &&
+      snappedStart < text.length &&
+      _isWordChar(text[snappedStart - 1]) &&
+      _isWordChar(text[snappedStart])) {
+    while (snappedStart > 0 && _isWordChar(text[snappedStart - 1])) {
+      snappedStart--;
+    }
+  }
+
+  var snappedEnd = end;
+  if (snappedEnd > 0 &&
+      snappedEnd < text.length &&
+      _isWordChar(text[snappedEnd - 1]) &&
+      _isWordChar(text[snappedEnd])) {
+    while (snappedEnd < text.length && _isWordChar(text[snappedEnd])) {
+      snappedEnd++;
+    }
+  }
+
+  return (snappedStart, snappedEnd);
+}
+
 /// Splits [text] into plain/highlighted [InlineSpan]s from a sorted,
 /// non-overlapping list of [highlights]. Stale offsets (from content that
 /// changed since a highlight was saved) are clamped to the text bounds and
 /// any highlight left with no width, or that starts before the previous
 /// span's end, is skipped rather than throwing.
+///
+/// [offset] shifts highlight offsets before slicing, for callers that only
+/// render a suffix of the field's full addressable text (e.g. the text
+/// after a separately-rendered drop cap letter) — the [highlights] objects
+/// themselves stay in the field's full offset space throughout.
 List<InlineSpan> buildHighlightSpans({
   required String text,
   required List<TextHighlight> highlights,
@@ -21,51 +59,12 @@ List<InlineSpan> buildHighlightSpans({
   required Color Function(TextHighlight) resolveColor,
   required void Function(TextHighlight, TapDownDetails) onHighlightTapDown,
   required List<TapGestureRecognizer> recognizerSink,
-  int styleBoundary = 0,
-  TextStyle Function(TextStyle)? styleBeforeBoundary,
+  int offset = 0,
   TextHighlight? scrollAnchorHighlight,
   Key? scrollAnchorKey,
 }) {
-  List<InlineSpan> spansForRun(
-    int start,
-    int end,
-    TextStyle style, {
-    TapGestureRecognizer? recognizer,
-  }) {
-    if (styleBeforeBoundary == null || styleBoundary <= start || end <= start) {
-      return [
-        TextSpan(
-          text: text.substring(start, end),
-          style: style,
-          recognizer: recognizer,
-        ),
-      ];
-    }
-    if (styleBoundary >= end) {
-      return [
-        TextSpan(
-          text: text.substring(start, end),
-          style: styleBeforeBoundary(style),
-          recognizer: recognizer,
-        ),
-      ];
-    }
-    return [
-      TextSpan(
-        text: text.substring(start, styleBoundary),
-        style: styleBeforeBoundary(style),
-        recognizer: recognizer,
-      ),
-      TextSpan(
-        text: text.substring(styleBoundary, end),
-        style: style,
-        recognizer: recognizer,
-      ),
-    ];
-  }
-
   if (highlights.isEmpty) {
-    return spansForRun(0, text.length, baseStyle);
+    return [TextSpan(text: text, style: baseStyle)];
   }
 
   final sorted = [...highlights]..sort((a, b) => a.start.compareTo(b.start));
@@ -73,12 +72,14 @@ List<InlineSpan> buildHighlightSpans({
   var cursor = 0;
 
   for (final highlight in sorted) {
-    final start = highlight.start.clamp(0, text.length);
-    final end = highlight.end.clamp(0, text.length);
+    final start = (highlight.start - offset).clamp(0, text.length);
+    final end = (highlight.end - offset).clamp(0, text.length);
     if (end <= start || start < cursor) continue;
 
     if (start > cursor) {
-      spans.addAll(spansForRun(cursor, start, baseStyle));
+      spans.add(
+        TextSpan(text: text.substring(cursor, start), style: baseStyle),
+      );
     }
 
     // Anchors a zero-size placeholder at the exact start of the target
@@ -98,11 +99,10 @@ List<InlineSpan> buildHighlightSpans({
           ..onTapDown = (details) => onHighlightTapDown(highlight, details);
     recognizerSink.add(recognizer);
 
-    spans.addAll(
-      spansForRun(
-        start,
-        end,
-        baseStyle.copyWith(backgroundColor: resolveColor(highlight)),
+    spans.add(
+      TextSpan(
+        text: text.substring(start, end),
+        style: baseStyle.copyWith(backgroundColor: resolveColor(highlight)),
         recognizer: recognizer,
       ),
     );
@@ -111,7 +111,9 @@ List<InlineSpan> buildHighlightSpans({
   }
 
   if (cursor < text.length) {
-    spans.addAll(spansForRun(cursor, text.length, baseStyle));
+    spans.add(
+      TextSpan(text: text.substring(cursor, text.length), style: baseStyle),
+    );
   }
 
   return spans;
@@ -128,9 +130,10 @@ class HighlightableText extends StatefulWidget {
     required this.baseStyle,
     this.textAlign = TextAlign.left,
     this.prefixText,
+    this.leadingText = '',
     this.selectionActiveNotifier,
+    this.leadingTextPreviewNotifier,
     this.textScaler,
-    this.firstCharacterStyle,
     this.scrollAnchorHighlight,
     this.scrollAnchorKey,
     super.key,
@@ -145,7 +148,11 @@ class HighlightableText extends StatefulWidget {
   /// Rendered ahead of [text] but excluded from highlighting/offsets.
   final String? prefixText;
 
-  final TextStyle? firstCharacterStyle;
+  /// Text that precedes [text] in the field's addressable offset space but
+  /// is rendered by a separate widget outside this one (e.g. a drop cap
+  /// letter). Included when computing/snapping highlight offsets — so a
+  /// highlight or selection can start inside it — but never rendered here.
+  final String leadingText;
 
   final TextHighlight? scrollAnchorHighlight;
   final Key? scrollAnchorKey;
@@ -153,6 +160,13 @@ class HighlightableText extends StatefulWidget {
   /// Set to true while a selection is active, so callers can suppress
   /// competing gestures (e.g. swipe navigation) during text selection.
   final ValueNotifier<bool>? selectionActiveNotifier;
+
+  /// Live-updated (on every drag movement, not just on release) to whether
+  /// the in-progress selection reaches all the way to the start of [text]
+  /// — i.e. it's about to pull [leadingText] in too. Lets a caller preview
+  /// that on the separately-rendered leading widget (e.g. tint a drop cap)
+  /// while the user is still dragging, instead of only after they let go.
+  final ValueNotifier<bool>? leadingTextPreviewNotifier;
 
   @override
   State<HighlightableText> createState() => _HighlightableTextState();
@@ -203,14 +217,7 @@ class _HighlightableTextState extends State<HighlightableText> {
               (h, details) =>
                   _showHighlightMenu(context, details.globalPosition, h),
           recognizerSink: _recognizers,
-          styleBoundary:
-              widget.firstCharacterStyle != null && widget.text.isNotEmpty
-                  ? widget.text.characters.first.length
-                  : 0,
-          styleBeforeBoundary:
-              widget.firstCharacterStyle == null
-                  ? null
-                  : (style) => style.merge(widget.firstCharacterStyle),
+          offset: widget.leadingText.length,
           scrollAnchorHighlight: widget.scrollAnchorHighlight,
           scrollAnchorKey: widget.scrollAnchorKey,
         ),
@@ -222,8 +229,16 @@ class _HighlightableTextState extends State<HighlightableText> {
       textAlign: widget.textAlign,
       textScaler: widget.textScaler,
       onSelectionChanged: (selection, cause) {
-        widget.selectionActiveNotifier?.value =
-            selection.isValid && !selection.isCollapsed;
+        final isActive = selection.isValid && !selection.isCollapsed;
+        widget.selectionActiveNotifier?.value = isActive;
+        if (widget.leadingTextPreviewNotifier != null) {
+          final contentStart = (selection.start - prefixLen).clamp(
+            0,
+            widget.text.length,
+          );
+          widget.leadingTextPreviewNotifier!.value =
+              isActive && contentStart == 0;
+        }
       },
       contextMenuBuilder:
           (ctx, editableTextState) =>
@@ -248,6 +263,28 @@ class _HighlightableTextState extends State<HighlightableText> {
     final contentEnd = (selection.end - prefixLen).clamp(0, widget.text.length);
     if (contentEnd <= contentStart) return const SizedBox.shrink();
 
+    // Offsets/snapping happen against the field's full text (leading text,
+    // e.g. a drop cap letter, plus what's actually rendered here), so a
+    // selection starting just after a leading letter still snaps back to
+    // include it.
+    final leadingLen = widget.leadingText.length;
+    final fullText = '${widget.leadingText}${widget.text}';
+    var (fieldStart, fieldEnd) = snapToWordBoundaries(
+      fullText,
+      contentStart + leadingLen,
+      contentEnd + leadingLen,
+    );
+    // A selection dragged all the way to this widget's own left edge —
+    // e.g. up against a drop cap rendered by a sibling widget — reads as
+    // "select from the very start", so it should pull in the leading text
+    // too. Plain word-boundary snapping can't do this on its own when the
+    // drop cap is a one-letter word of its own (e.g. "I will..."), since
+    // the space between "I" and "will" blocks the word-char adjacency
+    // check from ever crossing it.
+    if (contentStart == 0 && leadingLen > 0) {
+      fieldStart = 0;
+    }
+
     final anchors = editableTextState.contextMenuAnchors;
 
     return TextSelectionToolbar(
@@ -260,11 +297,11 @@ class _HighlightableTextState extends State<HighlightableText> {
             // `ctx` here is the context menu's own Overlay context, which
             // sits outside the BlocProvider<HighlightCubit> subtree — read
             // the cubit from this State's context instead.
-            final snippet = widget.text.substring(contentStart, contentEnd);
+            final snippet = fullText.substring(fieldStart, fieldEnd);
             context.read<HighlightCubit>().addHighlight(
               field: widget.field,
-              start: contentStart,
-              end: contentEnd,
+              start: fieldStart,
+              end: fieldEnd,
               colorId: colorId,
               snippet: snippet,
             );
@@ -282,8 +319,8 @@ class _HighlightableTextState extends State<HighlightableText> {
               _showNoteDialog(
                 context,
                 TextHighlight(
-                  start: contentStart,
-                  end: contentEnd,
+                  start: fieldStart,
+                  end: fieldEnd,
                   colorId: colorId,
                   snippet: snippet,
                 ),
