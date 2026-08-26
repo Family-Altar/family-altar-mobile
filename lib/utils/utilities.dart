@@ -70,3 +70,10 @@ String formatReadingForSharing(
 String formatDateTypeToDDMMYYY(DateTime date) {
   return DateFormat('d MMMM yyyy').format(date);
 }
+
+/// Day + month only, no year — the book's daily readings repeat every
+/// year, so a highlight's date refers to which day of the reading it's
+/// on, not the calendar year it happened to be made in.
+String formatDateTypeToDDMM(DateTime date) {
+  return DateFormat('d MMMM').format(date);
+}

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_altar/screens/reader/cubit/highlight_cubit.dart';
 import 'package:family_altar/screens/reader/domain/text_highlight.dart';
+import 'package:family_altar/screens/reader/widgets/add_note_bubble.dart';
 import 'package:family_altar/screens/reader/widgets/highlight_color_toolbar.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
@@ -186,6 +187,8 @@ class HighlightableText extends StatefulWidget {
 
 class _HighlightableTextState extends State<HighlightableText> {
   final List<TapGestureRecognizer> _recognizers = [];
+  OverlayEntry? _addNoteEntry;
+  Timer? _addNoteTimer;
 
   void _disposeRecognizers() {
     for (final recognizer in _recognizers) {
@@ -197,6 +200,7 @@ class _HighlightableTextState extends State<HighlightableText> {
   @override
   void dispose() {
     _disposeRecognizers();
+    _dismissAddNoteBubble();
     super.dispose();
   }
 
@@ -312,12 +316,16 @@ class _HighlightableTextState extends State<HighlightableText> {
             // sits outside the BlocProvider<HighlightCubit> subtree — read
             // the cubit from this State's context instead.
             final snippet = fullText.substring(fieldStart, fieldEnd);
+            // Shared with the highlight added below so the note dialog's
+            // later setNote() call can look it up by id.
+            final highlightId = generateHighlightId();
             context.read<HighlightCubit>().addHighlight(
               field: widget.field,
               start: fieldStart,
               end: fieldEnd,
               colorId: colorId,
               snippet: snippet,
+              id: highlightId,
             );
             editableTextState
               ..hideToolbar()
@@ -327,23 +335,65 @@ class _HighlightableTextState extends State<HighlightableText> {
                 ),
                 SelectionChangedCause.tap,
               );
-            // Follow the new highlight straight into the note drawer, so
-            // adding a note doesn't require a separate tap-to-reopen step.
-            unawaited(
-              _showNoteDialog(
-                context,
-                TextHighlight(
-                  start: fieldStart,
-                  end: fieldEnd,
-                  colorId: colorId,
-                  snippet: snippet,
-                ),
+            // Offer a note without forcing the keyboard open immediately —
+            // a brief "Add note" bubble next to the highlight, rather than
+            // opening the note sheet straight away.
+            _showAddNoteBubble(
+              ctx,
+              anchors,
+              TextHighlight(
+                id: highlightId,
+                start: fieldStart,
+                end: fieldEnd,
+                colorId: colorId,
+                snippet: snippet,
               ),
             );
           },
         ),
       ],
     );
+  }
+
+  /// Shows a transient "Add note" pill anchored where the color toolbar
+  /// just was, for [_addNoteBubbleDuration] — tapping it opens the note
+  /// sheet (with keyboard); otherwise it fades out on its own.
+  static const _addNoteBubbleDuration = Duration(seconds: 4);
+
+  void _showAddNoteBubble(
+    BuildContext toolbarContext,
+    TextSelectionToolbarAnchors anchors,
+    TextHighlight highlight,
+  ) {
+    _dismissAddNoteBubble();
+
+    final overlay = Overlay.of(toolbarContext);
+    final entry = OverlayEntry(
+      builder:
+          (_) => TextSelectionToolbar(
+            anchorAbove: anchors.primaryAnchor,
+            anchorBelow: anchors.secondaryAnchor ?? anchors.primaryAnchor,
+            children: [
+              AddNoteBubble(
+                onTap: () {
+                  _dismissAddNoteBubble();
+                  unawaited(_showNoteDialog(context, highlight));
+                },
+              ),
+            ],
+          ),
+    );
+
+    overlay.insert(entry);
+    _addNoteEntry = entry;
+    _addNoteTimer = Timer(_addNoteBubbleDuration, _dismissAddNoteBubble);
+  }
+
+  void _dismissAddNoteBubble() {
+    _addNoteTimer?.cancel();
+    _addNoteTimer = null;
+    _addNoteEntry?.remove();
+    _addNoteEntry = null;
   }
 
   void _showHighlightMenu(
@@ -355,8 +405,9 @@ class _HighlightableTextState extends State<HighlightableText> {
         Overlay.of(context).context.findRenderObject()! as RenderBox;
     showMenu<void>(
       context: context,
-      color: context.dialogBG,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      color: Colors.transparent,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(),
       position: RelativeRect.fromRect(
         globalPosition & const Size(1, 1),
         Offset.zero & overlayBox.size,
@@ -365,6 +416,7 @@ class _HighlightableTextState extends State<HighlightableText> {
         PopupMenuItem<void>(
           enabled: false,
           padding: EdgeInsets.zero,
+          height: 0,
           child: HighlightColorToolbar(
             colorIds: context.highlightColorIds,
             selectedColorId: highlight.colorId,

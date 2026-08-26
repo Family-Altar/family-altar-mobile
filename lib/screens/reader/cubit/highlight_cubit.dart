@@ -95,13 +95,20 @@ class HighlightCubit extends Cubit<HighlightState> {
     required int end,
     required String colorId,
     required String snippet,
+    String? id,
   }) async {
     final existing = state.forField(field);
     final withoutOverlaps =
         existing.where((h) => !h.overlaps(start, end)).toList();
     final updated = [
       ...withoutOverlaps,
-      TextHighlight(start: start, end: end, colorId: colorId, snippet: snippet),
+      TextHighlight(
+        id: id ?? generateHighlightId(),
+        start: start,
+        end: end,
+        colorId: colorId,
+        snippet: snippet,
+      ),
     ]..sort((a, b) => a.start.compareTo(b.start));
 
     await _updateField(field, updated);
@@ -112,10 +119,7 @@ class HighlightCubit extends Cubit<HighlightState> {
     required TextHighlight highlight,
   }) async {
     final updated =
-        state
-            .forField(field)
-            .where((h) => h.start != highlight.start || h.end != highlight.end)
-            .toList();
+        state.forField(field).where((h) => h.id != highlight.id).toList();
     await _updateField(field, updated);
   }
 
@@ -126,8 +130,9 @@ class HighlightCubit extends Cubit<HighlightState> {
   }) async {
     final updated =
         state.forField(field).map((h) {
-          if (h.start == highlight.start && h.end == highlight.end) {
+          if (h.id == highlight.id) {
             return TextHighlight(
+              id: h.id,
               start: h.start,
               end: h.end,
               colorId: newColorId,
@@ -147,8 +152,9 @@ class HighlightCubit extends Cubit<HighlightState> {
   }) async {
     final updated =
         state.forField(field).map((h) {
-          if (h.start == highlight.start && h.end == highlight.end) {
+          if (h.id == highlight.id) {
             return TextHighlight(
+              id: h.id,
               start: h.start,
               end: h.end,
               colorId: h.colorId,
@@ -277,7 +283,7 @@ Future<void> _mutateHighlightEntry(
     final updatedList =
         list
             .map((raw) => TextHighlight.fromJson(raw as Map<String, dynamic>))
-            .map((h) => h == entry.highlight ? transform(h) : h)
+            .map((h) => h.id == entry.highlight.id ? transform(h) : h)
             .whereType<TextHighlight>()
             .map((h) => h.toJson())
             .toList();
@@ -314,6 +320,7 @@ Future<void> changeHighlightEntryColor(
   volume,
   entry,
   (h) => TextHighlight(
+    id: h.id,
     start: h.start,
     end: h.end,
     colorId: newColorId,
@@ -332,6 +339,7 @@ Future<void> setHighlightEntryNote(
   volume,
   entry,
   (h) => TextHighlight(
+    id: h.id,
     start: h.start,
     end: h.end,
     colorId: h.colorId,

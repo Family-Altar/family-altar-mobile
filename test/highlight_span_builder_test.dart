@@ -40,7 +40,7 @@ void main() {
     test('highlight in the middle splits into a plain and a highlighted '
         'span', () {
       final spans = build('Hello world', const [
-        TextHighlight(start: 6, end: 11, colorId: 'yellow'),
+        TextHighlight(id: 't', start: 6, end: 11, colorId: 'yellow'),
       ]);
 
       expect(spans, hasLength(2));
@@ -51,7 +51,7 @@ void main() {
 
     test('highlight fully inside the string produces three spans', () {
       final spans = build('Hello world today', const [
-        TextHighlight(start: 6, end: 11, colorId: 'yellow'),
+        TextHighlight(id: 't', start: 6, end: 11, colorId: 'yellow'),
       ]);
 
       expect(spans, hasLength(3));
@@ -63,7 +63,7 @@ void main() {
 
     test('highlight touching the start has no leading plain span', () {
       final spans = build('Hello world', const [
-        TextHighlight(start: 0, end: 5, colorId: 'yellow'),
+        TextHighlight(id: 't', start: 0, end: 5, colorId: 'yellow'),
       ]);
 
       expect(span(spans[0]).text, 'Hello');
@@ -72,7 +72,7 @@ void main() {
 
     test('highlight touching the end has no trailing plain span', () {
       final spans = build('Hello world', const [
-        TextHighlight(start: 6, end: 11, colorId: 'yellow'),
+        TextHighlight(id: 't', start: 6, end: 11, colorId: 'yellow'),
       ]);
       final texts = spans.map((s) => span(s).text).toList();
 
@@ -81,8 +81,8 @@ void main() {
 
     test('adjacent highlights produce no gap span between them', () {
       final spans = build('Hello world', const [
-        TextHighlight(start: 0, end: 5, colorId: 'yellow'),
-        TextHighlight(start: 5, end: 11, colorId: 'green'),
+        TextHighlight(id: 't', start: 0, end: 5, colorId: 'yellow'),
+        TextHighlight(id: 't', start: 5, end: 11, colorId: 'green'),
       ]);
       final texts = spans.map((s) => span(s).text).toList();
 
@@ -92,21 +92,21 @@ void main() {
     test('out-of-range offsets are clamped instead of throwing', () {
       expect(
         () => build('Hi', const [
-          TextHighlight(start: -5, end: 100, colorId: 'yellow'),
+          TextHighlight(id: 't', start: -5, end: 100, colorId: 'yellow'),
         ]),
         returnsNormally,
       );
 
       final spans = build('Hi', const [
-        TextHighlight(start: -5, end: 100, colorId: 'yellow'),
+        TextHighlight(id: 't', start: -5, end: 100, colorId: 'yellow'),
       ]);
       expect(span(spans.first).text, 'Hi');
     });
 
     test('a highlight starting before the previous one ended is skipped', () {
       final spans = build('Hello world', const [
-        TextHighlight(start: 0, end: 8, colorId: 'yellow'),
-        TextHighlight(start: 2, end: 5, colorId: 'green'),
+        TextHighlight(id: 't', start: 0, end: 8, colorId: 'yellow'),
+        TextHighlight(id: 't', start: 2, end: 5, colorId: 'green'),
       ]);
       final texts = spans.map((s) => span(s).text).toList();
 
@@ -116,8 +116,8 @@ void main() {
     test('one recognizer is created per highlighted span', () {
       final sink = <TapGestureRecognizer>[];
       build('Hello world', const [
-        TextHighlight(start: 0, end: 5, colorId: 'yellow'),
-        TextHighlight(start: 6, end: 11, colorId: 'green'),
+        TextHighlight(id: 't', start: 0, end: 5, colorId: 'yellow'),
+        TextHighlight(id: 't', start: 6, end: 11, colorId: 'green'),
       ], sink: sink);
 
       expect(sink, hasLength(2));
@@ -130,7 +130,7 @@ void main() {
       // against this shorter, offset text ('n th').
       final spans = build(
         'n the beginning',
-        const [TextHighlight(start: 0, end: 5, colorId: 'yellow')],
+        const [TextHighlight(id: 't', start: 0, end: 5, colorId: 'yellow')],
         offset: 1,
       );
 

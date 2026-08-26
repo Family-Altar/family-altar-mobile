@@ -1,13 +1,12 @@
 import 'package:family_altar/models/volume.dart';
+import 'package:family_altar/screens/highlights/widgets/filter_bar.dart';
+import 'package:family_altar/screens/highlights/widgets/highlight_tile.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/screens/reader/cubit/highlight_cubit.dart';
-import 'package:family_altar/screens/reader/domain/reader_route_args.dart';
 import 'package:family_altar/screens/reader/domain/text_highlight.dart';
-import 'package:family_altar/screens/reader/widgets/highlight_color_toolbar.dart';
 import 'package:family_altar/screens/reader/widgets/highlightable_text.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
-import 'package:family_altar/utils/utilities.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -63,6 +62,7 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
       _allEntries = _replaceHighlight(
         entry,
         TextHighlight(
+          id: entry.highlight.id,
           start: entry.highlight.start,
           end: entry.highlight.end,
           colorId: colorId,
@@ -91,6 +91,7 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
       _allEntries = _replaceHighlight(
         entry,
         TextHighlight(
+          id: entry.highlight.id,
           start: entry.highlight.start,
           end: entry.highlight.end,
           colorId: entry.highlight.colorId,
@@ -101,8 +102,13 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
     });
   }
 
+  // Ids are only guaranteed unique within a single date+field's highlight
+  // list (legacy highlights predating ids fall back to a start/end/color
+  // derived id, which isn't globally unique), so scope the lookup to match.
   bool _sameHighlight(HighlightListEntry a, HighlightListEntry b) =>
-      a.date == b.date && a.field == b.field && a.highlight == b.highlight;
+      a.date == b.date &&
+      a.field == b.field &&
+      a.highlight.id == b.highlight.id;
 
   List<HighlightListEntry>? _replaceHighlight(
     HighlightListEntry entry,
@@ -264,7 +270,10 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
             icon: Icon(Icons.arrow_back, color: context.textColor),
             onPressed: () => context.pop(),
           ),
-          title: Text('My Highlights', style: AppFonts.bold(context)),
+          title: Text(
+            '${_volume.displayTitle} Highlights',
+            style: AppFonts.bold(context),
+          ),
           actions: [
             if (_allEntries != null && _allEntries!.isNotEmpty)
               IconButton(
@@ -301,7 +310,7 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
 
     return Column(
       children: [
-        _FilterBar(
+        FilterBar(
           searchController: _searchController,
           dateRange: _dateRange,
           onPickDateRange: _pickDateRange,
@@ -319,7 +328,7 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                         sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
-                            (context, index) => _HighlightTile(
+                            (context, index) => HighlightTile(
                               entry: filtered[index],
                               onColorSelected:
                                   (colorId) =>
@@ -401,393 +410,3 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
   }
 }
 
-class _FilterBar extends StatelessWidget {
-  const _FilterBar({
-    required this.searchController,
-    required this.dateRange,
-    required this.onPickDateRange,
-    required this.onClearDateRange,
-    required this.selectedColorIds,
-    required this.onToggleColor,
-  });
-
-  final TextEditingController searchController;
-  final DateTimeRange? dateRange;
-  final VoidCallback onPickDateRange;
-  final VoidCallback onClearDateRange;
-  final Set<String> selectedColorIds;
-  final ValueChanged<String> onToggleColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: searchController,
-            style: AppFonts.normal(context),
-            decoration: InputDecoration(
-              hintText: 'Search highlights and notes',
-              hintStyle: AppFonts.normal(
-                context,
-              ).copyWith(color: context.textColor.withValues(alpha: 0.4)),
-              prefixIcon: Icon(
-                Icons.search,
-                color: context.textColor.withValues(alpha: 0.6),
-              ),
-              suffixIcon:
-                  searchController.text.isNotEmpty
-                      ? IconButton(
-                        icon: Icon(
-                          Icons.clear,
-                          size: 18,
-                          color: context.textColor.withValues(alpha: 0.6),
-                        ),
-                        onPressed: searchController.clear,
-                      )
-                      : null,
-              filled: true,
-              fillColor: context.accent.withValues(alpha: 0.05),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 10,
-              ),
-              isDense: true,
-            ),
-          ),
-          const SizedBox(height: 10),
-          _DateRangeChip(
-            dateRange: dateRange,
-            onTap: onPickDateRange,
-            onClear: dateRange != null ? onClearDateRange : null,
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 32,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                for (final colorId in context.highlightColorIds)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _ColorFilterDot(
-                      colorId: colorId,
-                      isSelected: selectedColorIds.contains(colorId),
-                      onTap: () => onToggleColor(colorId),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DateRangeChip extends StatelessWidget {
-  const _DateRangeChip({
-    required this.dateRange,
-    required this.onTap,
-    this.onClear,
-  });
-
-  final DateTimeRange? dateRange;
-  final VoidCallback onTap;
-  final VoidCallback? onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    final isActive = dateRange != null;
-    final label =
-        isActive
-            ? '${formatDateTypeToDDMMYYY(dateRange!.start)} – '
-                '${formatDateTypeToDDMMYYY(dateRange!.end)}'
-            : 'Date range';
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color:
-              isActive
-                  ? context.accent.withValues(alpha: 0.12)
-                  : context.accent.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.date_range, size: 16, color: context.textColor),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: AppFonts.normal(
-                context,
-                size: FontSize.small,
-              ).copyWith(fontWeight: isActive ? FontWeight.bold : null),
-            ),
-            if (onClear != null) ...[
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: onClear,
-                child: Icon(
-                  Icons.close,
-                  size: 14,
-                  color: context.textColor.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ColorFilterDot extends StatelessWidget {
-  const _ColorFilterDot({
-    required this.colorId,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String colorId;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = context.highlightColor(colorId);
-    return InkWell(
-      onTap: onTap,
-      customBorder: const CircleBorder(),
-      child: Container(
-        width: 28,
-        height: 28,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color,
-          border: Border.all(
-            color: isSelected ? context.textColor : Colors.transparent,
-            width: 2,
-          ),
-        ),
-        child:
-            isSelected
-                ? Icon(
-                  Icons.check,
-                  size: 14,
-                  color:
-                      ThemeData.estimateBrightnessForColor(color) ==
-                              Brightness.dark
-                          ? Colors.white
-                          : Colors.black87,
-                )
-                : null,
-      ),
-    );
-  }
-}
-
-class _HighlightTile extends StatelessWidget {
-  const _HighlightTile({
-    required this.entry,
-    required this.onColorSelected,
-    required this.onRemove,
-    required this.onEditNote,
-  });
-
-  final HighlightListEntry entry;
-  final ValueChanged<String> onColorSelected;
-  final VoidCallback onRemove;
-  final VoidCallback onEditNote;
-
-  @override
-  Widget build(BuildContext context) {
-    final note = entry.highlight.note;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: context.backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: context.calendarCellBorder.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            context.push(
-              '/reader',
-              extra: ReaderRouteArgs(
-                date: entry.date,
-                scrollTarget: HighlightScrollTarget(
-                  field: entry.field,
-                  highlight: entry.highlight,
-                ),
-              ),
-            );
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 6,
-                  decoration: BoxDecoration(
-                    color: context.highlightColor(entry.highlight.colorId),
-                    borderRadius: const BorderRadius.horizontal(
-                      left: Radius.circular(12),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              formatDateTypeToDDMMYYY(entry.date),
-                              style: AppFonts.bold(
-                                context,
-                                size: FontSize.small,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            _FieldChip(label: entry.field.displayLabel),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '“${entry.highlight.snippet}”',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.normal(context),
-                        ),
-                        if (note != null && note.isNotEmpty) ...[
-                          const SizedBox(height: 6),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.edit_note,
-                                size: 16,
-                                color: context.calendarDayTextSecondary,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  note,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppFonts.italics(
-                                    context,
-                                    size: FontSize.small,
-                                  ).copyWith(
-                                    color: context.calendarDayTextSecondary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                Center(
-                  child: PopupMenuButton<void>(
-                    icon: Icon(
-                      Icons.more_vert,
-                      color: context.calendarDayTextSecondary,
-                    ),
-                    tooltip: 'Edit highlight',
-                    color: context.dialogBG,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    itemBuilder:
-                        (menuContext) => [
-                          PopupMenuItem<void>(
-                            enabled: false,
-                            padding: EdgeInsets.zero,
-                            child: HighlightColorToolbar(
-                              colorIds: menuContext.highlightColorIds,
-                              selectedColorId: entry.highlight.colorId,
-                              onColorSelected: (colorId) {
-                                Navigator.of(menuContext).pop();
-                                onColorSelected(colorId);
-                              },
-                              onRemove: () {
-                                Navigator.of(menuContext).pop();
-                                onRemove();
-                              },
-                              onEditNote: () {
-                                Navigator.of(menuContext).pop();
-                                onEditNote();
-                              },
-                            ),
-                          ),
-                        ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Center(
-                    child: Icon(
-                      Icons.chevron_right,
-                      color: context.calendarDayTextSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FieldChip extends StatelessWidget {
-  const _FieldChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: context.missedDaysBadgeBG,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        label,
-        style: AppFonts.normal(
-          context,
-          size: FontSize.small,
-        ).copyWith(color: context.missedDaysBadgeText, fontSize: 11),
-      ),
-    );
-  }
-}

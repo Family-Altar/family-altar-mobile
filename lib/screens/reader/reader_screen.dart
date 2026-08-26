@@ -328,7 +328,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
-                                      'My Highlights',
+                                      '${state.currentVolume.displayTitle} Highlights',
                                       style: AppFonts.normal(context),
                                     ),
                                   ],

@@ -34,25 +34,17 @@ void main() {
         snippet: 'example',
       );
 
-      expect(cubit.state.forField(HighlightField.quote), [
-        const TextHighlight(
-          start: 2,
-          end: 8,
-          colorId: 'green',
-          snippet: 'example',
-        ),
-      ]);
+      final added = cubit.state.forField(HighlightField.quote).single;
+      expect(added.start, 2);
+      expect(added.end, 8);
+      expect(added.colorId, 'green');
+      expect(added.snippet, 'example');
 
       final reloaded = HighlightCubit();
       await reloaded.loadForDate(date: date, volume: Volume.one);
-      expect(reloaded.state.forField(HighlightField.quote), [
-        const TextHighlight(
-          start: 2,
-          end: 8,
-          colorId: 'green',
-          snippet: 'example',
-        ),
-      ]);
+      // The persisted id round trips, so the reloaded highlight is the
+      // same one that was added, not just a field-for-field match.
+      expect(reloaded.state.forField(HighlightField.quote), [added]);
     });
 
     test(
@@ -75,14 +67,11 @@ void main() {
           snippet: 'blue bit',
         );
 
-        expect(cubit.state.forField(HighlightField.quote), [
-          const TextHighlight(
-            start: 5,
-            end: 15,
-            colorId: 'blue',
-            snippet: 'blue bit',
-          ),
-        ]);
+        final remaining = cubit.state.forField(HighlightField.quote).single;
+        expect(remaining.start, 5);
+        expect(remaining.end, 15);
+        expect(remaining.colorId, 'blue');
+        expect(remaining.snippet, 'blue bit');
       },
     );
 
@@ -96,9 +85,10 @@ void main() {
         colorId: 'pink',
         snippet: 'Titl',
       );
+      final added = cubit.state.forField(HighlightField.title).single;
       await cubit.removeHighlight(
         field: HighlightField.title,
-        highlight: const TextHighlight(start: 0, end: 4, colorId: 'pink'),
+        highlight: added,
       );
 
       expect(cubit.state.forField(HighlightField.title), isEmpty);
@@ -118,20 +108,19 @@ void main() {
         colorId: 'orange',
         snippet: 'ab',
       );
+      final added = cubit.state.forField(HighlightField.scripture).single;
       await cubit.changeHighlightColor(
         field: HighlightField.scripture,
-        highlight: const TextHighlight(start: 1, end: 3, colorId: 'orange'),
+        highlight: added,
         newColorId: 'blue',
       );
 
-      expect(cubit.state.forField(HighlightField.scripture), [
-        const TextHighlight(
-          start: 1,
-          end: 3,
-          colorId: 'blue',
-          snippet: 'ab',
-        ),
-      ]);
+      final updated = cubit.state.forField(HighlightField.scripture).single;
+      expect(updated.id, added.id);
+      expect(updated.start, 1);
+      expect(updated.end, 3);
+      expect(updated.colorId, 'blue');
+      expect(updated.snippet, 'ab');
     });
 
     test('setNote adds a note and persists it', () async {
@@ -144,14 +133,10 @@ void main() {
         colorId: 'green',
         snippet: 'hello',
       );
+      final added = cubit.state.forField(HighlightField.quote).single;
       await cubit.setNote(
         field: HighlightField.quote,
-        highlight: const TextHighlight(
-          start: 0,
-          end: 5,
-          colorId: 'green',
-          snippet: 'hello',
-        ),
+        highlight: added,
         note: 'remember this',
       );
 
@@ -178,25 +163,16 @@ void main() {
         colorId: 'green',
         snippet: 'hello',
       );
+      final added = cubit.state.forField(HighlightField.quote).single;
       await cubit.setNote(
         field: HighlightField.quote,
-        highlight: const TextHighlight(
-          start: 0,
-          end: 5,
-          colorId: 'green',
-          snippet: 'hello',
-        ),
+        highlight: added,
         note: 'temp',
       );
+      final withTempNote = cubit.state.forField(HighlightField.quote).single;
       await cubit.setNote(
         field: HighlightField.quote,
-        highlight: const TextHighlight(
-          start: 0,
-          end: 5,
-          colorId: 'green',
-          snippet: 'hello',
-          note: 'temp',
-        ),
+        highlight: withTempNote,
         note: null,
       );
 
@@ -215,19 +191,13 @@ void main() {
           colorId: 'green',
           snippet: 'abcd',
         );
+        final added = cubit.state.forField(HighlightField.quote).single;
 
         await cubit.loadForDate(date: date, volume: Volume.two);
         expect(cubit.state.forField(HighlightField.quote), isEmpty);
 
         await cubit.loadForDate(date: date, volume: Volume.one);
-        expect(cubit.state.forField(HighlightField.quote), [
-          const TextHighlight(
-            start: 0,
-            end: 4,
-            colorId: 'green',
-            snippet: 'abcd',
-          ),
-        ]);
+        expect(cubit.state.forField(HighlightField.quote), [added]);
       },
     );
   });
