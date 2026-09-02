@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/screens/reader/cubit/highlight_cubit.dart';
 import 'package:family_altar/screens/reader/domain/text_highlight.dart';
@@ -178,6 +180,63 @@ void main() {
 
       expect(cubit.state.forField(HighlightField.quote).single.note, isNull);
     });
+
+    test(
+      'a highlight on a given month+day is visible from the same '
+      'month+day in a different real year — the reading plan repeats '
+      "every year, so a highlight isn't bound to the year it was made in",
+      () async {
+        final cubit = HighlightCubit();
+        await cubit.loadForDate(date: DateTime(2026), volume: Volume.one);
+        await cubit.addHighlight(
+          field: HighlightField.quote,
+          start: 0,
+          end: 5,
+          colorId: 'green',
+          snippet: 'hello',
+        );
+
+        final reloaded = HighlightCubit();
+        await reloaded.loadForDate(date: DateTime(2025), volume: Volume.one);
+
+        expect(reloaded.state.forField(HighlightField.quote), hasLength(1));
+        expect(
+          reloaded.state.forField(HighlightField.quote).single.snippet,
+          'hello',
+        );
+      },
+    );
+
+    test(
+      'legacy full-date ("yyyy-MM-dd") storage keys are migrated to '
+      'month+day keys on load',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'highlights': json.encode({
+            '2025-01-01': {
+              'quote': [
+                {'id': 'legacy-1', 's': 0, 'e': 5, 'c': 'green', 'tx': 'old'},
+              ],
+            },
+          }),
+        });
+
+        final cubit = HighlightCubit();
+        await cubit.loadForDate(date: DateTime(2026), volume: Volume.one);
+
+        expect(cubit.state.forField(HighlightField.quote), hasLength(1));
+        expect(
+          cubit.state.forField(HighlightField.quote).single.snippet,
+          'old',
+        );
+
+        final prefs = await SharedPreferences.getInstance();
+        final stored =
+            json.decode(prefs.getString('highlights')!) as Map<String, dynamic>;
+        expect(stored.keys, contains('01-01'));
+        expect(stored.keys, isNot(contains('2025-01-01')));
+      },
+    );
 
     test(
       'volume-namespaced storage keys do not leak across volumes',

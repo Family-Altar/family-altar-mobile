@@ -10,15 +10,66 @@ import 'package:shared_preferences/shared_preferences.dart';
 String _highlightsStorageKey(Volume volume) =>
     'highlights${volume.storageSuffix}';
 
-String _highlightDateKey(DateTime date) =>
-    DateFormat('yyyy-MM-dd').format(date);
+/// Highlights are keyed by month+day only, not the full calendar date —
+/// the reading plan is a fixed 365-day cycle that repeats every year, so
+/// a highlight made on "January 1" should still show up on any January 1,
+/// regardless of which real year it was created in or is being viewed in.
+String _highlightDateKey(DateTime date) => DateFormat('MM-dd').format(date);
+
+final _legacyFullDateKeyPattern = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+
+DateTime _dateFromDateKey(String key) {
+  final parts = key.split('-');
+  final month = int.parse(parts[parts.length - 2]);
+  final day = int.parse(parts[parts.length - 1]);
+  return DateTime(DateTime.now().year, month, day);
+}
+
+Map<String, dynamic> _migrateLegacyDateKeys(Map<String, dynamic> blob) {
+  if (!blob.keys.any(_legacyFullDateKeyPattern.hasMatch)) return blob;
+
+  final migrated = <String, dynamic>{};
+  for (final entry in blob.entries) {
+    final newKey =
+        _legacyFullDateKeyPattern.hasMatch(entry.key)
+            ? entry.key.substring(5)
+            : entry.key;
+
+    final existing = migrated[newKey] as Map<String, dynamic>?;
+    if (existing == null) {
+      migrated[newKey] = entry.value;
+      continue;
+    }
+
+    final incoming = entry.value as Map<String, dynamic>;
+    final merged = Map<String, dynamic>.from(existing);
+    for (final fieldEntry in incoming.entries) {
+      final existingList = (merged[fieldEntry.key] as List<dynamic>?) ?? [];
+      merged[fieldEntry.key] = [
+        ...existingList,
+        ...fieldEntry.value as List<dynamic>,
+      ];
+    }
+    migrated[newKey] = merged;
+  }
+  return migrated;
+}
 
 Future<Map<String, dynamic>> _loadHighlightsBlob(Volume volume) async {
   try {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getString(_highlightsStorageKey(volume));
     if (jsonString == null || jsonString.isEmpty) return {};
-    return json.decode(jsonString) as Map<String, dynamic>;
+    final blob = json.decode(jsonString) as Map<String, dynamic>;
+
+    final migrated = _migrateLegacyDateKeys(blob);
+    if (!identical(migrated, blob)) {
+      await prefs.setString(
+        _highlightsStorageKey(volume),
+        json.encode(migrated),
+      );
+    }
+    return migrated;
   } on Exception {
     return {};
   }
@@ -231,8 +282,7 @@ Future<List<HighlightListEntry>> loadAllHighlights(Volume volume) async {
 
   try {
     for (final dayEntry in blob.entries) {
-      final date = DateTime.tryParse(dayEntry.key);
-      if (date == null) continue;
+      final date = _dateFromDateKey(dayEntry.key);
       final fields = dayEntry.value as Map<String, dynamic>;
 
       for (final fieldEntry in fields.entries) {
