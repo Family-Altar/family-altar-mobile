@@ -1,6 +1,7 @@
 import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/screens/highlights/widgets/filter_bar.dart';
 import 'package:family_altar/screens/highlights/widgets/highlight_tile.dart';
+import 'package:family_altar/screens/highlights/widgets/month_day_range_picker.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/screens/reader/cubit/highlight_cubit.dart';
 import 'package:family_altar/screens/reader/domain/text_highlight.dart';
@@ -228,13 +229,16 @@ class _HighlightsListScreenState extends State<HighlightsListScreen> {
     }).toList();
   }
 
+  // The reading plan is a fixed 365-day cycle that repeats every year, so
+  // the filter uses a month/day-only picker instead of the platform's
+  // date range picker, which always renders a year in its header.
   Future<void> _pickDateRange() async {
-    final now = DateTime.now();
-    final picked = await showDateRangePicker(
+    final picked = await showModalBottomSheet<DateTimeRange>(
       context: context,
-      firstDate: DateTime(now.year - 5),
-      lastDate: DateTime(now.year + 1),
-      initialDateRange: _dateRange,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => MonthDayRangePicker(initialRange: _dateRange),
     );
     if (picked != null) {
       setState(() => _dateRange = picked);
