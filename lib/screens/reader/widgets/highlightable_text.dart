@@ -120,10 +120,123 @@ List<InlineSpan> buildHighlightSpans({
   return spans;
 }
 
+/// Renders [text] as tap-aware highlighted rich text via a plain
+/// [Text.rich] — no selection of its own. Callers that need selection
+/// either wrap this in a [SelectionArea] (see `DropCapHighlightableText`)
+/// or use [HighlightableText], which pairs the same span builder with
+/// [SelectableText.rich].
+///
+/// Existing highlights show as tinted spans; tapping one opens the
+/// color/edit-note/remove popover.
+class HighlightableRichText extends StatefulWidget {
+  const HighlightableRichText({
+    required this.text,
+    required this.field,
+    required this.baseStyle,
+    this.textAlign = TextAlign.left,
+    this.textScaler,
+    this.prefixText,
+    this.offset = 0,
+    this.scrollAnchorHighlight,
+    this.scrollAnchorKey,
+    super.key,
+  });
+
+  final String text;
+  final HighlightField field;
+  final TextStyle baseStyle;
+  final TextAlign textAlign;
+  final TextScaler? textScaler;
+
+  /// Rendered ahead of [text] but excluded from highlighting/offsets.
+  final String? prefixText;
+
+  /// Shift applied when mapping stored highlight offsets into the
+  /// substring rendered here — for use when the field's addressable text
+  /// is split across sibling widgets (e.g. a drop cap letter and the two
+  /// wrap regions beside/below it, each carrying its own [offset]).
+  final int offset;
+
+  final TextHighlight? scrollAnchorHighlight;
+  final Key? scrollAnchorKey;
+
+  @override
+  State<HighlightableRichText> createState() => _HighlightableRichTextState();
+}
+
+class _HighlightableRichTextState extends State<HighlightableRichText> {
+  final List<TapGestureRecognizer> _recognizers = [];
+
+  void _disposeRecognizers() {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+  }
+
+  @override
+  void dispose() {
+    _disposeRecognizers();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _disposeRecognizers();
+
+    final highlights = context.watch<HighlightCubit>().state.forField(
+      widget.field,
+    );
+
+    final span = TextSpan(
+      style: widget.baseStyle,
+      children: [
+        if (widget.prefixText != null)
+          TextSpan(text: widget.prefixText, style: widget.baseStyle),
+        ...buildHighlightSpans(
+          text: widget.text,
+          highlights: highlights,
+          baseStyle: widget.baseStyle,
+          // Rendered as a faint wash rather than a solid tint, so the
+          // marker reads as understated even with several highlights
+          // visible on the same page.
+          resolveColor:
+              (h) => context
+                  .highlightColor(h.colorId)
+                  .withValues(alpha: context.isDarkMode ? 0.42 : 0.62),
+          onHighlightTapDown:
+              (h, details) => unawaited(
+                showHighlightMenu(
+                  context,
+                  widget.field,
+                  details.globalPosition,
+                  h,
+                ),
+              ),
+          recognizerSink: _recognizers,
+          offset: widget.offset,
+          scrollAnchorHighlight: widget.scrollAnchorHighlight,
+          scrollAnchorKey: widget.scrollAnchorKey,
+        ),
+      ],
+    );
+
+    return Text.rich(
+      span,
+      textAlign: widget.textAlign,
+      textScaler: widget.textScaler,
+    );
+  }
+}
+
 /// Renders [text] as selectable, highlightable rich text for [field].
 /// Selecting a range shows a color-swatch popup instead of the default
 /// copy/paste toolbar; tapping an existing highlight reopens it with a
 /// remove option.
+///
+/// For quote text that needs a drop cap, use `DropCapHighlightableText`
+/// instead — it stitches together multiple [HighlightableRichText]s under
+/// a single [SelectionArea] so a selection can span the wrap boundary.
 class HighlightableText extends StatefulWidget {
   const HighlightableText({
     required this.text,
@@ -131,10 +244,7 @@ class HighlightableText extends StatefulWidget {
     required this.baseStyle,
     this.textAlign = TextAlign.left,
     this.prefixText,
-    this.leadingText = '',
-    this.forceIncludeLeadingTextAtStart = false,
     this.selectionActiveNotifier,
-    this.leadingTextPreviewNotifier,
     this.textScaler,
     this.scrollAnchorHighlight,
     this.scrollAnchorKey,
@@ -150,23 +260,6 @@ class HighlightableText extends StatefulWidget {
   /// Rendered ahead of [text] but excluded from highlighting/offsets.
   final String? prefixText;
 
-  /// Text that precedes [text] in the field's addressable offset space but
-  /// is rendered by a separate widget outside this one (e.g. a drop cap
-  /// letter). Included when computing/snapping highlight offsets — so a
-  /// highlight or selection can start inside it — but never rendered here.
-  final String leadingText;
-
-  /// Whether a selection dragged to this widget's own left edge should
-  /// force-include the *entire* [leadingText], not just snap to a word
-  /// boundary within it. Only correct when [leadingText] genuinely is the
-  /// thing immediately before [text] with nothing else in between (e.g.
-  /// a drop cap letter) — a later chunk whose [leadingText] is "drop cap
-  /// + an earlier chunk's whole text" must leave this false, or an
-  /// ordinary selection starting at its own first character would
-  /// force-swallow everything back to the drop cap, including any
-  /// unrelated highlight sitting in between.
-  final bool forceIncludeLeadingTextAtStart;
-
   final TextHighlight? scrollAnchorHighlight;
   final Key? scrollAnchorKey;
 
@@ -174,21 +267,13 @@ class HighlightableText extends StatefulWidget {
   /// competing gestures (e.g. swipe navigation) during text selection.
   final ValueNotifier<bool>? selectionActiveNotifier;
 
-  /// Live-updated (on every drag movement, not just on release) to whether
-  /// the in-progress selection reaches all the way to the start of [text]
-  /// — i.e. it's about to pull [leadingText] in too. Lets a caller preview
-  /// that on the separately-rendered leading widget (e.g. tint a drop cap)
-  /// while the user is still dragging, instead of only after they let go.
-  final ValueNotifier<bool>? leadingTextPreviewNotifier;
-
   @override
   State<HighlightableText> createState() => _HighlightableTextState();
 }
 
 class _HighlightableTextState extends State<HighlightableText> {
   final List<TapGestureRecognizer> _recognizers = [];
-  OverlayEntry? _addNoteEntry;
-  Timer? _addNoteTimer;
+  final AddNoteBubbleHost _addNoteBubble = AddNoteBubbleHost();
 
   void _disposeRecognizers() {
     for (final recognizer in _recognizers) {
@@ -200,7 +285,7 @@ class _HighlightableTextState extends State<HighlightableText> {
   @override
   void dispose() {
     _disposeRecognizers();
-    _dismissAddNoteBubble();
+    _addNoteBubble.dismiss();
     super.dispose();
   }
 
@@ -222,18 +307,20 @@ class _HighlightableTextState extends State<HighlightableText> {
           text: widget.text,
           highlights: highlights,
           baseStyle: widget.baseStyle,
-          // Rendered as a faint wash rather than a solid tint, so the
-          // marker reads as understated even with several highlights
-          // visible on the same page.
           resolveColor:
               (h) => context
                   .highlightColor(h.colorId)
                   .withValues(alpha: context.isDarkMode ? 0.42 : 0.62),
           onHighlightTapDown:
-              (h, details) =>
-                  _showHighlightMenu(context, details.globalPosition, h),
+              (h, details) => unawaited(
+                showHighlightMenu(
+                  context,
+                  widget.field,
+                  details.globalPosition,
+                  h,
+                ),
+              ),
           recognizerSink: _recognizers,
-          offset: widget.leadingText.length,
           scrollAnchorHighlight: widget.scrollAnchorHighlight,
           scrollAnchorKey: widget.scrollAnchorKey,
         ),
@@ -245,16 +332,8 @@ class _HighlightableTextState extends State<HighlightableText> {
       textAlign: widget.textAlign,
       textScaler: widget.textScaler,
       onSelectionChanged: (selection, cause) {
-        final isActive = selection.isValid && !selection.isCollapsed;
-        widget.selectionActiveNotifier?.value = isActive;
-        if (widget.leadingTextPreviewNotifier != null) {
-          final contentStart = (selection.start - prefixLen).clamp(
-            0,
-            widget.text.length,
-          );
-          widget.leadingTextPreviewNotifier!.value =
-              isActive && contentStart == 0;
-        }
+        widget.selectionActiveNotifier?.value =
+            selection.isValid && !selection.isCollapsed;
       },
       contextMenuBuilder:
           (ctx, editableTextState) =>
@@ -279,29 +358,11 @@ class _HighlightableTextState extends State<HighlightableText> {
     final contentEnd = (selection.end - prefixLen).clamp(0, widget.text.length);
     if (contentEnd <= contentStart) return const SizedBox.shrink();
 
-    // Offsets/snapping happen against the field's full text (leading text,
-    // e.g. a drop cap letter, plus what's actually rendered here), so a
-    // selection starting just after a leading letter still snaps back to
-    // include it.
-    final leadingLen = widget.leadingText.length;
-    final fullText = '${widget.leadingText}${widget.text}';
-    var (fieldStart, fieldEnd) = snapToWordBoundaries(
-      fullText,
-      contentStart + leadingLen,
-      contentEnd + leadingLen,
+    final (fieldStart, fieldEnd) = snapToWordBoundaries(
+      widget.text,
+      contentStart,
+      contentEnd,
     );
-    // A selection dragged all the way to this widget's own left edge —
-    // e.g. up against a drop cap rendered by a sibling widget — reads as
-    // "select from the very start", so it should pull in the leading text
-    // too. Plain word-boundary snapping can't do this on its own when the
-    // drop cap is a one-letter word of its own (e.g. "I will..."), since
-    // the space between "I" and "will" blocks the word-char adjacency
-    // check from ever crossing it.
-    if (widget.forceIncludeLeadingTextAtStart &&
-        contentStart == 0 &&
-        leadingLen > 0) {
-      fieldStart = 0;
-    }
 
     final anchors = editableTextState.contextMenuAnchors;
 
@@ -315,9 +376,7 @@ class _HighlightableTextState extends State<HighlightableText> {
             // `ctx` here is the context menu's own Overlay context, which
             // sits outside the BlocProvider<HighlightCubit> subtree — read
             // the cubit from this State's context instead.
-            final snippet = fullText.substring(fieldStart, fieldEnd);
-            // Shared with the highlight added below so the note dialog's
-            // later setNote() call can look it up by id.
+            final snippet = widget.text.substring(fieldStart, fieldEnd);
             final highlightId = generateHighlightId();
             context.read<HighlightCubit>().addHighlight(
               field: widget.field,
@@ -335,13 +394,12 @@ class _HighlightableTextState extends State<HighlightableText> {
                 ),
                 SelectionChangedCause.tap,
               );
-            // Offer a note without forcing the keyboard open immediately —
-            // a brief "Add note" bubble next to the highlight, rather than
-            // opening the note sheet straight away.
-            _showAddNoteBubble(
-              ctx,
-              anchors,
-              TextHighlight(
+            _addNoteBubble.show(
+              toolbarContext: ctx,
+              hostContext: context,
+              anchors: anchors,
+              field: widget.field,
+              highlight: TextHighlight(
                 id: highlightId,
                 start: fieldStart,
                 end: fieldEnd,
@@ -354,19 +412,26 @@ class _HighlightableTextState extends State<HighlightableText> {
       ],
     );
   }
+}
 
-  /// Shows a transient "Add note" pill anchored where the color toolbar
-  /// just was, for [_addNoteBubbleDuration] — tapping it opens the note
-  /// sheet (with keyboard); otherwise it fades out on its own.
-  static const _addNoteBubbleDuration = Duration(seconds: 4);
+/// Shared "Add note" pill that appears next to a highlight the moment it's
+/// created, giving the user a chance to attach a note without the note
+/// sheet grabbing focus (and the keyboard) unprompted. Owned by each
+/// selection-handling State so its [OverlayEntry] and [Timer] get cleaned
+/// up on unmount.
+class AddNoteBubbleHost {
+  OverlayEntry? _entry;
+  Timer? _timer;
+  static const _duration = Duration(seconds: 4);
 
-  void _showAddNoteBubble(
-    BuildContext toolbarContext,
-    TextSelectionToolbarAnchors anchors,
-    TextHighlight highlight,
-  ) {
-    _dismissAddNoteBubble();
-
+  void show({
+    required BuildContext toolbarContext,
+    required BuildContext hostContext,
+    required TextSelectionToolbarAnchors anchors,
+    required HighlightField field,
+    required TextHighlight highlight,
+  }) {
+    dismiss();
     final overlay = Overlay.of(toolbarContext);
     final entry = OverlayEntry(
       builder:
@@ -376,97 +441,103 @@ class _HighlightableTextState extends State<HighlightableText> {
             children: [
               AddNoteBubble(
                 onTap: () {
-                  _dismissAddNoteBubble();
-                  unawaited(_showNoteDialog(context, highlight));
+                  dismiss();
+                  unawaited(showNoteDialog(hostContext, field, highlight));
                 },
               ),
             ],
           ),
     );
-
     overlay.insert(entry);
-    _addNoteEntry = entry;
-    _addNoteTimer = Timer(_addNoteBubbleDuration, _dismissAddNoteBubble);
+    _entry = entry;
+    _timer = Timer(_duration, dismiss);
   }
 
-  void _dismissAddNoteBubble() {
-    _addNoteTimer?.cancel();
-    _addNoteTimer = null;
-    _addNoteEntry?.remove();
-    _addNoteEntry = null;
+  void dismiss() {
+    _timer?.cancel();
+    _timer = null;
+    _entry?.remove();
+    _entry = null;
   }
+}
 
-  void _showHighlightMenu(
-    BuildContext context,
-    Offset globalPosition,
-    TextHighlight highlight,
-  ) {
-    final overlayBox =
-        Overlay.of(context).context.findRenderObject()! as RenderBox;
-    showMenu<void>(
-      context: context,
-      color: Colors.transparent,
-      elevation: 0,
-      shape: const RoundedRectangleBorder(),
-      position: RelativeRect.fromRect(
-        globalPosition & const Size(1, 1),
-        Offset.zero & overlayBox.size,
-      ),
-      items: [
-        PopupMenuItem<void>(
-          enabled: false,
-          padding: EdgeInsets.zero,
-          height: 0,
-          child: HighlightColorToolbar(
-            colorIds: context.highlightColorIds,
-            selectedColorId: highlight.colorId,
-            onColorSelected: (colorId) {
-              context.read<HighlightCubit>().changeHighlightColor(
-                field: widget.field,
-                highlight: highlight,
-                newColorId: colorId,
-              );
-              Navigator.of(context).pop();
-            },
-            onRemove: () {
-              context.read<HighlightCubit>().removeHighlight(
-                field: widget.field,
-                highlight: highlight,
-              );
-              Navigator.of(context).pop();
-            },
-            onEditNote: () {
-              Navigator.of(context).pop();
-              unawaited(_showNoteDialog(context, highlight));
-            },
-          ),
+/// Opens the change-color / edit-note / remove menu for an existing
+/// [highlight] anchored at [globalPosition] (typically the tap position on
+/// the highlighted span itself).
+Future<void> showHighlightMenu(
+  BuildContext context,
+  HighlightField field,
+  Offset globalPosition,
+  TextHighlight highlight,
+) async {
+  final overlayBox =
+      Overlay.of(context).context.findRenderObject()! as RenderBox;
+  await showMenu<void>(
+    context: context,
+    color: Colors.transparent,
+    elevation: 0,
+    shape: const RoundedRectangleBorder(),
+    position: RelativeRect.fromRect(
+      globalPosition & const Size(1, 1),
+      Offset.zero & overlayBox.size,
+    ),
+    items: [
+      PopupMenuItem<void>(
+        enabled: false,
+        padding: EdgeInsets.zero,
+        height: 0,
+        child: HighlightColorToolbar(
+          colorIds: context.highlightColorIds,
+          selectedColorId: highlight.colorId,
+          onColorSelected: (colorId) {
+            context.read<HighlightCubit>().changeHighlightColor(
+              field: field,
+              highlight: highlight,
+              newColorId: colorId,
+            );
+            Navigator.of(context).pop();
+          },
+          onRemove: () {
+            context.read<HighlightCubit>().removeHighlight(
+              field: field,
+              highlight: highlight,
+            );
+            Navigator.of(context).pop();
+          },
+          onEditNote: () {
+            Navigator.of(context).pop();
+            unawaited(showNoteDialog(context, field, highlight));
+          },
         ),
-      ],
-    );
-  }
-
-  Future<void> _showNoteDialog(
-    BuildContext context,
-    TextHighlight highlight,
-  ) async {
-    final result = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => NoteSheet(initialNote: highlight.note),
-    );
-
-    if (result == null || !context.mounted) return;
-    final trimmed = result.trim();
-    unawaited(
-      context.read<HighlightCubit>().setNote(
-        field: widget.field,
-        highlight: highlight,
-        note: trimmed.isEmpty ? null : trimmed,
       ),
-    );
-  }
+    ],
+  );
+}
+
+/// Opens the note bottom sheet for [highlight] and persists the trimmed
+/// result (or clears the note if empty) via [HighlightCubit.setNote].
+Future<void> showNoteDialog(
+  BuildContext context,
+  HighlightField field,
+  TextHighlight highlight,
+) async {
+  final result = await showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (_) => NoteSheet(initialNote: highlight.note),
+  );
+
+  if (result == null || !context.mounted) return;
+  final trimmed = result.trim();
+  unawaited(
+    context.read<HighlightCubit>().setNote(
+      field: field,
+      highlight: highlight,
+      note: trimmed.isEmpty ? null : trimmed,
+    ),
+  );
 }
 
 /// Bottom sheet for adding/editing a highlight's note. Shared by the
