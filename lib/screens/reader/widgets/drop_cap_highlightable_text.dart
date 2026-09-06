@@ -158,7 +158,9 @@ class _DropCapHighlightableTextState extends State<DropCapHighlightableText> {
           textDirection: textDirection,
           textScaler: textScaler,
         ).preferredLineHeight;
-    final rows = (capHeight / lineHeight).ceil();
+    // Capped at 3 — a taller cap (e.g. from a larger reading font size)
+    // would otherwise wrap more lines beside it than reads well.
+    final rows = (capHeight / lineHeight).ceil().clamp(0, 3);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -166,6 +168,7 @@ class _DropCapHighlightableTextState extends State<DropCapHighlightableText> {
           1.0,
           constraints.maxWidth,
         );
+        final searchWidth = (boundsWidth - 3).clamp(1.0, boundsWidth);
 
         // Finds how much of `rest` fits in the first `rows` lines at
         // `boundsWidth`, mirroring the drop_cap_text package: lay out
@@ -178,14 +181,14 @@ class _DropCapHighlightableTextState extends State<DropCapHighlightableText> {
             text: TextSpan(text: rest, style: widget.baseStyle),
             textDirection: textDirection,
             textScaler: textScaler,
-          )..layout(maxWidth: boundsWidth);
+          )..layout(maxWidth: searchWidth);
           final charIndex =
               restPainter
                   .getPositionForOffset(Offset(0, rows * lineHeight))
                   .offset;
           restPainter
             ..maxLines = rows
-            ..layout(maxWidth: boundsWidth);
+            ..layout(maxWidth: searchWidth);
           if (restPainter.didExceedMaxLines) sideEnd = charIndex;
         }
 
@@ -240,6 +243,7 @@ class _DropCapHighlightableTextState extends State<DropCapHighlightableText> {
                         offset: capLen,
                         scrollAnchorHighlight: widget.scrollAnchorHighlight,
                         scrollAnchorKey: widget.scrollAnchorKey,
+                        maxLines: rows > 0 ? rows : null,
                       ),
                     ),
                   ),

@@ -139,6 +139,8 @@ class HighlightableRichText extends StatefulWidget {
     this.offset = 0,
     this.scrollAnchorHighlight,
     this.scrollAnchorKey,
+    this.maxLines,
+    this.overflow = TextOverflow.clip,
     super.key,
   });
 
@@ -159,6 +161,9 @@ class HighlightableRichText extends StatefulWidget {
 
   final TextHighlight? scrollAnchorHighlight;
   final Key? scrollAnchorKey;
+
+  final int? maxLines;
+  final TextOverflow overflow;
 
   @override
   State<HighlightableRichText> createState() => _HighlightableRichTextState();
@@ -225,6 +230,8 @@ class _HighlightableRichTextState extends State<HighlightableRichText> {
       span,
       textAlign: widget.textAlign,
       textScaler: widget.textScaler,
+      maxLines: widget.maxLines,
+      overflow: widget.overflow,
     );
   }
 }

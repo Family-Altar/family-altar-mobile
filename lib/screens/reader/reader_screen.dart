@@ -457,7 +457,11 @@ class _ReaderScreenState extends State<ReaderScreen>
                                     quote: state.reading.quote,
                                     dropCapStyle: TextStyle(
                                       fontFamily: 'OldEnglish',
-                                      fontSize: 50,
+                                      // Scales with the reading font size
+                                      // setting instead of a fixed size,
+                                      // preserving the ratio to the
+                                      // default 16pt body text (50pt cap).
+                                      fontSize: fontSize * (50 / 16),
                                       color:
                                           context.isDarkMode
                                               ? Colors.white
