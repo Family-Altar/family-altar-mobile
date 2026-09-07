@@ -29,7 +29,10 @@ class LocalReadingStorage {
 
   String readingFilePath({required DateTime date, required Volume volume}) {
     final fileName = _getFileName(date);
-    return p.join('${volume.assetBasePath}/daily_readings', fileName);
+    // Asset bundle keys are always POSIX-style, regardless of host OS —
+    // `p.join` would emit backslashes on a Windows host, which the asset
+    // bundle wouldn't recognize.
+    return p.posix.join('${volume.assetBasePath}/daily_readings', fileName);
   }
 
   String _getFileName(DateTime date) {
@@ -45,12 +48,11 @@ class LocalReadingStorage {
       case Section.foreword:
         return _loadStaticPage('Foreword.txt', volume);
       case Section.preface:
-        final fileName =
-            volume == Volume.three ? 'preface.txt' : 'Preface.txt';
+        final fileName = volume == Volume.three ? 'preface.txt' : 'Preface.txt';
         return _loadStaticPage(fileName, volume);
       case Section.dailyReading:
         final fileName = _getFileName(DateTime.now());
-        final filePath = p.join(
+        final filePath = p.posix.join(
           '${volume.assetBasePath}/daily_readings',
           fileName,
         );
@@ -63,7 +65,7 @@ class LocalReadingStorage {
   }
 
   Future<String> _loadStaticPage(String fileName, Volume volume) async {
-    final filePath = p.join('${volume.assetBasePath}/', fileName);
+    final filePath = p.posix.join('${volume.assetBasePath}/', fileName);
     return rootBundle.loadString(filePath);
   }
 }

@@ -58,6 +58,15 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
 
   // --- Logic Helpers ---
 
+  // The reading plan is a fixed 365-day cycle that repeats every year, so
+  // the calendar navigates within a single Jan–Dec window (this actual
+  // year) rather than scrolling freely across years.
+  static DateTime get _minDate => DateTime(DateTime.now().year);
+  static DateTime get _maxDate => DateTime(DateTime.now().year, 12, 31);
+
+  static bool _isBlankedLeapDay(DateTime date) =>
+      date.month == 2 && date.day == 29;
+
   static int _daysInYear(int year) {
     final isLeapYear = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
     return isLeapYear ? 366 : 365;
@@ -86,8 +95,10 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
   }
 
   void _changeMonth(int offset) {
+    final target = DateTime(_currentDate.year, _currentDate.month + offset);
+    if (target.isBefore(_minDate) || target.isAfter(_maxDate)) return;
     setState(() {
-      _currentDate = DateTime(_currentDate.year, _currentDate.month + offset);
+      _currentDate = target;
       _calendarController.displayDate = _currentDate;
     });
   }
@@ -102,10 +113,12 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
   // --- UI Builders ---
 
   Widget _buildHeader(BuildContext context) {
-    final headerDate = DateFormat('MMMM yyyy').format(_currentDate);
+    final headerDate = DateFormat('MMMM').format(_currentDate);
     final navStyle = IconButton.styleFrom(
       foregroundColor: context.calendarMonthText,
     );
+    final atFirstMonth = !_currentDate.isAfter(_minDate);
+    final atLastMonth = !_currentDate.isBefore(DateTime(_maxDate.year, 12));
     // Same width on both sides so the month label stays visually centered.
     const sideSlotWidth = 112.0;
     return Padding(
@@ -121,7 +134,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                 children: [
                   IconButton(
                     style: navStyle,
-                    onPressed: () => _changeMonth(-1),
+                    onPressed: atFirstMonth ? null : () => _changeMonth(-1),
                     icon: const Icon(Icons.chevron_left),
                   ),
                   IconButton(
@@ -151,7 +164,7 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
               alignment: Alignment.centerRight,
               child: IconButton(
                 style: navStyle,
-                onPressed: () => _changeMonth(1),
+                onPressed: atLastMonth ? null : () => _changeMonth(1),
                 icon: const Icon(Icons.chevron_right),
               ),
             ),
@@ -320,6 +333,8 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                 view: CalendarView.month,
                 todayHighlightColor: context.calendarCurrentWeekday,
                 initialDisplayDate: _currentDate,
+                minDate: _minDate,
+                maxDate: _maxDate,
                 headerHeight: 0,
                 viewHeaderHeight: viewHeaderH,
                 backgroundColor: Colors.transparent,
@@ -332,12 +347,18 @@ class _FamilyAltarCalendarState extends State<FamilyAltarCalendar>
                 selectionDecoration: const BoxDecoration(),
                 onViewChanged: _onCalendarViewChanged,
                 onTap: (details) {
-                  if (details.date != null) {
+                  if (details.date != null &&
+                      !_isBlankedLeapDay(details.date!)) {
                     context.push('/reader', extra: details.date);
                   }
                 },
                 monthCellBuilder: (context, details) {
                   final cellDate = details.date;
+                  // Feb 29 only exists in real leap years — blank it out so
+                  // the calendar always reads as one fixed, non-leap year.
+                  if (_isBlankedLeapDay(cellDate)) {
+                    return const SizedBox.shrink();
+                  }
                   final cellStatus =
                       loadedState?.getStatus(cellDate) ??
                       ReadingStatus.upcoming;

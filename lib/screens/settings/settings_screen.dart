@@ -2,6 +2,7 @@ import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/notification_service.dart';
 import 'package:family_altar/notification_settings.dart';
 import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
+import 'package:family_altar/screens/reader/cubit/highlight_cubit.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
@@ -52,10 +53,9 @@ class SettingsScreen extends StatelessWidget {
       backgroundColor: context.backgroundColor,
       appBar: AppBar(
         toolbarHeight: 48,
-        backgroundColor: context
-            .read<ReadingBloc>()
-            .currentVolume
-            .appBarColor(isDark: context.isDarkMode),
+        backgroundColor: context.read<ReadingBloc>().currentVolume.appBarColor(
+          isDark: context.isDarkMode,
+        ),
         title: Text(
           'Settings',
           style: AppFonts.bold(
@@ -499,6 +499,8 @@ class _NotificationTimeCardState extends State<_NotificationTimeCard> {
   }
 }
 
+enum _ResetScope { cancel, progressOnly, everything }
+
 class _ResetReadingProgressCard extends StatelessWidget {
   const _ResetReadingProgressCard();
 
@@ -509,27 +511,33 @@ class _ResetReadingProgressCard extends StatelessWidget {
 
   Future<void> _showResetConfirmation(BuildContext context) async {
     final platform = Theme.of(context).platform;
-    final volumeTitle = _activeVolume(context).displayTitle;
-    bool? shouldReset;
+    final volume = _activeVolume(context);
+    final volumeTitle = volume.displayTitle;
+    _ResetScope? scope;
 
     if (platform == TargetPlatform.iOS) {
-      shouldReset = await _showCupertinoResetDialog(context, volumeTitle);
+      scope = await _showCupertinoResetDialog(context, volumeTitle);
     } else {
-      shouldReset = await _showMaterialResetDialog(context, volumeTitle);
+      scope = await _showMaterialResetDialog(context, volumeTitle);
     }
 
-    if (shouldReset != true || !context.mounted) {
+    if (scope == null || scope == _ResetScope.cancel || !context.mounted) {
       return;
     }
 
     context.read<ReadingBloc>().add(const ResetReadingProgressEvent());
+    if (scope == _ResetScope.everything) {
+      await clearAllHighlights(volume);
+    }
 
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Reading progress has been reset',
+          scope == _ResetScope.everything
+              ? 'Reading progress and highlights have been cleared'
+              : 'Reading progress has been reset',
           style: AppFonts.normal(context),
         ),
         backgroundColor: context.backgroundColor.withValues(alpha: 0.8),
@@ -537,11 +545,11 @@ class _ResetReadingProgressCard extends StatelessWidget {
     );
   }
 
-  Future<bool?> _showMaterialResetDialog(
+  Future<_ResetScope?> _showMaterialResetDialog(
     BuildContext context,
     String volumeTitle,
   ) {
-    return showDialog<bool>(
+    return showDialog<_ResetScope>(
       context: context,
       builder:
           (context) => AlertDialog(
@@ -551,27 +559,52 @@ class _ResetReadingProgressCard extends StatelessWidget {
               style: AppFonts.bold(context, size: FontSize.large),
             ),
             content: Text(
-              "Are you sure you want to wipe $volumeTitle's reading progress?",
+              'What would you like to clear for $volumeTitle? This '
+              "can't be undone.",
               style: AppFonts.normal(context),
             ),
+            actionsOverflowButtonSpacing: 4,
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(
-                  'No, cancel',
-                  style: AppFonts.normal(
-                    context,
-                  ).copyWith(color: context.textColor),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed:
+                      () => Navigator.of(context).pop(_ResetScope.cancel),
+                  child: Text(
+                    'Cancel',
+                    style: AppFonts.normal(
+                      context,
+                    ).copyWith(color: context.textColor),
+                  ),
                 ),
               ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: Text(
-                  'Yes, reset',
-                  style: AppFonts.normal(
-                    context,
-                  ).copyWith(color: Colors.red, fontWeight: FontWeight.bold),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed:
+                      () => Navigator.of(context).pop(_ResetScope.progressOnly),
+                  child: Text(
+                    'Just reading progress',
+                    style: AppFonts.normal(context).copyWith(
+                      color: context.accent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed:
+                      () => Navigator.of(context).pop(_ResetScope.everything),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: Text(
+                    'Everything, including highlights',
+                    textAlign: TextAlign.center,
+                    style: AppFonts.normal(
+                      context,
+                    ).copyWith(color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],
@@ -579,11 +612,11 @@ class _ResetReadingProgressCard extends StatelessWidget {
     );
   }
 
-  Future<bool?> _showCupertinoResetDialog(
+  Future<_ResetScope?> _showCupertinoResetDialog(
     BuildContext context,
     String volumeTitle,
   ) {
-    return showCupertinoDialog<bool>(
+    return showCupertinoDialog<_ResetScope>(
       context: context,
       builder:
           (context) => CupertinoAlertDialog(
@@ -592,24 +625,37 @@ class _ResetReadingProgressCard extends StatelessWidget {
               style: AppFonts.bold(context, size: FontSize.large),
             ),
             content: Text(
-              "Are you sure you want to wipe $volumeTitle's reading progress?",
+              'What would you like to clear for $volumeTitle? This '
+              "can't be undone.",
               style: AppFonts.normal(context),
             ),
             actions: [
               CupertinoDialogAction(
-                onPressed: () => Navigator.of(context).pop(false),
+                onPressed: () => Navigator.of(context).pop(_ResetScope.cancel),
                 child: Text(
-                  'No, cancel',
+                  'Cancel',
                   style: AppFonts.normal(
                     context,
                   ).copyWith(color: context.textColor),
                 ),
               ),
               CupertinoDialogAction(
-                onPressed: () => Navigator.of(context).pop(true),
+                onPressed:
+                    () => Navigator.of(context).pop(_ResetScope.progressOnly),
+                child: Text(
+                  'Just reading progress',
+                  style: AppFonts.normal(context).copyWith(
+                    color: context.accent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              CupertinoDialogAction(
+                onPressed:
+                    () => Navigator.of(context).pop(_ResetScope.everything),
                 isDestructiveAction: true,
                 child: Text(
-                  'Yes, reset',
+                  'Everything, including highlights',
                   style: AppFonts.normal(
                     context,
                   ).copyWith(color: Colors.red, fontWeight: FontWeight.bold),
@@ -651,14 +697,16 @@ class _ResetReadingProgressCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: BlocBuilder<ReadingBloc, ReadingState>(
-                    buildWhen: (prev, curr) =>
-                        curr is ReadingLoaded &&
-                        (prev is! ReadingLoaded ||
-                            prev.currentVolume != curr.currentVolume),
+                    buildWhen:
+                        (prev, curr) =>
+                            curr is ReadingLoaded &&
+                            (prev is! ReadingLoaded ||
+                                prev.currentVolume != curr.currentVolume),
                     builder: (context, state) {
-                      final volumeTitle = state is ReadingLoaded
-                          ? state.currentVolume.displayTitle
-                          : 'Volume I';
+                      final volumeTitle =
+                          state is ReadingLoaded
+                              ? state.currentVolume.displayTitle
+                              : 'Volume I';
                       return Text(
                         'Clear all reading progress for $volumeTitle',
                         style: AppFonts.normal(
