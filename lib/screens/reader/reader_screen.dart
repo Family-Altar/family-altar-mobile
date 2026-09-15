@@ -239,7 +239,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                       ],
                     ),
                     title: Text(
-                      state.reading.date,
+                      formatDateTypeToShortMonthDay(state.currentDate),
                       style: AppFonts.bold(context),
                     ),
                     actions: [
