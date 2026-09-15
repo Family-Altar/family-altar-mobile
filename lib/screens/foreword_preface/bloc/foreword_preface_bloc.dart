@@ -13,7 +13,7 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
     required this.readingRepository,
     required this.volume,
   }) : super(PageInitial()) {
-    _sectionOrder = _orderedSectionsFor(volume);
+    _sectionOrder = orderedSectionsFor(volume);
     on<LoadPageEvent>(_onLoad);
     on<NextPageEvent>(_onNext);
     on<PreviousPageEvent>(_onPrevious);
@@ -24,7 +24,8 @@ class ForewordPrefaceBloc extends Bloc<PageEvent, ForewordPrefaceState> {
   final Map<Section, Page> _pageCache = {};
   late final List<Section> _sectionOrder;
 
-  static List<Section> _orderedSectionsFor(Volume v) => switch (v) {
+  /// Sections in reading order; only Volume I has a foreword.
+  static List<Section> orderedSectionsFor(Volume v) => switch (v) {
     Volume.one => [Section.foreword, Section.preface, Section.dailyReading],
     Volume.two => [Section.preface, Section.dailyReading],
     Volume.three => [Section.preface, Section.dailyReading],

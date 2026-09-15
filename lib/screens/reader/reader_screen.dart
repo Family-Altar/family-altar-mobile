@@ -11,7 +11,7 @@ import 'package:family_altar/theme/app_icons.dart';
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
 import 'package:family_altar/utils/utilities.dart';
-import 'package:family_altar/widgets/reading_settings_bottom_sheet.dart';
+import 'package:family_altar/widgets/reading_menu_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -216,137 +216,34 @@ class _ReaderScreenState extends State<ReaderScreen>
                           size: AppIcons.getIconSize(IconSize.medium),
                         ),
                       ),
-                      PopupMenuButton<Object>(
-                        color: context.backgroundColor,
-                        offset: const Offset(0, 48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey[800],
-                          ),
-                          child: CircleAvatar(
-                            radius: 12,
-                            backgroundColor: context.backgroundColor,
-                            child: Icon(
-                              Icons.more_horiz,
-                              color: context.textColor,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                        onSelected: (value) {
-                          if (value is Volume) {
-                            if (value != state.currentVolume) {
-                              context.read<ReadingBloc>().add(
-                                SwitchVolumeEvent(value),
-                              );
-                              _scrollController.jumpTo(0);
-                            }
-                          } else if (value == 'share') {
-                            final reading = state.reading;
-                            final fullShareText = formatReadingForSharing(
-                              reading,
-                              volume: state.currentVolume,
-                            );
-                            SharePlus.instance.share(
-                              ShareParams(text: fullShareText.trim()),
-                            );
-                          } else if (value == 'settings') {
-                            showReadingSettingsBottomSheet(context);
-                          } else if (value == 'highlights') {
-                            final highlightCubit = context
-                                .read<HighlightCubit>();
-                            context.push('/highlights').then((_) {
-                              if (!context.mounted) return;
-                              highlightCubit.loadForDate(
-                                date: highlightCubit.state.currentDate,
-                                volume: highlightCubit.state.currentVolume,
-                              );
-                            });
-                          }
+                      ReadingMenuButton(
+                        currentVolume: state.currentVolume,
+                        onVolumeSelected: (volume) {
+                          context.read<ReadingBloc>().add(
+                            SwitchVolumeEvent(volume),
+                          );
+                          _scrollController.jumpTo(0);
                         },
-                        itemBuilder:
-                            (BuildContext context) => [
-                              for (final v in Volume.values)
-                                PopupMenuItem<Object>(
-                                  value: v,
-                                  child: Row(
-                                    children: [
-                                      if (v == state.currentVolume)
-                                        Icon(
-                                          Icons.check,
-                                          color: context.textColor,
-                                          size: 20,
-                                        )
-                                      else
-                                        const SizedBox(width: 20),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        v.displayTitle,
-                                        style: AppFonts.normal(context),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              const PopupMenuDivider(),
-                              PopupMenuItem<Object>(
-                                value: 'share',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.share,
-                                      color: context.textColor,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Share Reading',
-                                      style: AppFonts.normal(context),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem<Object>(
-                                value: 'highlights',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.bookmark_border,
-                                      color: context.textColor,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      '${state.currentVolume.displayTitle} '
-                                      'Highlights',
-                                      style: AppFonts.normal(context),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem<Object>(
-                                value: 'settings',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.settings,
-                                      color: context.textColor,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Font and Settings',
-                                      style: AppFonts.normal(context),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                        shareLabel: 'Share Reading',
+                        onShare: () {
+                          final fullShareText = formatReadingForSharing(
+                            state.reading,
+                            volume: state.currentVolume,
+                          );
+                          SharePlus.instance.share(
+                            ShareParams(text: fullShareText.trim()),
+                          );
+                        },
+                        onHighlights: () {
+                          final highlightCubit = context.read<HighlightCubit>();
+                          context.push('/highlights').then((_) {
+                            if (!context.mounted) return;
+                            highlightCubit.loadForDate(
+                              date: highlightCubit.state.currentDate,
+                              volume: highlightCubit.state.currentVolume,
+                            );
+                          });
+                        },
                       ),
                     ],
                   ),
