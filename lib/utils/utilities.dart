@@ -77,8 +77,3 @@ String formatDateTypeToDDMMYYY(DateTime date) {
 String formatDateTypeToDDMM(DateTime date) {
   return DateFormat('d MMMM').format(date);
 }
-
-/// Short month + day, e.g. "Jan 1".
-String formatDateTypeToShortMonthDay(DateTime date) {
-  return DateFormat('MMM d').format(date);
-}

@@ -195,51 +195,16 @@ class _ReaderScreenState extends State<ReaderScreen>
                     toolbarHeight: 48,
                     backgroundColor: context.backgroundColor,
                     centerTitle: true,
-                    leadingWidth: 160,
-                    leading: Row(
-                      children: [
-                        IconButton(
-                          onPressed: context.pop,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          constraints: const BoxConstraints(),
-                          icon: Icon(
-                            Icons.arrow_back,
-                            color: context.textColor,
-                            size: AppIcons.getIconSize(IconSize.medium),
-                          ),
-                        ),
-                        DropdownButton<Volume>(
-                          value: state.currentVolume,
-                          dropdownColor: context.backgroundColor,
-                          underline: const SizedBox.shrink(),
-                          icon: Icon(
-                            Icons.arrow_drop_down,
-                            color: context.textColor,
-                            size: 16,
-                          ),
-                          style: AppFonts.normal(context, size: FontSize.small),
-                          items:
-                              Volume.values
-                                  .map(
-                                    (v) => DropdownMenuItem(
-                                      value: v,
-                                      child: Text(v.displayTitle),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (volume) {
-                            if (volume != null) {
-                              context.read<ReadingBloc>().add(
-                                SwitchVolumeEvent(volume),
-                              );
-                              _scrollController.jumpTo(0);
-                            }
-                          },
-                        ),
-                      ],
+                    leading: IconButton(
+                      onPressed: context.pop,
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: context.textColor,
+                        size: AppIcons.getIconSize(IconSize.medium),
+                      ),
                     ),
                     title: Text(
-                      formatDateTypeToShortMonthDay(state.currentDate),
+                      state.reading.date,
                       style: AppFonts.bold(context),
                     ),
                     actions: [
@@ -251,7 +216,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                           size: AppIcons.getIconSize(IconSize.medium),
                         ),
                       ),
-                      PopupMenuButton<String>(
+                      PopupMenuButton<Object>(
                         color: context.backgroundColor,
                         offset: const Offset(0, 48),
                         shape: RoundedRectangleBorder(
@@ -275,7 +240,14 @@ class _ReaderScreenState extends State<ReaderScreen>
                           ),
                         ),
                         onSelected: (value) {
-                          if (value == 'share') {
+                          if (value is Volume) {
+                            if (value != state.currentVolume) {
+                              context.read<ReadingBloc>().add(
+                                SwitchVolumeEvent(value),
+                              );
+                              _scrollController.jumpTo(0);
+                            }
+                          } else if (value == 'share') {
                             final reading = state.reading;
                             final fullShareText = formatReadingForSharing(
                               reading,
@@ -300,7 +272,29 @@ class _ReaderScreenState extends State<ReaderScreen>
                         },
                         itemBuilder:
                             (BuildContext context) => [
-                              PopupMenuItem<String>(
+                              for (final v in Volume.values)
+                                PopupMenuItem<Object>(
+                                  value: v,
+                                  child: Row(
+                                    children: [
+                                      if (v == state.currentVolume)
+                                        Icon(
+                                          Icons.check,
+                                          color: context.textColor,
+                                          size: 20,
+                                        )
+                                      else
+                                        const SizedBox(width: 20),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        v.displayTitle,
+                                        style: AppFonts.normal(context),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              const PopupMenuDivider(),
+                              PopupMenuItem<Object>(
                                 value: 'share',
                                 child: Row(
                                   children: [
@@ -317,7 +311,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                                   ],
                                 ),
                               ),
-                              PopupMenuItem<String>(
+                              PopupMenuItem<Object>(
                                 value: 'highlights',
                                 child: Row(
                                   children: [
@@ -335,7 +329,7 @@ class _ReaderScreenState extends State<ReaderScreen>
                                   ],
                                 ),
                               ),
-                              PopupMenuItem<String>(
+                              PopupMenuItem<Object>(
                                 value: 'settings',
                                 child: Row(
                                   children: [
