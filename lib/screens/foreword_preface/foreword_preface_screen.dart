@@ -2,16 +2,18 @@ import 'package:family_altar/models/volume.dart';
 import 'package:family_altar/repository/reading_repository.dart';
 import 'package:family_altar/screens/book_selection/book_selection_screen.dart';
 import 'package:family_altar/screens/foreword_preface/bloc/foreword_preface_bloc.dart';
+import 'package:family_altar/screens/reader/bloc/reading_bloc.dart';
 import 'package:family_altar/theme/app_colors.dart';
 import 'package:family_altar/theme/app_fonts.dart';
 import 'package:family_altar/theme/app_icons.dart';
 import 'package:family_altar/theme/bloc/theme_bloc.dart';
 import 'package:family_altar/theme/bloc/theme_state.dart';
 import 'package:family_altar/utils/utilities.dart';
-import 'package:family_altar/widgets/reading_settings_bottom_sheet.dart';
+import 'package:family_altar/widgets/reading_menu_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ForewordPrefaceScreenProvider extends StatefulWidget {
   const ForewordPrefaceScreenProvider({
@@ -31,6 +33,8 @@ class ForewordPrefaceScreenProvider extends StatefulWidget {
 class _ForewordPrefaceScreenProviderState
     extends State<ForewordPrefaceScreenProvider> {
   late final ScrollController _scrollController;
+  late Volume _volume = widget.volume;
+  late Section _section = widget.section;
 
   @override
   void initState() {
@@ -44,23 +48,47 @@ class _ForewordPrefaceScreenProviderState
     super.dispose();
   }
 
+  void _switchVolume(Volume volume, Section? currentSection) {
+    context.read<ReadingBloc>().add(SwitchVolumeEvent(volume));
+    final hasForeword = ForewordPrefaceBloc.orderedSectionsFor(
+      volume,
+    ).contains(Section.foreword);
+    setState(() {
+      _volume = volume;
+      _section =
+          currentSection == Section.foreword && hasForeword
+              ? Section.foreword
+              : Section.preface;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
+      // Keyed by volume so switching volumes creates a fresh bloc.
+      key: ValueKey(_volume),
       create:
           (context) => ForewordPrefaceBloc(
             readingRepository: context.read<ReadingRepository>(),
-            volume: widget.volume,
-          )..add(LoadPageEvent(sect: widget.section)),
-      child: ForewordPrefaceScreen(scrollController: _scrollController),
+            volume: _volume,
+          )..add(LoadPageEvent(sect: _section)),
+      child: ForewordPrefaceScreen(
+        scrollController: _scrollController,
+        onVolumeSelected: _switchVolume,
+      ),
     );
   }
 }
 
 class ForewordPrefaceScreen extends StatelessWidget {
-  const ForewordPrefaceScreen({required this.scrollController, super.key});
+  const ForewordPrefaceScreen({
+    required this.scrollController,
+    required this.onVolumeSelected,
+    super.key,
+  });
 
   final ScrollController scrollController;
+  final void Function(Volume volume, Section? currentSection) onVolumeSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +116,7 @@ class ForewordPrefaceScreen extends StatelessWidget {
         builder: (context, state) {
           final title =
               state is PageLoaded ? _sectionTitle(state.section) : 'Reading';
+          final volume = context.read<ForewordPrefaceBloc>().volume;
           return SafeArea(
             child: Scaffold(
               backgroundColor: context.backgroundColor,
@@ -113,33 +142,26 @@ class ForewordPrefaceScreen extends StatelessWidget {
                       size: AppIcons.getIconSize(IconSize.medium),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => showReadingSettingsBottomSheet(context),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    constraints: const BoxConstraints(
-                      minWidth: 40,
-                      minHeight: 40,
-                    ),
-                    icon: Container(
-                      width: 28,
-                      height: 28,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: context.textColor,
-                          width: 1.5,
+                  ReadingMenuButton(
+                    currentVolume: volume,
+                    onVolumeSelected:
+                        (selected) => onVolumeSelected(
+                          selected,
+                          state is PageLoaded ? state.section : null,
                         ),
-                      ),
-                      child: Text(
-                        'A',
-                        style: AppFonts.bold(context).copyWith(
-                          fontSize: 14,
-                          color: context.textColor,
-                          height: 1,
+                    shareLabel: 'Share $title',
+                    onShare: () {
+                      if (state is! PageLoaded) return;
+                      SharePlus.instance.share(
+                        ShareParams(
+                          text:
+                              'Family Altar - ${volume.displayTitle}\n'
+                              '$title\n\n'
+                              '${_unwrapLines(state.page.text).trim()}',
                         ),
-                      ),
-                    ),
+                      );
+                    },
+                    onHighlights: () => context.push('/highlights'),
                   ),
                 ],
               ),
@@ -196,6 +218,10 @@ class ForewordPrefaceScreen extends StatelessWidget {
   }
 }
 
+/// Joins hard-wrapped lines within a paragraph, keeping blank-line breaks.
+String _unwrapLines(String text) =>
+    text.replaceAll(RegExp(r'(?<!\n)\n(?!\n)'), ' ');
+
 class _ContentBody extends StatelessWidget {
   const _ContentBody({required this.state, required this.scrollController});
 
@@ -244,10 +270,7 @@ class _ContentBody extends StatelessWidget {
                     return Opacity(opacity: value, child: child);
                   },
                   child: Text(
-                    loadedState.page.text.replaceAll(
-                      RegExp(r'(?<!\n)\n(?!\n)'),
-                      ' ',
-                    ),
+                    _unwrapLines(loadedState.page.text),
                     textAlign: TextAlign.left,
                     style: AppFonts.normal(
                       context,
