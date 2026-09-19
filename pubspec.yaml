@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.1.1+21
 
 environment:
   sdk: ^3.7.2
@@ -28,15 +28,31 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  bloc: ^8.1.0
   cupertino_icons: ^1.0.8
+  equatable: ^2.0.5
   flutter:
     sdk: flutter
+  flutter_bloc: ^8.1.6
+  flutter_launcher_icons: ^0.14.4
+  flutter_local_notifications: ^19.5.0
   flutter_localizations:
     sdk: flutter
+  flutter_timezone: ^5.0.1
   go_router: ^16.2.4
+  google_fonts: ^6.2.1
+  intl: ^0.20.2
+  path: ^1.8.0
+  permission_handler: ^12.0.3
+  share_plus: ^13.2.0
+  shared_preferences: ^2.3.2
   slang: ^4.8.1
   slang_build_runner: ^4.8.1
   slang_flutter: ^4.8.0
+  syncfusion_flutter_calendar: ^31.1.23
+  timezone: ^0.10.1
+  transparent_image: ^2.0.1
+
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -66,8 +82,16 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
+  assets:
+    - assets/images/
+    - assets/volume_I/daily_readings/
+    - assets/volume_II/daily_readings/
+    - assets/volume_III/daily_readings/
+    - assets/volume_I/
+    - assets/volume_II/
+    - assets/volume_III/
+    - assets/icon/divider.png
+    - assets/fonts/google_fonts/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -81,10 +105,10 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
+  fonts:
+    - family: OldEnglish
+      fonts:
+        - asset: assets/fonts/oldenglishtextmt.ttf
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro

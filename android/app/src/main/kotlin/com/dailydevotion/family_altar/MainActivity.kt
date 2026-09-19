@@ -1,4 +1,4 @@
-package com.dailydevotion.family_altar
+package com.timdoddmissions.family_altar
 
 import io.flutter.embedding.android.FlutterActivity
 
