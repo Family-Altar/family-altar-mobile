@@ -1,0 +1,136 @@
+# Ships a build made by release-build.yml. The iOS build is submitted for App
+# Store review and released automatically once Apple approves it. The Android
+# build is promoted from the internal track to 100% of production.
+# Jobs wait for approval in the `production` environment. See docs/RELEASING.md.
+name: "Release: Deploy"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Build tag to release, e.g. v1.2.0+23 (listed under Releases)
+        required: true
+        type: string
+      platforms:
+        description: Stores to release to
+        required: true
+        type: choice
+        options: [both, ios, android]
+        default: both
+
+concurrency:
+  group: release-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
+  FASTLANE_SKIP_UPDATE_CHECK: "1"
+  FASTLANE_HIDE_CHANGELOG: "1"
+  FASTLANE_OPT_OUT_USAGE: "1"
+
+jobs:
+  resolve:
+    name: Check the tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      build_number: ${{ steps.parse.outputs.build_number }}
+    steps:
+      - name: Parse and verify the tag
+        id: parse
+        env:
+          TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)$ ]]; then
+            echo "::error::'$TAG' isn't a build tag like v1.2.0+23."
+            exit 1
+          fi
+          version=${BASH_REMATCH[1]}
+          build_number=${BASH_REMATCH[2]}
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null; then
+            echo "::error::There's no release for $TAG. Run Release: Build & Upload first."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
+
+  ios:
+    name: iOS to App Store review
+    needs: resolve
+    if: inputs.platforms != 'android'
+    runs-on: macos-26
+    environment: production
+    timeout-minutes: 30
+    env:
+      TAG: ${{ inputs.tag }}
+      VERSION: ${{ needs.resolve.outputs.version }}
+      BUILD_NUMBER: ${{ needs.resolve.outputs.build_number }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The build workflow attached the notes it used to the release.
+      - name: Get the release notes from the build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern release-notes.txt --dir "$RUNNER_TEMP"
+
+      - uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1.324.0
+        with:
+          bundler-cache: true
+
+      - name: Submit for review
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          RELEASE_NOTES=$(cat "$RUNNER_TEMP/release-notes.txt") bundle exec fastlane ios release_build version:"$VERSION" build_number:"$BUILD_NUMBER"
+          echo "Submitted $VERSION ($BUILD_NUMBER) for App Store review. Apple releases it automatically once it's approved." >> "$GITHUB_STEP_SUMMARY"
+
+  android:
+    name: Android to production
+    needs: resolve
+    if: inputs.platforms != 'ios'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    env:
+      VERSION: ${{ needs.resolve.outputs.version }}
+      BUILD_NUMBER: ${{ needs.resolve.outputs.build_number }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1.324.0
+        with:
+          bundler-cache: true
+
+      - name: Promote to production
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          bundle exec fastlane android release_build version:"$VERSION" build_number:"$BUILD_NUMBER"
+          echo "Promoted $VERSION ($BUILD_NUMBER) to 100% of production. Google reviews the update before it reaches users." >> "$GITHUB_STEP_SUMMARY"
+
+  mark-released:
+    name: Mark the GitHub release
+    needs: [resolve, ios, android]
+    if: ${{ !cancelled() && needs.resolve.result == 'success' && !contains(needs.*.result, 'failure') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest

@@ -49,3 +49,12 @@ app.*.map.json
 
 #Family Altar content
 *.txt
+# Release notes are plain text too, but unlike the book they belong in git.
+!/release-notes/*.txt
+# Book content the release workflows check out from the private repo.
+/.book-content/
+
+# fastlane
+/fastlane/report.xml
+/fastlane/Preview.html
+/fastlane/README.md

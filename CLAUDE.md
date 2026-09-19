@@ -104,6 +104,15 @@ Day N⇥The Family Altar⇥January 1
 
 When `sectionIndex == -1` (no daily-reading label), `quoteEndIndex` falls back to `sermonTitleIndex`.
 
+## Releasing
+
+Store releases run from two manually triggered GitHub Actions workflows. The full process and one-time setup are in `docs/RELEASING.md`.
+- `release-build.yml` ("Release: Build & Upload") builds the production flavor from `main`, uploads to TestFlight and the Play internal track, and tags the commit `v<version>+<build>`.
+- `release-deploy.yml` ("Release: Deploy") takes a tag, submits the iOS build for review (released automatically on approval), and promotes the Android build to 100% of production. It waits for approval in the `production` environment.
+- Store API calls live in `fastlane/Fastfile` (Ruby 3.4, `bundle exec fastlane <lane>`). The builds themselves use `flutter build`.
+- `version:` in `pubspec.yaml` is the source of truth for the release version and has no `+build` suffix. `release-prepare.yml` ("Release: Prepare") bumps it (patch/minor/major) and adds `release-notes/<version>.txt` (500 characters max) in a PR. Build & Upload reads both, picks the build number from the stores, and attaches the notes to the GitHub release as `release-notes.txt` for Deploy to reuse.
+- The repo is public. The book `.txt` files are gitignored, and CI gets them from the private `Family-Altar/family-altar-content` repo. Never commit them, and never upload builds as workflow artifacts or release assets.
+
 ## Testing conventions
 
 `test/daily_reading_parsing_test.dart` is tagged `@Tags(['local'])` because it reads assets directly from disk via `File` (not `rootBundle`) to avoid the Flutter binding overhead. CI excludes these tests with `--exclude-tags local`. Run locally without the flag to execute them.

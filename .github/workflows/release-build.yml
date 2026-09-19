@@ -1,0 +1,284 @@
+# Builds signed production apps from main, uploads them to TestFlight and the
+# Google Play internal track, and tags the commit v<version>+<build>.
+# The version comes from pubspec.yaml and the notes from release-notes/<version>.txt;
+# release-prepare.yml sets both. Ship a tag with release-deploy.yml.
+# See docs/RELEASING.md.
+#
+# This repo is public and the app bundles contain the book text, so builds are
+# never stored as workflow artifacts or release assets: the stores hold them.
+name: "Release: Build & Upload"
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: Build number override. Leave empty to use one above the highest in either store.
+        required: false
+        type: string
+
+concurrency:
+  group: release-build
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
+  FASTLANE_SKIP_UPDATE_CHECK: "1"
+  FASTLANE_HIDE_CHANGELOG: "1"
+  FASTLANE_OPT_OUT_USAGE: "1"
+
+jobs:
+  prepare:
+    name: Pick version and build number
+    runs-on: ubuntu-latest
+    environment: store-upload
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      build_number: ${{ steps.stores.outputs.build_number }}
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Require main
+        if: github.ref != 'refs/heads/main'
+        env:
+          REF: ${{ github.ref_name }}
+        run: |
+          echo "::error::Release builds run from main, not $REF."
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read the version and release notes
+        id: version
+        run: |
+          version=$(sed -nE 's/^version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' pubspec.yaml)
+          if [ -z "$version" ]; then
+            echo "::error file=pubspec.yaml::Couldn't read an X.Y.Z version from pubspec.yaml."
+            exit 1
+          fi
+          if [ ! -s "release-notes/$version.txt" ]; then
+            echo "::error::release-notes/$version.txt is missing. Start the release with Release: Prepare."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1.324.0
+        with:
+          bundler-cache: true
+
+      - name: Check the version and pick the build number
+        id: stores
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BUILD_NUMBER_OVERRIDE: ${{ inputs.build_number }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          RELEASE_NOTES=$(cat "release-notes/$VERSION.txt") \
+            bundle exec fastlane prepare_release version:"$VERSION" build_number:"$BUILD_NUMBER_OVERRIDE"
+
+      - name: Make sure the tag is new
+        id: tag
+        env:
+          TAG: v${{ steps.version.outputs.version }}+${{ steps.stores.outputs.build_number }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "::error::Tag $TAG already exists."
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Test with the book content
+    runs-on: ubuntu-latest
+    environment: store-upload
+    timeout-minutes: 20
+    outputs:
+      content_sha: ${{ steps.flutter.outputs.content-sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/flutter-with-book
+        id: flutter
+        with:
+          content-deploy-key: ${{ secrets.CONTENT_REPO_DEPLOY_KEY }}
+
+      - run: flutter analyze
+
+      # Includes the @Tags(['local']) tests that parse every day of every volume.
+      - run: flutter test
+
+  android:
+    name: Android to the Play internal track
+    needs: [prepare, test]
+    runs-on: ubuntu-latest
+    environment: store-upload
+    timeout-minutes: 45
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: ./.github/actions/flutter-with-book
+        with:
+          content-deploy-key: ${{ secrets.CONTENT_REPO_DEPLOY_KEY }}
+
+      - name: Install the upload keystore
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$ANDROID_KEYSTORE_B64" | base64 --decode > android/app/upload-keystore.jks
+          {
+            echo "storeFile=upload-keystore.jks"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > android/key.properties
+
+      - name: Build app bundle
+        run: flutter build appbundle --release --flavor production --build-name "$VERSION" --build-number "$BUILD_NUMBER"
+
+      - uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1.324.0
+        with:
+          bundler-cache: true
+
+      - name: Upload to the internal track
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          RELEASE_NOTES=$(cat "release-notes/$VERSION.txt") \
+            bundle exec fastlane android upload_build build_number:"$BUILD_NUMBER"
+
+  ios:
+    name: iOS to TestFlight
+    needs: [prepare, test]
+    runs-on: macos-26
+    environment: store-upload
+    timeout-minutes: 90
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
+      # Keep in step with the Xcode used locally.
+      XCODE_VERSION: "26.6"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select Xcode
+        run: |
+          xcode="/Applications/Xcode_${XCODE_VERSION}.app"
+          if [ ! -d "$xcode" ]; then
+            installed=$(ls -d /Applications/Xcode_*.app | xargs -n1 basename | tr '\n' ' ')
+            echo "::error::Xcode $XCODE_VERSION isn't on this runner image. Installed: $installed"
+            exit 1
+          fi
+          sudo xcode-select --switch "$xcode"
+
+      - uses: ./.github/actions/flutter-with-book
+        with:
+          content-deploy-key: ${{ secrets.CONTENT_REPO_DEPLOY_KEY }}
+
+      - name: Install the distribution certificate and provisioning profile
+        env:
+          IOS_DIST_CERT_P12_B64: ${{ secrets.IOS_DIST_CERT_P12_B64 }}
+          IOS_DIST_CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_B64: ${{ secrets.IOS_PROVISIONING_PROFILE_B64 }}
+        run: |
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password=$(openssl rand -base64 24)
+          cert="$RUNNER_TEMP/distribution.p12"
+          profile="$RUNNER_TEMP/distribution.mobileprovision"
+
+          echo "$IOS_DIST_CERT_P12_B64" | base64 --decode -o "$cert"
+          echo "$IOS_PROVISIONING_PROFILE_B64" | base64 --decode -o "$profile"
+
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$cert" -P "$IOS_DIST_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -k "$keychain_password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain"
+
+          uuid=$(security cms -D -i "$profile" | plutil -extract UUID raw -o - -)
+          for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+            mkdir -p "$dir"
+            cp "$profile" "$dir/$uuid.mobileprovision"
+          done
+          rm "$cert" "$profile"
+
+      - name: Build IPA
+        run: flutter build ipa --release --flavor production --build-name "$VERSION" --build-number "$BUILD_NUMBER" --export-options-plist=ios/ExportOptions.plist
+
+      - uses: ruby/setup-ruby@a0102e0972be65f351c307e2d64b9314a57c8073 # v1.324.0
+        with:
+          bundler-cache: true
+
+      - name: Upload to TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: RELEASE_NOTES=$(cat "release-notes/$VERSION.txt") bundle exec fastlane ios upload_build
+
+      - name: Remove the signing keychain
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/signing.keychain-db" || true
+
+  tag:
+    name: Tag the build
+    needs: [prepare, test, android, ios]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The notes are also attached as release-notes.txt so the deploy workflow
+      # can send the same text to the App Store.
+      - name: Create the tag and a pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          BUILD_NUMBER: ${{ needs.prepare.outputs.build_number }}
+          CONTENT_SHA: ${{ needs.test.outputs.content_sha }}
+        run: |
+          notes="$RUNNER_TEMP/release-notes.txt"
+          cp "release-notes/$VERSION.txt" "$notes"
+          {
+            echo "Build $VERSION ($BUILD_NUMBER) is on TestFlight and the Google Play internal track."
+            echo
+            cat "$notes"
+            echo
+            echo "---"
+            echo "Book content: family-altar-content@${CONTENT_SHA:0:7}"
+            echo
+            echo "To ship it, run **Release: Deploy** with tag \`$TAG\`."
+          } > "$RUNNER_TEMP/release.md"
+          gh release create "$TAG" "$notes" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --prerelease --title "$VERSION ($BUILD_NUMBER)" --notes-file "$RUNNER_TEMP/release.md"
+          echo "Tagged $TAG. Ship it with **Release: Deploy**." >> "$GITHUB_STEP_SUMMARY"
