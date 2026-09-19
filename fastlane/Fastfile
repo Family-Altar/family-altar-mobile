@@ -56,7 +56,10 @@ lane :prepare_release do |options|
 
   app = Spaceship::ConnectAPI::App.find(IOS_BUNDLE_ID) || UI.user_error!("#{IOS_BUNDLE_ID} isn't in App Store Connect")
   live = app.get_live_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS)
-  if live && Gem::Version.new(version) <= Gem::Version.new(live.version_string)
+  # App Store Connect version names are free text (1.1.1 went live as "1.1.1(21)"),
+  # so compare only the leading X.Y.Z.
+  live_version = live&.version_string.to_s[/\d+(\.\d+)*/]
+  if live_version && Gem::Version.new(version) <= Gem::Version.new(live_version)
     UI.user_error!("Version #{version} in pubspec.yaml isn't above #{live.version_string}, which is live on the App Store. Start a new release with Release: Prepare.")
   end
 
