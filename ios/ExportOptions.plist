@@ -3,14 +3,23 @@
 <plist version="1.0">
 <dict>
 	<key>method</key>
-	<string>app-store</string>
+	<string>app-store-connect</string>
+	<key>destination</key>
+	<string>export</string>
 	<key>teamID</key>
 	<string>BH49HZGJ7F</string>
 	<key>signingStyle</key>
-	<string>automatic</string>
-	<key>uploadBitcode</key>
+	<string>manual</string>
+	<key>signingCertificate</key>
+	<string>Apple Distribution</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.timdoddmissions.familyAltar</key>
+		<string>Family Altar iOS Provision Profile</string>
+	</dict>
+	<key>manageAppVersionAndBuildNumber</key>
 	<false/>
-	<key>compileBitcode</key>
-	<false/>
+	<key>uploadSymbols</key>
+	<true/>
 </dict>
 </plist>

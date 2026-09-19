@@ -1,0 +1,66 @@
+name: Flutter with book content
+description: >-
+  Installs the Flutter version pinned in .fvmrc, copies the book text from the
+  private Family-Altar/family-altar-content repo into assets/, and gets packages.
+  The book text is kept out of this public repo, so release builds need it from here.
+
+inputs:
+  content-deploy-key:
+    description: Private half of the read-only deploy key on Family-Altar/family-altar-content.
+    required: true
+
+outputs:
+  content-sha:
+    description: The family-altar-content commit that was copied in.
+    value: ${{ steps.content.outputs.sha }}
+
+runs:
+  using: composite
+  steps:
+    - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      with:
+        flutter-version-file: .fvmrc
+        cache: true
+
+    # iOS is CocoaPods-only here: mixed Swift Package Manager mode breaks the
+    # archive. On developer machines this is set in the global Flutter config.
+    - name: Disable Swift Package Manager
+      shell: bash
+      run: flutter config --no-enable-swift-package-manager
+
+    - name: Check out book content
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        repository: Family-Altar/family-altar-content
+        ssh-key: ${{ inputs.content-deploy-key }}
+        path: .book-content
+        persist-credentials: false
+
+    - name: Copy book content into assets
+      id: content
+      shell: bash
+      run: |
+        for volume in volume_I volume_II volume_III; do
+          rsync -a ".book-content/$volume/" "assets/$volume/"
+        done
+
+        # Fail here with a clear message rather than ship an app with missing days.
+        expect_days() {
+          local dir="assets/$1/daily_readings" count=0
+          if [ -d "$dir" ]; then
+            count=$(find "$dir" -name '*.txt' | wc -l | tr -d ' ')
+          fi
+          if [ "$count" != "$2" ]; then
+            echo "::error::$dir has $count reading files; expected $2. Check the family-altar-content repo."
+            exit 1
+          fi
+        }
+        expect_days volume_I 366
+        expect_days volume_II 365
+        expect_days volume_III 365
+
+        echo "sha=$(git -C .book-content rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+    - name: Get packages
+      shell: bash
+      run: flutter pub get

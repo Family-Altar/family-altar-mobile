@@ -1,0 +1,180 @@
+# Store automation for the release workflows in .github/workflows/release-*.yml.
+# The workflows build with `flutter build`; these lanes only talk to App Store
+# Connect and Google Play. See docs/RELEASING.md.
+#
+# Inputs come from the environment:
+#   ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8   App Store Connect API key
+#   PLAY_SERVICE_ACCOUNT_JSON               Google Play service account key
+#   RELEASE_NOTES                           What's new (the workflows read release-notes/<version>.txt)
+
+require "fileutils"
+require "tmpdir"
+
+IOS_BUNDLE_ID = "com.timdoddmissions.familyAltar"
+ANDROID_PACKAGE = "com.timdoddmissions.family_altar"
+# Release notes are sent in this language to both stores. It has to be one of
+# the app's languages in App Store Connect and Play Console.
+STORE_LOCALE = "en-US"
+PROJECT_ROOT = `git rev-parse --show-toplevel`.strip
+
+RELEASE_NOTES_LIMIT = 500 # Google Play's limit; the App Store allows more.
+
+def release_notes
+  notes = ENV.fetch("RELEASE_NOTES", "").dup.force_encoding(Encoding::UTF_8).strip
+  UI.user_error!("The release notes are empty.") if notes.empty?
+  if notes.length > RELEASE_NOTES_LIMIT
+    UI.user_error!("The release notes are #{notes.length} characters; Google Play allows #{RELEASE_NOTES_LIMIT}.")
+  end
+  notes
+end
+
+def play_json_key
+  ENV.fetch("PLAY_SERVICE_ACCOUNT_JSON")
+end
+
+def github_output(key, value)
+  return unless ENV["GITHUB_OUTPUT"]
+
+  File.open(ENV["GITHUB_OUTPUT"], "a") { |file| file.puts("#{key}=#{value}") }
+end
+
+private_lane :authenticate_app_store_connect do
+  app_store_connect_api_key(
+    key_id: ENV.fetch("ASC_KEY_ID"),
+    issuer_id: ENV.fetch("ASC_ISSUER_ID"),
+    key_content: ENV.fetch("ASC_KEY_P8"),
+    duration: 1200
+  )
+end
+
+desc "Check that `version` (from pubspec.yaml) is above the live App Store version and pick the build number:"
+desc "`build_number` if given, otherwise one above the highest build in either store"
+lane :prepare_release do |options|
+  version = options.fetch(:version)
+  release_notes # fail now, not after the builds, if the notes are empty or too long
+  authenticate_app_store_connect
+
+  app = Spaceship::ConnectAPI::App.find(IOS_BUNDLE_ID) || UI.user_error!("#{IOS_BUNDLE_ID} isn't in App Store Connect")
+  live = app.get_live_app_store_version(platform: Spaceship::ConnectAPI::Platform::IOS)
+  if live && Gem::Version.new(version) <= Gem::Version.new(live.version_string)
+    UI.user_error!("Version #{version} in pubspec.yaml isn't above #{live.version_string}, which is live on the App Store. Start a new release with Release: Prepare.")
+  end
+
+  if options[:build_number].to_s.empty?
+    ios_latest = latest_testflight_build_number(app_identifier: IOS_BUNDLE_ID, initial_build_number: 0).to_i
+
+    validate_play_store_json_key(json_key_data: play_json_key)
+    android_latest = %w[internal alpha beta production].flat_map do |track|
+      google_play_track_version_codes(package_name: ANDROID_PACKAGE, track: track, json_key_data: play_json_key)
+    rescue StandardError => e
+      UI.important("Skipping the #{track} track: #{e.message}")
+      []
+    end.map(&:to_i).max || 0
+
+    build_number = [ios_latest, android_latest].max + 1
+    UI.success("Latest iOS build is #{ios_latest}, latest Android version code is #{android_latest}; using #{build_number}")
+  else
+    build_number = Integer(options[:build_number])
+    UI.important("Using build number #{build_number} from the workflow input")
+  end
+
+  github_output("build_number", build_number)
+end
+
+platform :ios do
+  desc "Upload build/ios/ipa/*.ipa to TestFlight and wait until App Store Connect has processed it"
+  lane :upload_build do
+    ipa = Dir[File.join(PROJECT_ROOT, "build/ios/ipa/*.ipa")].first
+    UI.user_error!("No IPA in build/ios/ipa. Run `flutter build ipa` first.") unless ipa
+
+    authenticate_app_store_connect
+    upload_to_testflight(
+      app_identifier: IOS_BUNDLE_ID,
+      ipa: ipa,
+      changelog: release_notes,
+      skip_waiting_for_build_processing: false,
+      distribute_external: false
+    )
+  end
+
+  desc "Submit an uploaded build for App Store review. Apple releases it as soon as it's approved."
+  lane :release_build do |options|
+    version = options.fetch(:version)
+    authenticate_app_store_connect
+
+    # An empty metadata folder so deliver only sends the release notes below.
+    Dir.mktmpdir do |metadata|
+      deliver(
+        app_identifier: IOS_BUNDLE_ID,
+        app_version: version,
+        build_number: options.fetch(:build_number).to_s,
+        metadata_path: metadata,
+        release_notes: { STORE_LOCALE => release_notes },
+        skip_binary_upload: true,
+        skip_screenshots: true,
+        submit_for_review: true,
+        automatic_release: true,
+        phased_release: false,
+        run_precheck_before_submit: false,
+        # Only used if the build has no answer yet; Info.plist sets ITSAppUsesNonExemptEncryption.
+        submission_information: { export_compliance_uses_encryption: false },
+        force: true
+      )
+    end
+  end
+end
+
+platform :android do
+  desc "Upload the production app bundle to the Play internal testing track"
+  lane :upload_build do |options|
+    build_number = Integer(options.fetch(:build_number))
+    aab = File.join(PROJECT_ROOT, "build/app/outputs/bundle/productionRelease/app-production-release.aab")
+    UI.user_error!("No app bundle at #{aab}. Run `flutter build appbundle --flavor production` first.") unless File.exist?(aab)
+
+    # supply reads release notes from <metadata>/<locale>/changelogs/<version code>.txt.
+    Dir.mktmpdir do |metadata|
+      changelogs = File.join(metadata, STORE_LOCALE, "changelogs")
+      FileUtils.mkdir_p(changelogs)
+      File.write(File.join(changelogs, "#{build_number}.txt"), release_notes)
+
+      upload_to_play_store(
+        package_name: ANDROID_PACKAGE,
+        json_key_data: play_json_key,
+        track: "internal",
+        release_status: "completed",
+        aab: aab,
+        metadata_path: metadata,
+        skip_upload_apk: true,
+        skip_upload_metadata: true,
+        skip_upload_images: true,
+        skip_upload_screenshots: true
+      )
+    end
+  end
+
+  desc "Promote a build from the internal track to 100% of production"
+  lane :release_build do |options|
+    build_number = Integer(options.fetch(:build_number))
+
+    internal = google_play_track_version_codes(package_name: ANDROID_PACKAGE, track: "internal", json_key_data: play_json_key).map(&:to_i)
+    unless internal.include?(build_number)
+      found = internal.empty? ? "nothing" : internal.join(", ")
+      UI.user_error!("Build #{build_number} isn't on the internal track (it has #{found}). Each upload replaces the internal release, so release the newest build tag instead.")
+    end
+
+    upload_to_play_store(
+      package_name: ANDROID_PACKAGE,
+      json_key_data: play_json_key,
+      track: "internal",
+      track_promote_to: "production",
+      track_promote_release_status: "completed",
+      version_code: build_number,
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+end

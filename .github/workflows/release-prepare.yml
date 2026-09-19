@@ -1,0 +1,106 @@
+# Starts a release: opens a pull request that bumps `version:` in pubspec.yaml
+# and adds release-notes/<version>.txt. pubspec.yaml is the source of truth for
+# the version; once the pull request is merged, run release-build.yml.
+# See docs/RELEASING.md.
+name: "Release: Prepare"
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump from pubspec.yaml (patch: 1.1.1 → 1.1.2, minor: → 1.2.0, major: → 2.0.0)"
+        required: true
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+      release_notes:
+        description: "What's new, shown in TestFlight, Google Play and the App Store (plain text, 500 characters max). You can edit it in the pull request."
+        required: true
+        type: string
+
+concurrency:
+  group: release-prepare
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-pr:
+    name: Open the release pull request
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require main
+        if: github.ref != 'refs/heads/main'
+        env:
+          REF: ${{ github.ref_name }}
+        run: |
+          echo "::error::Releases start from main, not $REF."
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Bump the version and add release notes
+        id: bump
+        env:
+          BUMP: ${{ inputs.bump }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          current=$(sed -nE 's/^version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' pubspec.yaml)
+          if [ -z "$current" ]; then
+            echo "::error file=pubspec.yaml::Couldn't read an X.Y.Z version from pubspec.yaml."
+            exit 1
+          fi
+          IFS=. read -r major minor patch <<< "$current"
+          case "$BUMP" in
+            patch) version="$major.$minor.$((patch + 1))" ;;
+            minor) version="$major.$((minor + 1)).0" ;;
+            major) version="$((major + 1)).0.0" ;;
+          esac
+
+          length=$(python3 -c 'import sys; print(len(sys.argv[1].strip()))' "$RELEASE_NOTES")
+          if [ "$length" -eq 0 ] || [ "$length" -gt 500 ]; then
+            echo "::error::The release notes are $length characters; they need between 1 and 500."
+            exit 1
+          fi
+
+          branch="release/$version"
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            echo "::error::The branch $branch already exists. Merge or close its pull request and delete the branch first."
+            exit 1
+          fi
+
+          # The build number isn't kept here: the build workflow picks it from the stores.
+          sed -i -E "s/^version:.*/version: $version/" pubspec.yaml
+          mkdir -p release-notes
+          printf '%s\n' "$RELEASE_NOTES" > "release-notes/$version.txt"
+
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Open the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CURRENT: ${{ steps.bump.outputs.current }}
+          VERSION: ${{ steps.bump.outputs.version }}
+          BRANCH: ${{ steps.bump.outputs.branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add pubspec.yaml "release-notes/$VERSION.txt"
+          git commit -m "chore: release $VERSION"
+          git push origin "$BRANCH"
+
+          {
+            echo "Bumps the app version from $CURRENT to $VERSION and adds its release notes."
+            echo
+            echo "Before merging, check \`release-notes/$VERSION.txt\`. It's shown in TestFlight, Google Play and the App Store, so keep it to 500 characters. You can edit it on this branch."
+            echo
+            echo "After merging, run **Release: Build & Upload** from the Actions tab."
+          } > "$RUNNER_TEMP/pr-body.md"
+          url=$(gh pr create --base main --head "$BRANCH" --title "Release $VERSION" --body-file "$RUNNER_TEMP/pr-body.md")
+          echo "Opened $url" >> "$GITHUB_STEP_SUMMARY"
