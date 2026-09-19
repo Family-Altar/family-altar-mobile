@@ -1,0 +1,1 @@
+Improves reading screen layout for devices with smaller screens.
