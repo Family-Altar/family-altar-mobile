@@ -1,6 +1,6 @@
 # Ships a build made by release-build.yml. The iOS build is submitted for App
 # Store review and released automatically once Apple approves it. The Android
-# build is promoted from the internal track to 100% of production.
+# build is promoted from the closed testing track to 100% of production.
 # Jobs wait for approval in the `production` environment. See docs/RELEASING.md.
 name: "Release: Deploy"
 
