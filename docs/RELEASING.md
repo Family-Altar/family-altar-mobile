@@ -11,7 +11,7 @@ This guide covers publishing the app to the App Store and Google Play from GitHu
 Releases run as three workflows in the **Actions** tab of the app repo on GitHub:
 
 1. **Release: Prepare** opens a pull request that bumps `version:` in `pubspec.yaml` and adds the release notes as `release-notes/<version>.txt`. You choose how much to bump the version and type the notes when you start it. `pubspec.yaml` is the source of truth for the version.
-2. **Release: Build & Upload** runs after that pull request is merged. It builds the iOS and Android apps from `main` with the version in `pubspec.yaml` and uploads them to TestFlight and Google Play's internal testing track, where the team can try them. It then tags the commit with the version and build number, for example `v1.2.0+23`.
+2. **Release: Build & Upload** runs after that pull request is merged. It builds the iOS and Android apps from `main` with the version in `pubspec.yaml` and uploads them to TestFlight and Google Play's closed testing track, where the team can try them. It then tags the commit with the version and build number, for example `v1.2.0+23`.
 3. **Release: Deploy** takes one of those tags and ships that exact build. The iOS build is submitted for App Store review and goes live automatically when Apple approves it. The Android build is released to 100% of Google Play users.
 
 Three other pieces make this work:
@@ -280,12 +280,12 @@ The workflows use an App Store Connect API key to upload builds and submit them 
 
 ### Step 8: Set up testers
 
-Every build goes to TestFlight and Google Play internal testing before it ships. To install a build on a phone before release, you need to be a tester there. The workflows don't need testers, so skipping this doesn't break anything; you just can't try builds before they ship.
+Every build goes to TestFlight and Google Play closed testing before it ships. To install a build on a phone before release, you need to be a tester there. The workflows don't need testers, so skipping this doesn't break anything; you just can't try builds before they ship.
 
-- **Google Play:** in Play Console, open Family Altar → **Testing → Internal testing → Testers**. Create an email list with your Google accounts and save it. Open the join link on your phone and accept.
+- **Google Play:** in Play Console, open Family Altar → **Testing → Closed testing**, then the **Alpha** track → **Testers**. Add an email list with your Google accounts, **tick the checkbox next to it**, and click **Save**. The list only gets builds while it's ticked; you only need to do this once. Then open the join link on your phone and accept.
 - **TestFlight (optional):** in App Store Connect, open Family Altar → **TestFlight** → **Internal Testing**. Create a group, add yourselves, and turn on automatic distribution. Then install the TestFlight app on your iPhone. Without this, iOS builds still upload and ship, but nobody can try them on an iPhone first.
 
-Both consoles move their menus around from time to time. If you can't find these pages, look for "internal testing".
+Both consoles move their menus around from time to time. If you can't find these pages, look for "closed testing".
 
 ### Step 9: Check everything
 
@@ -339,14 +339,14 @@ Check the notes in the pull request, edit them on that branch if you need to, an
 
 The build uses the version in `pubspec.yaml` and the notes in `release-notes/<version>.txt`. When the run turns green:
 
-- The build is in TestFlight and in Google Play internal testing.
+- The build is in TestFlight and in Google Play closed testing. Google reviews closed testing releases, so it can be a few hours before testers can install it.
 - A new pre-release appears under **Releases** in the right sidebar of the app repo's main page. It's named something like `1.2.0 (23)` and tagged `v1.2.0+23`. You'll need that tag to ship.
 
 If the run fails, open the failed job to read the error, then see [Troubleshooting](#troubleshooting).
 
 ### 3. Test the build
 
-Install the build on an Android phone from the internal testing link. If you've set up TestFlight, install it on an iPhone too.
+Install the build on an Android phone from the closed testing link. If you've set up TestFlight, install it on an iPhone too.
 
 If something's wrong, merge a fix into `main` and run **Build & Upload** again. Don't run Prepare again: the version stays the same, and the new build gets a higher build number and a new tag.
 
@@ -368,7 +368,7 @@ After approval:
 
 ### Good to know
 
-- **Android can only ship the newest build.** Each upload replaces the one waiting in internal testing. If you've built again since, deploy the newer tag.
+- **Android can only ship the newest build.** Each upload replaces the one waiting in closed testing. If you've built again since, deploy the newer tag.
 - **If Apple rejects the build,** merge a fix, run Build & Upload again (not Prepare), and deploy the new tag with **Stores to release to** set to `ios`.
 - **If a build fails partway,** open the run and click **Re-run failed jobs**. It reuses the build number it already picked, so no number is skipped or used twice.
 - **Build numbers** are one above the highest build in either store, and iOS and Android get the same number. Only use the override if a store rejects the number that was picked.
@@ -393,7 +393,7 @@ After approval:
 | `assets/volume_…/daily_readings has N reading files` | Files are missing from the content repo. |
 | The "Check out book content" step fails with a permission error | Check the deploy key (Part 1, step 3). |
 | `Xcode 26.6 isn't on this runner image` | Set `XCODE_VERSION` to one of the versions listed in the error. |
-| `Build N isn't on the internal track` | A newer build replaced it. Deploy the newest tag. |
+| `Build N isn't on the alpha track` | A newer build replaced it. Deploy the newest tag. |
 | Google Cloud won't let you create a JSON key | Your organization's policy blocks service account keys. Use a project outside the organization, or ask its admin to allow keys for this project. |
 
 If a release has to go out while the pipeline is broken, follow the manual iOS steps in `ios/RELEASE_CHECKLIST.md`.

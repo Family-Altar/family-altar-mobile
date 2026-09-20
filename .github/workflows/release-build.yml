@@ -1,5 +1,5 @@
 # Builds signed production apps from main, uploads them to TestFlight and the
-# Google Play internal track, and tags the commit v<version>+<build>.
+# Google Play closed testing track, and tags the commit v<version>+<build>.
 # The version comes from pubspec.yaml and the notes from release-notes/<version>.txt;
 # release-prepare.yml sets both. Ship a tag with release-deploy.yml.
 # See docs/RELEASING.md.
@@ -118,7 +118,7 @@ jobs:
       - run: flutter test
 
   android:
-    name: Android to the Play internal track
+    name: Android to the Play closed testing track
     needs: [prepare, test]
     runs-on: ubuntu-latest
     environment: store-upload
@@ -162,7 +162,7 @@ jobs:
         with:
           bundler-cache: true
 
-      - name: Upload to the internal track
+      - name: Upload to the closed testing track
         env:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
@@ -270,7 +270,7 @@ jobs:
           notes="$RUNNER_TEMP/release-notes.txt"
           cp "release-notes/$VERSION.txt" "$notes"
           {
-            echo "Build $VERSION ($BUILD_NUMBER) is on TestFlight and the Google Play internal track."
+            echo "Build $VERSION ($BUILD_NUMBER) is on TestFlight and the Google Play closed testing track."
             echo
             cat "$notes"
             echo
